@@ -14,8 +14,8 @@ var (
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 
-	OfficeEmail string
-	OfficePass  string
+	OfficeEmail, OfficePass string
+	EmailSmtp, EmailPort    string
 )
 
 func init() {
@@ -48,7 +48,9 @@ func LoadApp() {
 	}
 	OfficeEmail = sec.Key("EMAIL").MustString("")
 	OfficePass = sec.Key("PASSWORD").MustString("")
-	if OfficeEmail == "" || OfficePass == "" {
+	EmailSmtp = sec.Key("SMTP").MustString("")
+	EmailPort = sec.Key("PORT").MustString("")
+	if OfficeEmail == "" || OfficePass == "" || EmailSmtp == "" || EmailPort == "" {
 		log.Fatalf("Failed to init App because lacking of email or password keyword")
 	}
 

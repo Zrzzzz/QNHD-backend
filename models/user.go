@@ -18,10 +18,20 @@ func GetUsersAll(maps interface{}) (cnt int) {
 }
 
 func AddUser(email string, password string) bool {
-	db.Create(&User{
+	db.Select("password", "email").Create(&User{
 		Email:    email,
 		Password: password,
 	})
+	return true
+}
+
+func EditUser(email string, data interface{}) bool {
+	db.Model(&User{}).Where("email = ?", email).Updates(data)
+	return true
+}
+
+func DeleteUser(email string) bool {
+	db.Where("email = ?", email).Delete(&User{})
 	return true
 }
 
@@ -29,6 +39,15 @@ func ExistUserByEmail(email string) bool {
 	var user User
 	db.Select("UID").Where("email = ?", email).First(&user)
 	return user.UID > 0
+}
+
+func ValidUser(email string, password string) bool {
+	var user User
+	db.Where("email = ?", email).First(&user)
+	if user.Email == email {
+		return user.Password == password
+	}
+	return false
 }
 
 func (User) TableName() string {

@@ -14,12 +14,17 @@ func InitRouter() (r *gin.Engine) {
 	r.Use(gin.Recovery())
 
 	gin.SetMode(setting.RunMode)
-	apiv1 := r.Group("/api/v1")
+	apibackv1 := r.Group("/api/b/v1")
 	{
-		initHashTag(apiv1)
-		initUsers(apiv1)
-		initBanned(apiv1)
+		initUsers(apibackv1)
+		initBanned(apibackv1)
 	}
+	apifrontv1 := r.Group("api/f/v1")
+	{
+		initHashTag(apifrontv1)
+		initUsers(apifrontv1)
+	}
+
 	return r
 }
 
@@ -38,9 +43,9 @@ func initUsers(g *gin.RouterGroup) {
 	//新建用户
 	g.POST("/users", v1.AddUsers)
 	//修改用户
-	g.PUT("/users/:id", v1.EditUsers)
+	g.PUT("/users", v1.EditUsers)
 	//删除指定用户
-	g.DELETE("/users/:id", v1.DeleteUsers)
+	g.DELETE("/users", v1.DeleteUsers)
 }
 
 func initBanned(g *gin.RouterGroup) {
