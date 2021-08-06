@@ -1,10 +1,11 @@
 package models
 
 type User struct {
-	UID        uint64 `gorm:"primaryKey;autoIncrement;" json:"uid"`
-	Password   string `json:"password"`
-	Email      string `json:"email"`
-	RegisterAt string `json:"register_at" gorm:"autoCreateTime"`
+	Uid          uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"uid"`
+	Password     string `json:"password"`
+	Email        string `json:"email"`
+	RegisteredAt string `json:"register_at" gorm:"autoCreateTime;default:null;"`
+	Status       int8   `json:"status" gorm:"default:null;"`
 }
 
 func GetUsers(maps interface{}) (users []User) {
@@ -12,13 +13,8 @@ func GetUsers(maps interface{}) (users []User) {
 	return
 }
 
-func GetUsersAll(maps interface{}) (cnt int) {
-	db.Model(&User{}).Where(maps).Count(&cnt)
-	return
-}
-
 func AddUser(email string, password string) bool {
-	db.Select("password", "email").Create(&User{
+	db.Create(&User{
 		Email:    email,
 		Password: password,
 	})
@@ -31,14 +27,14 @@ func EditUser(email string, data interface{}) bool {
 }
 
 func DeleteUser(email string) bool {
-	db.Where("email = ?", email).Delete(&User{})
+	db.Model(&User{Email: email}).Update("status", 0)
 	return true
 }
 
 func ExistUserByEmail(email string) bool {
 	var user User
-	db.Select("UID").Where("email = ?", email).First(&user)
-	return user.UID > 0
+	db.Select("uid").Where("email = ?", email).First(&user)
+	return user.Uid > 0
 }
 
 func ValidUser(email string, password string) bool {

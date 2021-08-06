@@ -16,6 +16,8 @@ var (
 
 	OfficeEmail, OfficePass string
 	EmailSmtp, EmailPort    string
+
+	JwtSecret string
 )
 
 func init() {
