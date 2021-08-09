@@ -1,11 +1,11 @@
 package b
 
 import (
-	"log"
 	"net/http"
 	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -43,7 +43,7 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
-			log.Printf("Get Blocked Error %v", r)
+			logging.Error("Add blocked error: %v", r)
 		}
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
@@ -69,7 +69,7 @@ func DeleteBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
-			log.Printf("Get Blocked Error %v", r)
+			logging.Error("Delete blocked error: %v", r)
 		}
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return

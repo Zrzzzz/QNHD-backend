@@ -1,9 +1,5 @@
 package models
 
-import (
-	"log"
-)
-
 type Blocked struct {
 	Model
 	Uid uint64 `json:"uid"`
@@ -24,7 +20,6 @@ func AddBlockedByUid(uid uint64) bool {
 func AddBlockedByEmail(email string) bool {
 	var user User
 	db.Where("email = ?", email).First(&user)
-	log.Println(user)
 	return AddBlockedByUid(user.Uid)
 }
 
@@ -36,7 +31,6 @@ func DeleteBlockedByUid(uid uint64) bool {
 func DeleteBlockedByEmail(email string) bool {
 	var user User
 	db.Where("email = ?", email).First(&user)
-	log.Println(user)
 	return AddBlockedByUid(user.Uid)
 }
 

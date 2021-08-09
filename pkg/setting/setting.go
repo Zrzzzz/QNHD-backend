@@ -1,8 +1,9 @@
 package setting
 
 import (
-	"log"
 	"time"
+
+	"qnhd/pkg/logging"
 
 	"github.com/go-ini/ini"
 )
@@ -17,14 +18,15 @@ var (
 	OfficeEmail, OfficePass string
 	EmailSmtp, EmailPort    string
 
-	JwtSecret string
+	JwtSecret            string
+	AdminName, AdminPass string
 )
 
 func init() {
 	var err error
 	Cfg, err = ini.Load("conf/app.ini")
 	if err != nil {
-		log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
+		logging.Fatal("Fail to parse 'conf/app.ini': %v", err)
 	}
 	LoadBase()
 	LoadServer()
@@ -36,7 +38,7 @@ func LoadBase() {
 func LoadServer() {
 	sec, err := Cfg.GetSection("server")
 	if err != nil {
-		log.Fatalf("Fail to get section 'server': %v", err)
+		logging.Fatal("Fail to get section 'server': %v", err)
 	}
 	RunMode = Cfg.Section("").Key("RUN_MODE").MustString("debug")
 	HTTPPort = sec.Key("HTTP_PORT").MustInt(8000)
@@ -46,16 +48,18 @@ func LoadServer() {
 func LoadApp() {
 	sec, err := Cfg.GetSection("app")
 	if err != nil {
-		log.Fatalf("Fail to get section 'app': %v", err)
+		logging.Fatal("Fail to get section 'app': %v", err)
 	}
 	OfficeEmail = sec.Key("EMAIL").MustString("")
 	OfficePass = sec.Key("PASSWORD").MustString("")
 	EmailSmtp = sec.Key("SMTP").MustString("")
 	EmailPort = sec.Key("PORT").MustString("")
-	if OfficeEmail == "" || OfficePass == "" || EmailSmtp == "" || EmailPort == "" {
-		log.Fatalf("Failed to init App because lacking of email or password keyword")
-	}
+	JwtSecret = sec.Key("JWTSECRET").MustString("")
+	AdminName = sec.Key("ADMINNAME").MustString("")
+	AdminPass = sec.Key("ADMINPASS").MustString("")
 
-	log.Println(OfficeEmail, OfficePass)
+	if OfficeEmail == "" || OfficePass == "" || EmailSmtp == "" || EmailPort == "" {
+		logging.Fatal("Failed to init App because lacking of email or password keyword")
+	}
 
 }

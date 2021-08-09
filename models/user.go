@@ -8,6 +8,12 @@ type User struct {
 	Status       int8   `json:"status" gorm:"default:null;"`
 }
 
+func CheckUser(email string, password string) bool {
+	var user User
+	db.Select("uid").Where(User{Email: email, Password: password}).First(&user)
+	return user.Uid > 0
+}
+
 func GetUsers(maps interface{}) (users []User) {
 	db.Where(maps).Find(&users)
 	return

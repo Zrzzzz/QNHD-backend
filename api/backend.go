@@ -43,3 +43,8 @@ func initAdminBackend(g *gin.RouterGroup) {
 	//删除指定管理员
 	g.DELETE("/admin", b.DeleteAdmins)
 }
+
+func initAuthBackend(g *gin.RouterGroup) {
+	// 获取token
+	g.GET("/auth", b.GetAuth)
+}

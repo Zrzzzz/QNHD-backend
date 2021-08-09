@@ -2,8 +2,8 @@ package email
 
 import (
 	"fmt"
-	"log"
 	"net/smtp"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 	"time"
 
@@ -37,7 +37,7 @@ func SendEmail(to string, success func(), failure func()) {
 	err := mail.Send(fmt.Sprintf("%v:%v", server, port), smtp.PlainAuth("", from, pass, server))
 
 	if err != nil {
-		log.Printf("Failed to send email: %v", err)
+		logging.Error("Failed to send email: %v", err)
 		failure()
 	} else {
 		success()

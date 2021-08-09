@@ -1,10 +1,10 @@
 package b
 
 import (
-	"log"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"strings"
 
 	"qnhd/api/r"
@@ -24,7 +24,7 @@ func GetUsers(c *gin.Context) {
 	}
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
-			log.Printf("Get User Error %v", r)
+			logging.Error("Get user error: %v", r)
 		}
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return

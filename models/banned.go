@@ -1,9 +1,5 @@
 package models
 
-import (
-	"log"
-)
-
 type Banned struct {
 	Model
 	Uid uint64 `json:"uid"`
@@ -24,7 +20,6 @@ func AddBannedByUid(uid uint64) bool {
 func AddBannedByEmail(email string) bool {
 	var user User
 	db.Where("email = ?", email).First(&user)
-	log.Println(user)
 	return AddBannedByUid(user.Uid)
 }
 
@@ -36,7 +31,6 @@ func DeleteBannedByUid(uid uint64) bool {
 func DeleteBannedByEmail(email string) bool {
 	var user User
 	db.Where("email = ?", email).First(&user)
-	log.Println(user)
 	return AddBannedByUid(user.Uid)
 }
 

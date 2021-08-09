@@ -21,3 +21,8 @@ func initUsersFront(g *gin.RouterGroup) {
 	//修改用户
 	g.PUT("/users", f.EditUsers)
 }
+
+func initAuthFront(g *gin.RouterGroup) {
+	// 获取token
+	g.GET("/auth", f.GetAuth)
+}
