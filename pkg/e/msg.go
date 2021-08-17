@@ -10,6 +10,8 @@ var MsgFlags = map[int]string{
 	ERROR_NOT_EXIST_ARTICLE: "该文章不存在",
 	ERROR_EXIST_USER:        "该用户已存在",
 	ERROR_NOT_EXIST_USER:    "该用户不存在",
+	ERROR_EXIST_TAG:         "该标签已存在",
+	ERROR_NOT_EXIST_TAG:     "该标签不存在",
 
 	ERROR_BANNED_USER:      "用户已被封禁",
 	ERROR_NOT_BANNED_USER:  "用户未被封禁",
@@ -18,10 +20,13 @@ var MsgFlags = map[int]string{
 
 	ERROR_AUTH_CHECK_TOKEN_FAIL:    "Token鉴权失败",
 	ERROR_AUTH_CHECK_TOKEN_TIMEOUT: "Token已超时",
-	ERROR_AUTH_TOKEN:               "Token生成失败",
+	ERROR_GENERATE_TOKEN:           "Token生成失败",
 	ERROR_AUTH:                     "账号密码错误",
 
-	ERROR_SEND_EMAIL: "发送邮件失败",
+	ERROR_SEND_EMAIL:               "发送邮件失败",
+	ERROR_UPLOAD_SAVE_IMAGE_FAIL:   "保存图片失败",
+	ERROR_UPLOAD_CHECK_IMAGE_FAIL:  "检查图片失败",
+	ERROR_UPLOAD_SAVE_IMAGE_FORMAT: "图片格式或大小不合规范",
 }
 
 func GetMsg(code int) string {

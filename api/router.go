@@ -1,8 +1,12 @@
 package api
 
 import (
-	"qnhd/middleware/jwt"
+	"net/http"
+	"qnhd/api/v1/b"
+	"qnhd/api/v1/f"
+	"qnhd/middleware/crossfield"
 	"qnhd/pkg/setting"
+	"qnhd/pkg/upload"
 
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -16,29 +20,17 @@ func InitRouter() (r *gin.Engine) {
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	gin.SetMode(setting.ServerSetting.RunMode)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// 解决跨域问题
+	r.Use(crossfield.CrossField())
 
-	gin.SetMode(setting.RunMode)
-
+	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 	avb := r.Group("/api/v1/b")
-	{
-		initAuthBackend(avb)
-		avb.Use(jwt.JWT())
-		// 这之后的需要jwt验证
-		initUsersBackend(avb)
-		initBannedBackend(avb)
-		initBlockedBackend(avb)
-		initAdminBackend(avb)
-	}
+	b.Setup(avb)
 	avf := r.Group("api/v1/f")
-	{
-		initAuthFront(avf)
-		avb.Use(jwt.JWT())
-		// 这之后的需要jwt验证
-		initHashTagFront(avf)
-		initUsersFront(avf)
-	}
+	f.Setup(avf)
 
 	return r
 }

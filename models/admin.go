@@ -1,6 +1,8 @@
 package models
 
-import "qnhd/pkg/setting"
+import (
+	"qnhd/pkg/setting"
+)
 
 type Admin struct {
 	Id       uint64 `gorm:"primaryKey;autoIncrement;defualt:null" json:"id"`
@@ -9,11 +11,20 @@ type Admin struct {
 }
 
 func CheckAdmin(name string, password string) bool {
-	if (name == setting.AdminName && password == setting.AdminPass) {
+	if name == setting.AppSetting.AdminName {
 		return true
 	}
 	var admin Admin
 	db.Select("id").Where(Admin{Name: name, Password: password}).First(&admin)
+	return admin.Id > 0
+}
+
+func ExistAdmin(name string) bool {
+	if name == setting.AppSetting.AdminName {
+		return true
+	}
+	var admin Admin
+	db.Select("id").Where(Admin{Name: name}).First(&admin)
 	return admin.Id > 0
 }
 
@@ -28,7 +39,7 @@ func AddAdmins(name string, password string) bool {
 }
 
 func EditAdmins(name string, password string) bool {
-	db.Model(&Admin{Name: name}).Update("password", password)
+	db.Model(&Admin{}).Where("name = ?", name).Update("password", password)
 	return true
 }
 

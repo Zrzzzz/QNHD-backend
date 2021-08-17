@@ -1,10 +1,37 @@
 basePath: /api/v1
 definitions:
+  b.UserResponse:
+    properties:
+      bloced_start:
+        type: string
+      blocked_over:
+        type: string
+      blocked_remain:
+        type: integer
+      email:
+        type: string
+      is_banned:
+        type: boolean
+      is_blocked:
+        type: boolean
+      password:
+        type: string
+      register_at:
+        type: string
+      status:
+        type: integer
+      uid:
+        type: integer
+    type: object
   b.authRes:
     properties:
       super:
-        example: false
         type: boolean
+      token:
+        type: string
+    type: object
+  f.authRes:
+    properties:
       token:
         type: string
     type: object
@@ -28,12 +55,70 @@ definitions:
       uid:
         type: integer
     type: object
+  models.Blocked:
+    properties:
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: integer
+      last_time:
+        type: integer
+      uid:
+        type: integer
+    type: object
   models.ListRes:
     properties:
       list:
         type: object
       total:
         example: 1
+        type: integer
+    type: object
+  models.Notice:
+    properties:
+      content:
+        type: string
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      id:
+        type: integer
+    type: object
+  models.Post:
+    properties:
+      content:
+        type: string
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      id:
+        type: integer
+      picture_url:
+        type: string
+      uid:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.Report:
+    properties:
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      id:
+        type: integer
+      post_id:
+        type: string
+      reason:
+        type: string
+      uid:
         type: integer
     type: object
   models.Response:
@@ -43,6 +128,13 @@ definitions:
       data:
         type: object
       msg:
+        type: string
+    type: object
+  models.Tag:
+    properties:
+      id:
+        type: integer
+      name:
         type: string
     type: object
 host: 116.62.107.46:7013
@@ -64,11 +156,6 @@ paths:
         name: name
         required: true
         type: string
-      - description: 用于验证用户
-        in: query
-        name: token
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -80,6 +167,8 @@ paths:
           description: 失败不返回数据
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
       summary: 删除管理员
       tags:
       - backend
@@ -88,10 +177,9 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: 用于验证用户
+      - description: 管理员昵称
         in: query
-        name: token
-        required: true
+        name: name
         type: string
       produces:
       - application/json
@@ -112,6 +200,8 @@ paths:
                         type: array
                     type: object
               type: object
+      security:
+      - ApiKeyAuth: []
       summary: 获取所有的管理员
       tags:
       - backend
@@ -121,20 +211,17 @@ paths:
       - application/json
       parameters:
       - description: 管理员昵称
-        in: query
+        in: body
         name: name
         required: true
-        type: string
+        schema:
+          type: string
       - description: 管理员密码, 32位小写md5
-        in: query
+        in: body
         name: password
         required: true
-        type: string
-      - description: 用于验证用户
-        in: query
-        name: token
-        required: true
-        type: string
+        schema:
+          type: string
       produces:
       - application/json
       responses:
@@ -146,6 +233,8 @@ paths:
           description: 参数错误
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
       summary: 增加管理员
       tags:
       - backend
@@ -155,20 +244,17 @@ paths:
       - application/json
       parameters:
       - description: 管理员昵称
-        in: query
+        in: body
         name: name
         required: true
-        type: string
+        schema:
+          type: string
       - description: 管理员密码, 32位小写md5
-        in: query
+        in: body
         name: password
         required: true
-        type: string
-      - description: 用于验证用户
-        in: query
-        name: token
-        required: true
-        type: string
+        schema:
+          type: string
       produces:
       - application/json
       responses:
@@ -180,6 +266,8 @@ paths:
           description: 参数错误
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
       summary: 修改管理员密码
       tags:
       - backend
@@ -188,7 +276,641 @@ paths:
     get:
       consumes:
       - application/json
-      description: getAuth
+      parameters:
+      - description: admin name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: admin password，发送密码的32位小写md5
+        in: query
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/b.authRes'
+              type: object
+        "20003":
+          description: 失败不返回数据
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: 后端获取token
+      tags:
+      - backend
+      - auth
+  /b/auth/{token}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/b.authRes'
+              type: object
+        "400":
+          description: 无token
+          schema:
+            $ref: '#/definitions/models.Response'
+        "20001":
+          description: token检查失败
+          schema:
+            $ref: '#/definitions/models.Response'
+        "20003":
+          description: token生成失败
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 后端刷新token
+      tags:
+      - backend
+      - auth
+  /b/banned:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除封号用户(解禁), 此接口不使用
+      tags:
+      - backend
+      - banned
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/models.Banned'
+                        type: array
+                    type: object
+              type: object
+        "400":
+          description: 失败不返回数据
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取封号用户
+      tags:
+      - backend
+      - banned
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: body
+        name: uid
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加封号用户
+      tags:
+      - backend
+      - banned
+  /b/blocked:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 失败不返回数据
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除禁言用户
+      tags:
+      - backend
+      - blocked
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/models.Blocked'
+                        type: array
+                    type: object
+              type: object
+        "400":
+          description: 失败不返回数据
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取禁言用户
+      tags:
+      - backend
+      - blocked
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: body
+        name: uid
+        required: true
+        schema:
+          type: integer
+      - description: 持续天数 0<?<=30
+        in: body
+        name: last
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 失败不返回数据
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加禁言用户
+      tags:
+      - backend
+      - blocked
+  /b/notice:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除公告
+      tags:
+      - backend
+      - notice
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/models.Notice'
+                    type: object
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 获取公告
+      tags:
+      - backend
+      - notice
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告内容
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加公告
+      tags:
+      - backend
+      - notice
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告id
+        in: body
+        name: id
+        required: true
+        schema:
+          type: integer
+      - description: 公告内容
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改公告
+      tags:
+      - backend
+      - notice
+  /b/post:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 帖子id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除帖子
+      tags:
+      - backend
+      - post
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/models.Post'
+                    type: object
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 获取帖子
+      tags:
+      - backend
+      - post
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 发帖人id
+        in: formData
+        name: uid
+        required: true
+        type: string
+      - description: 帖子内容
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: 图片data，最大5MB
+        in: formData
+        name: picture
+        type: string
+      - description: 标签id
+        in: formData
+        items:
+          type: integer
+        name: tags
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加帖子
+      tags:
+      - front
+      - post
+  /b/report:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/models.Report'
+                        type: array
+                    type: object
+              type: object
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取举报列表
+      tags:
+      - backend
+      - report
+  /b/user:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户邮箱
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效的参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除用户，不应使用此接口
+      tags:
+      - backend
+      - user
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        type: integer
+      - description: 用户邮箱
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/b.UserResponse'
+                    type: object
+              type: object
+        "400":
+          description: 无效的参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户列表
+      tags:
+      - backend
+      - user
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户邮箱, 必须10位学号的tju邮箱
+        in: body
+        name: email
+        required: true
+        schema:
+          type: string
+      - description: 用户密码, 32位小写md5
+        in: body
+        name: password
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效的参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加用户，不应使用此接口
+      tags:
+      - backend
+      - user
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户邮箱
+        in: body
+        name: email
+        required: true
+        schema:
+          type: string
+      - description: 用户新密码, 32位小写md5
+        in: body
+        name: new_password
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效的参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改用户数据
+      tags:
+      - backend
+      - user
+  /f/auth:
+    get:
+      consumes:
+      - application/json
       parameters:
       - description: admin name
         in: query
@@ -214,55 +936,22 @@ paths:
             - $ref: '#/definitions/models.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/b.authRes'
+                  $ref: '#/definitions/f.authRes'
               type: object
         "20003":
           description: 失败不返回数据
           schema:
             $ref: '#/definitions/models.Response'
-      summary: 后端获取token
+      summary: 前端获取token
       tags:
-      - backend
-  /b/banned:
-    delete:
-      consumes:
-      - application/json
-      parameters:
-      - description: 用户id
-        in: query
-        name: uid
-        required: true
-        type: string
-      - description: 用于验证用户
-        in: query
-        name: token
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Response'
-        "400":
-          description: 无效参数
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: 删除封禁用户(解禁), 此接口不使用
-      tags:
-      - backend
-      - banned
+      - front
+      - auth
+  /f/auth/{token}:
     get:
       consumes:
       - application/json
       parameters:
-      - description: 用户id
-        in: query
-        name: uid
-        required: true
-        type: string
-      - description: 用于验证用户
+      - description: 用户token
         in: query
         name: token
         required: true
@@ -277,35 +966,123 @@ paths:
             - $ref: '#/definitions/models.Response'
             - properties:
                 data:
-                  allOf:
-                  - $ref: '#/definitions/models.ListRes'
-                  - properties:
-                      list:
-                        items:
-                          $ref: '#/definitions/models.Banned'
-                        type: array
-                    type: object
+                  $ref: '#/definitions/f.authRes'
               type: object
         "400":
-          description: 失败不返回数据
+          description: 无token
           schema:
             $ref: '#/definitions/models.Response'
-      summary: 获取封禁用户
+        "20001":
+          description: token检查失败
+          schema:
+            $ref: '#/definitions/models.Response'
+        "20003":
+          description: token生成失败
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 前端刷新token
       tags:
-      - backend
-      - banned
+      - front
+      - auth
+  /f/tag:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 标签id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除标签
+      tags:
+      - front
+      - tag
     post:
       consumes:
       - application/json
       parameters:
-      - description: 用户id
+      - description: 标签名称
+        in: body
+        name: name
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加标签
+      tags:
+      - front
+      - tag
+  /f/user:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: tju邮箱，必须是10位学号
         in: query
-        name: uid
+        name: email
         required: true
         type: string
-      - description: 用于验证用户
+      - description: 密码，32位md5
         in: query
-        name: token
+        name: password
+        required: true
+        type: string
+      - description: 邮箱验证码
+        in: query
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 前端新建用户，没有带code，会发送邮件，带code的，会验证code并且新建用户
+      tags:
+      - front
+      - user
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户邮箱
+        in: query
+        name: email
         required: true
         type: string
       produces:
@@ -316,13 +1093,20 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
         "400":
-          description: 无效参数
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.Response'
-      summary: 添加封禁用户
+      security:
+      - ApiKeyAuth: []
+      summary: 更改密码
       tags:
-      - backend
-      - banned
+      - front
+      - user
 schemes:
 - http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: token
+    type: apiKey
 swagger: "2.0"

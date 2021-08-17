@@ -1,9 +1,16 @@
+.PHONY: start refresh watch stop
+
+
 start:
-	swag init >> /tmp/qnhd.log 2>&1 & && air >> /tmp/qnhd.log 2>&1 &
+	swag init >> /tmp/qnhd.log 2>&1 &
+	air >> /tmp/qnhd.log 2>&1 &
 
 refresh:
 	swag init >> /tmp/qnhd.log 2>&1 &
 
+watch:
+	tail -f /tmp/qnhd.log
+
 stop:
-	ps -ef | grep air | awk {'print $2'} | xargs kill -9
+	pkill air
 	rm /tmp/qnhd.log 2>/dev/null

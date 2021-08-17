@@ -2,7 +2,7 @@ package models
 
 type Banned struct {
 	Model
-	Uid uint64 `json:"uid"`
+	Uid uint64 `json:"uid" gorm:"index"`
 }
 
 func GetBanned(maps interface{}) (bans []Banned) {

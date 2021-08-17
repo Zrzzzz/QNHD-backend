@@ -14,6 +14,12 @@ func CheckUser(email string, password string) bool {
 	return user.Uid > 0
 }
 
+func ExistUser(email string) bool {
+	var user User
+	db.Select("uid").Where(User{Email: email}).First(&user)
+	return user.Uid > 0
+}
+
 func GetUsers(maps interface{}) (users []User) {
 	db.Where(maps).Find(&users)
 	return

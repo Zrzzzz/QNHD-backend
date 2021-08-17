@@ -19,10 +19,10 @@ func init() {
 func SendEmail(to string, success func(), failure func()) {
 	// TODO: 连接池和计时器清除Code保留
 
-	from := setting.OfficeEmail
-	pass := setting.OfficePass
-	server := setting.EmailSmtp
-	port := setting.EmailPort
+	from := setting.AppSetting.OfficeEmail
+	pass := setting.AppSetting.OfficePass
+	server := setting.AppSetting.EmailSmtp
+	port := setting.AppSetting.EmailPort
 
 	t := time.Now().Unix()
 	code := fmt.Sprintf("%06d", t%1000000)

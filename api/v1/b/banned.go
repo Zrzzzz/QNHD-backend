@@ -5,7 +5,6 @@ import (
 	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
-	"qnhd/pkg/logging"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -13,11 +12,11 @@ import (
 )
 
 // @Tags backend, banned
-// @Summary 获取封禁用户
+// @Summary 获取封号用户
 // @Accept json
 // @Produce json
-// @Param uid query string true "用户id"
-// @Param token query string true "用于验证用户"
+// @Param uid query int false "用户id"
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Response{data=models.ListRes{list=[]models.Banned}}
 // @Failure 400 {object} models.Response "失败不返回数据"
 // @Router /b/banned [get]
@@ -26,7 +25,8 @@ func GetBanned(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
+	ok := r.E(&valid, "Get banned")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
@@ -46,23 +46,21 @@ func GetBanned(c *gin.Context) {
 }
 
 // @Tags backend, banned
-// @Summary 添加封禁用户
+// @Summary 添加封号用户
 // @Accept json
 // @Produce json
-// @Param uid query string true "用户id"
-// @Param token query string true "用于验证用户"
+// @Param uid body int true "用户id"
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.Response "无效参数"
 // @Router /b/banned [post]
 func AddBanned(c *gin.Context) {
-	uid := c.Query("uid")
+	uid := c.PostForm("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
-		for _, r := range valid.Errors {
-			logging.Error("Add banned error: %v", r)
-		}
+	ok := r.E(&valid, "Add banned")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
@@ -81,11 +79,11 @@ func AddBanned(c *gin.Context) {
 }
 
 // @Tags backend, banned
-// @Summary 删除封禁用户(解禁), 此接口不使用
+// @Summary 删除封号用户(解禁), 此接口不使用
 // @Accept json
 // @Produce json
-// @Param uid query string true "用户id"
-// @Param token query string true "用于验证用户"
+// @Param uid query int true "用户id"
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.Response "无效参数"
 // @Router /b/banned [delete]
@@ -94,10 +92,8 @@ func DeleteBanned(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
-		for _, r := range valid.Errors {
-			logging.Error("Delete banned error: %v", r)
-		}
+	ok := r.E(&valid, "Delete banned")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}

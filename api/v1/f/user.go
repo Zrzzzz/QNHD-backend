@@ -20,6 +20,17 @@ func checkMail(email string) bool {
 	return true
 }
 
+// @Tags front, user
+// @Summary 前端新建用户，没有带code，会发送邮件，带code的，会验证code并且新建用户
+// @Accept json
+// @Produce json
+// @Param email query string true "tju邮箱，必须是10位学号"
+// @Param password query string true "密码，32位md5"
+// @Param code query string false "邮箱验证码"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response ""
+// @Router /f/user [post]
 func AddUsers(c *gin.Context) {
 	email := c.Query("email")
 	password := c.Query("password")
@@ -56,6 +67,15 @@ func AddUsers(c *gin.Context) {
 
 }
 
+// @Tags front, user
+// @Summary 更改密码
+// @Accept json
+// @Produce json
+// @Param email query string true "用户邮箱"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response ""
+// @Router /f/user [put]
 func EditUsers(c *gin.Context) {
 	email := c.Query("email")
 	oldPass := c.Query("old_password")
@@ -65,18 +85,6 @@ func EditUsers(c *gin.Context) {
 		data := make(map[string]interface{})
 		data["password"] = newPass
 		models.EditUser(email, data)
-		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
-	} else {
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))
-	}
-}
-
-func DeleteUsers(c *gin.Context) {
-	email := c.Query("email")
-	password := c.Query("password")
-
-	if models.ValidUser(email, password) {
-		models.DeleteUser(email)
 		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
 	} else {
 		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))

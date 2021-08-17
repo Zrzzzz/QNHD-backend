@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"qnhd/api"
+	"qnhd/models"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 )
 
@@ -14,7 +16,9 @@ import (
 // @host 116.62.107.46:7013
 // @BasePath /api/v1
 // @license.name Apache 2.0
-
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name token
 func main() {
 	// endless.DefaultReadTimeOut = setting.ReadTimeout
 	// endless.DefaultWriteTimeOut = setting.WriteTimeout
@@ -29,14 +33,20 @@ func main() {
 	// if err := s.ListenAndServe(); err != nil {
 	// 	logging.Error("Server err: %v", err)
 	// }
+	setting.Setup()
+	logging.Setup()
+	models.Setup()
+
 	router := api.InitRouter()
 
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%d", setting.HTTPPort),
+		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HTTPPort),
 		Handler:        router,
-		ReadTimeout:    setting.ReadTimeout,
-		WriteTimeout:   setting.WriteTimeout,
+		ReadTimeout:    setting.ServerSetting.ReadTimeout,
+		WriteTimeout:   setting.ServerSetting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
 	s.ListenAndServe()
+
+	defer models.CloseDB()
 }

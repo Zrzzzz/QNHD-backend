@@ -5,19 +5,28 @@ import (
 	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
-	"qnhd/pkg/logging"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
 
+// @Tags backend, blocked
+// @Summary 获取禁言用户
+// @Accept json
+// @Produce json
+// @Param uid query string false "用户id"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response{data=models.ListRes{list=[]models.Blocked}}
+// @Failure 400 {object} models.Response "失败不返回数据"
+// @Router /b/blocked [get]
 func GetBlocked(c *gin.Context) {
 	uid := c.Query("uid")
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
+	ok := r.E(&valid, "Get blocked")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
@@ -36,24 +45,35 @@ func GetBlocked(c *gin.Context) {
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
 }
 
+// @Tags backend, blocked
+// @Summary 添加禁言用户
+// @Accept json
+// @Produce json
+// @Param uid body int true "用户id"
+// @Param last body int true "持续天数 0<?<=30"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response "失败不返回数据"
+// @Router /b/blocked [post]
 func AddBlocked(c *gin.Context) {
-	uid := c.Query("uid")
+	uid := c.PostForm("uid")
+	last := c.PostForm("last")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
-		for _, r := range valid.Errors {
-			logging.Error("Add blocked error: %v", r)
-		}
+	valid.Required(last, "last")
+	valid.Numeric(last, "last")
+	ok := r.E(&valid, "Add blocked")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
-
+	// 因为做过valid了不必考虑错误
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
-
+	intlast, _ := strconv.ParseUint(last, 10, 8)
 	code := 0
 	if !models.IfBlockedByUid(intuid) {
-		models.AddBlockedByUid(intuid)
+		models.AddBlockedByUid(intuid, uint8(intlast))
 		code = e.SUCCESS
 	} else {
 		code = e.ERROR_BLOCKED_USER
@@ -62,15 +82,22 @@ func AddBlocked(c *gin.Context) {
 
 }
 
+// @Tags backend, blocked
+// @Summary 删除禁言用户
+// @Accept json
+// @Produce json
+// @Param uid query string true "用户id"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response "失败不返回数据"
+// @Router /b/blocked [delete]
 func DeleteBlocked(c *gin.Context) {
 	uid := c.Query("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	if valid.HasErrors() {
-		for _, r := range valid.Errors {
-			logging.Error("Delete blocked error: %v", r)
-		}
+	ok := r.E(&valid, "Delete blocked")
+	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
