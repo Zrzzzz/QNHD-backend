@@ -3,7 +3,7 @@ package models
 type Floor struct {
 	Model
 	Uid     uint64 `json:"uid"`
-	PostId  string `json:"post_id" gorm:"index"`
+	PostId  uint64 `json:"post_id" gorm:"index"`
 	Content string `json:"content"`
 }
 
@@ -27,8 +27,27 @@ func GetFloor(id string) (floor Floor) {
 	return
 }
 
-func DeleteFloor(id string) bool {
+func AddFloor(maps map[string]interface{}) bool {
+	db.Select("uid", "post_id", "content").Create(&Floor{
+		Uid:     maps["uid"].(uint64),
+		PostId:  maps["postId"].(uint64),
+		Content: maps["content"].(string),
+	})
+	return true
+}
+
+func DeleteFloorByAdmin(id string) bool {
 	db.Where("id = ?", id).Delete(&Floor{})
+	return true
+}
+
+func DeleteFloorByUser(postId, uid, floorId string) bool {
+	db.Where("post_id = ? AND uid = ? AND id = ?", postId, uid, floorId).Delete(&Floor{})
+	return true
+}
+
+func DeleteFloorsInPost(postId string) bool {
+	db.Where("post_id = ?", postId).Delete(&Floor{})
 	return true
 }
 

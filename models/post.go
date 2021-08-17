@@ -18,8 +18,6 @@ func GetPosts(overNum, limit int, content string) (posts []Post) {
 	return
 }
 
-// func GetPostsTags
-
 func AddPosts(maps map[string]interface{}) bool {
 	var post = &Post{
 		Uid:        maps["uid"].(uint64),
@@ -37,12 +35,14 @@ func AddPosts(maps map[string]interface{}) bool {
 func DeletePostsUser(id, uid string) bool {
 	db.Where("id = ? AND uid = ?", id, uid).Delete(&Post{})
 	DeleteTagInPost(id)
+	DeleteFloorsInPost(id)
 	return true
 }
 
 func DeletePostsAdmin(id string) bool {
 	db.Where("id = ?", id).Delete(&Post{})
 	DeleteTagInPost(id)
+	DeleteFloorsInPost(id)
 	return true
 }
 

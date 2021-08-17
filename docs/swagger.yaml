@@ -35,6 +35,33 @@ definitions:
       token:
         type: string
     type: object
+  f.postRes:
+    type: object
+  f.postResponse:
+    properties:
+      content:
+        type: string
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      floors:
+        items:
+          $ref: '#/definitions/models.Floor'
+        type: array
+      id:
+        type: integer
+      picture_url:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/models.Tag'
+        type: array
+      uid:
+        type: integer
+      updated_at:
+        type: string
+    type: object
   models.Admin:
     properties:
       id:
@@ -66,6 +93,21 @@ definitions:
       id:
         type: integer
       last_time:
+        type: integer
+      uid:
+        type: integer
+    type: object
+  models.Floor:
+    properties:
+      content:
+        type: string
+      create_at:
+        type: string
+      delete_at:
+        type: string
+      id:
+        type: integer
+      post_id:
         type: integer
       uid:
         type: integer
@@ -701,47 +743,6 @@ paths:
       tags:
       - backend
       - post
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: 发帖人id
-        in: formData
-        name: uid
-        required: true
-        type: string
-      - description: 帖子内容
-        in: formData
-        name: content
-        required: true
-        type: string
-      - description: 图片data，最大5MB
-        in: formData
-        name: picture
-        type: string
-      - description: 标签id
-        in: formData
-        items:
-          type: integer
-        name: tags
-        type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Response'
-        "400":
-          description: 无效参数
-          schema:
-            $ref: '#/definitions/models.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 添加帖子
-      tags:
-      - front
-      - post
   /b/report:
     get:
       consumes:
@@ -986,6 +987,267 @@ paths:
       tags:
       - front
       - auth
+  /f/floor:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: query
+        name: uid
+        required: true
+        type: string
+      - description: 帖子id
+        in: query
+        name: post_id
+        required: true
+        type: string
+      - description: 楼层id
+        in: query
+        name: floor_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除楼层
+      tags:
+      - front
+      - floor
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: body
+        name: uid
+        required: true
+        schema:
+          type: string
+      - description: 帖子id
+        in: body
+        name: post_id
+        required: true
+        schema:
+          type: string
+      - description: 内容
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加楼层
+      tags:
+      - front
+      - floor
+  /f/floors:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 分页数量
+        in: query
+        name: page
+        type: string
+      - description: 帖子id
+        in: query
+        name: post_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/models.Floor'
+                    type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取楼层
+      tags:
+      - front
+      - floor
+  /f/post:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 发帖人id
+        in: query
+        name: uid
+        required: true
+        type: string
+      - description: 帖子id
+        in: query
+        name: post_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除帖子
+      tags:
+      - front
+      - post
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 帖子id
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/f.postRes'
+              type: object
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取单个post
+      tags:
+      - front
+      - post
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 发帖人id
+        in: formData
+        name: uid
+        required: true
+        type: string
+      - description: 帖子内容
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: 图片data，最大5MB
+        in: formData
+        name: picture
+        type: string
+      - description: 标签id数组
+        in: formData
+        items:
+          type: integer
+        name: tags
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加帖子
+      tags:
+      - front
+      - post
+  /f/posts:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 帖子内容
+        in: query
+        name: content
+        type: string
+      - description: 页数, 从0开始 默认为0
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/models.ListRes'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/f.postResponse'
+                    type: object
+              type: object
+        "400":
+          description: 无效参数
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取多个简短post
+      tags:
+      - front
+      - post
   /f/tag:
     get:
       consumes:

@@ -2,6 +2,7 @@ package f
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"qnhd/api/r"
 	"qnhd/models"
@@ -17,7 +18,7 @@ import (
 )
 
 type postRes struct {
-	post postResponse `json:"post"`
+	post postResponse
 }
 
 type postResponse struct {
@@ -33,9 +34,9 @@ type postResponse struct {
 // @Param content query string false "帖子内容"
 // @Param page query string false "页数, 从0开始 默认为0"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=}}
+// @Success 200 {object} models.Response{data=models.ListRes{list=postResponse}}
 // @Failure 400 {object} models.Response "无效参数"
-// @Router /f/post/single [get]
+// @Router /f/posts [get]
 func GetPosts(c *gin.Context) {
 	var pageSize = setting.AppSetting.PageSize
 	content := c.Query("content")
@@ -65,7 +66,7 @@ func GetPosts(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response{data=postRes}
 // @Failure 400 {object} models.Response "无效参数"
-// @Router /f/post/single [get]
+// @Router /f/post [get]
 func GetPost(c *gin.Context) {
 	id := c.Query("id")
 
@@ -79,9 +80,17 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	data := make(map[string]interface{})
 	post := models.GetPost(id)
-	data["post"] = post
+	tags := models.GetTagsInPost(fmt.Sprintf("%d", post.Id))
+	floors := models.GetFloorInPostShort(fmt.Sprintf("%d", post.Id))
+	data := map[string]interface{}{
+		"post": postResponse{
+			Post:   post,
+			Tags:   tags,
+			Floors: floors,
+		},
+	}
+
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
 }
 
@@ -96,7 +105,7 @@ func GetPost(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.Response "无效参数"
-// @Router /b/post [post]
+// @Router /f/post [post]
 func AddPosts(c *gin.Context) {
 	uid := c.PostForm("uid")
 	content := c.PostForm("content")
@@ -139,6 +148,7 @@ func AddPosts(c *gin.Context) {
 	maps["content"] = content
 	maps["picture_url"] = imageUrl
 	maps["tags"] = tags
+	log.Println(tags)
 	models.AddPosts(maps)
 
 	data["pictrue_url"] = imageUrl
@@ -149,11 +159,12 @@ func AddPosts(c *gin.Context) {
 // @Summary 删除帖子
 // @Accept json
 // @Produce json
-// @Param uid formData string true "发帖人id"
+// @Param uid query string true "发帖人id"
+// @Param post_id query string true "帖子id"
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.Response "无效参数"
-// @Router /b/post [post]
+// @Router /f/post [delete]
 func DeletePosts(c *gin.Context) {
 	uid := c.Query("uid")
 	postId := c.Query("post_id")

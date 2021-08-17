@@ -9,7 +9,7 @@ type PostTag struct {
 }
 
 func GetTagsInPost(postId string) (tags []Tag) {
-	db.Where("post_id = ?", postId).Find(&tags)
+	db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).Find(&tags)
 	return
 }
 
