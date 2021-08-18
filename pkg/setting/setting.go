@@ -7,20 +7,6 @@ import (
 	"github.com/go-ini/ini"
 )
 
-var (
-	Cfg          *ini.File
-	RunMode      string
-	HTTPPort     int
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-
-	OfficeEmail, OfficePass string
-	EmailSmtp, EmailPort    string
-
-	JwtSecret            string
-	AdminName, AdminPass string
-)
-
 type Server struct {
 	RunMode      string
 	HTTPPort     int

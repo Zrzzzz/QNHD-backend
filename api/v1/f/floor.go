@@ -67,7 +67,7 @@ func AddFloors(c *gin.Context) {
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Get floors")
+	ok := r.E(&valid, "Add floors")
 	if !ok {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
@@ -82,6 +82,52 @@ func AddFloors(c *gin.Context) {
 	}
 
 	models.AddFloor(maps)
+	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+}
+
+// @Tags front, floor
+// @Summary 回复楼层
+// @Accept json
+// @Produce json
+// @Param uid body string true "用户id"
+// @Param reply_to_floor body string true "回复楼层id"
+// @Param post_id body string true "帖子id"
+// @Param content body string true "内容"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response ""
+// @Router /f/floor/reply [post]
+func ReplyFloor(c *gin.Context) {
+	postId := c.PostForm("post_id")
+	uid := c.PostForm("uid")
+	replyToFloor := c.PostForm("reply_to_floor")
+	content := c.PostForm("content")
+
+	valid := validation.Validation{}
+	valid.Required(postId, "postId")
+	valid.Numeric(postId, "podsId")
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(replyToFloor, "floorId")
+	valid.Numeric(replyToFloor, "floorId")
+	valid.Required(content, "content")
+	ok := r.E(&valid, "Reply floors")
+	if !ok {
+		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		return
+	}
+	intpostid, _ := strconv.ParseUint(postId, 10, 64)
+	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	intfloor, _ := strconv.ParseUint(replyToFloor, 10, 64)
+
+	maps := map[string]interface{}{
+		"uid":          intuid,
+		"postId":       intpostid,
+		"replyToFloor": intfloor,
+		"content":      content,
+	}
+
+	models.ReplyFloor(maps)
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
 }
 

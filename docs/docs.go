@@ -1380,11 +1380,20 @@ var doc = `{
                     "front",
                     "floor"
                 ],
-                "summary": "添加楼层",
+                "summary": "回复楼层",
                 "parameters": [
                     {
                         "description": "用户id",
                         "name": "uid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "回复楼层id",
+                        "name": "reply_to_floor",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -2141,7 +2150,16 @@ var doc = `{
                 "id": {
                     "type": "integer"
                 },
+                "nickname": {
+                    "type": "string"
+                },
                 "post_id": {
+                    "type": "integer"
+                },
+                "reply_to": {
+                    "type": "string"
+                },
+                "reply_to_floor": {
                     "type": "integer"
                 },
                 "uid": {

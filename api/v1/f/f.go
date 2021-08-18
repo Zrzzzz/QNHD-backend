@@ -60,6 +60,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/floors", GetFloors)
 		//新建楼层
 		g.POST("/floor", AddFloors)
+		//回复楼层
+		g.POST("/floor/reply", ReplyFloor)
 		//删除指定楼层
 		g.DELETE("/floor", DeleteFloor)
 	}

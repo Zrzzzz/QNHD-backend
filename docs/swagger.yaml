@@ -107,7 +107,13 @@ definitions:
         type: string
       id:
         type: integer
+      nickname:
+        type: string
       post_id:
+        type: integer
+      reply_to:
+        type: string
+      reply_to_floor:
         type: integer
       uid:
         type: integer
@@ -1034,6 +1040,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: 回复楼层id
+        in: body
+        name: reply_to_floor
+        required: true
+        schema:
+          type: string
       - description: 帖子id
         in: body
         name: post_id
@@ -1059,7 +1071,7 @@ paths:
             $ref: '#/definitions/models.Response'
       security:
       - ApiKeyAuth: []
-      summary: 添加楼层
+      summary: 回复楼层
       tags:
       - front
       - floor
