@@ -8,7 +8,7 @@ import (
 
 type Blocked struct {
 	Model
-	Uid       uint64 `json:"uid" gorm:"index"`
+	Uid       uint64 `json:"uid" `
 	ExpiredAt string `json:"expired_at"`
 	LastTime  uint8  `json:"last_time"`
 }

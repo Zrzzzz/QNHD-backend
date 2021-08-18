@@ -4,8 +4,8 @@ import "strconv"
 
 type PostTag struct {
 	Id     uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
-	PostId uint64 `json:"post_id" gorm:"index"`
-	TagId  uint64 `json:"tag_id" gorm:"index"`
+	PostId uint64 `json:"post_id" `
+	TagId  uint64 `json:"tag_id" `
 }
 
 func GetTagsInPost(postId string) (tags []Tag) {

@@ -2,12 +2,11 @@ package models
 
 type Banned struct {
 	Model
-	Uid uint64 `json:"uid" gorm:"index"`
+	Uid uint64 `json:"uid" `
 }
 
 func GetBanned(maps interface{}) (bans []Banned) {
 	db.Where(maps).Find(&bans)
-
 	return
 }
 
@@ -42,8 +41,7 @@ func IfBannedByEmail(email string) bool {
 
 func IfBannedByUid(uid uint64) bool {
 	var ban Banned
-	var cnt int
-	db.Model(&ban).Where("uid = ?", uid).Count(&cnt)
 	db.Where("uid = ?", uid).Last(&ban)
-	return cnt > 0 && ban.DeletedAt == ""
+
+	return ban.Uid > 0
 }

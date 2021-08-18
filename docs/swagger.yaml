@@ -112,9 +112,9 @@ definitions:
       post_id:
         type: integer
       reply_to:
-        type: string
-      reply_to_floor:
         type: integer
+      reply_to_name:
+        type: string
       uid:
         type: integer
     type: object
@@ -1030,6 +1030,46 @@ paths:
       tags:
       - front
       - floor
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户id
+        in: body
+        name: uid
+        required: true
+        schema:
+          type: string
+      - description: 帖子id
+        in: body
+        name: post_id
+        required: true
+        schema:
+          type: string
+      - description: 内容
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加楼层
+      tags:
+      - front
+      - floor
+  /f/floor/reply:
     post:
       consumes:
       - application/json

@@ -79,7 +79,7 @@ func GetAuth(c *gin.Context) {
 // @Failure 20003 {object} models.Response "token生成失败"
 // @Router /b/auth/{token} [get]
 func RefreshToken(c *gin.Context) {
-	token := c.Query("token")
+	token := c.Param("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
 	ok := r.E(&valid, "Refresh Token Backend")

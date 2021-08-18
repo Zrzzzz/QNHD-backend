@@ -3,10 +3,10 @@ package models
 type Floor struct {
 	Model
 	Uid         uint64 `json:"uid"`
-	PostId      uint64 `json:"post_id" gorm:"index"`
+	PostId      uint64 `json:"post_id" `
 	Content     string `json:"content"`
 	Nickname    string `json:"nickname"`
-	ReplyTo     uint64 `json:"reply_to" gorm:"index"`
+	ReplyTo     uint64 `json:"reply_to" `
 	ReplyToName string `json:"reply_to_name"`
 }
 

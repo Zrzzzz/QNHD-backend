@@ -25,8 +25,8 @@ var FrontTypes = [...]FrontType{
 func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
-	g.Use(jwt.JWT())
 	g.GET("/auth/:token", RefreshToken)
+	g.Use(jwt.JWT())
 	for _, t := range FrontTypes {
 		initType(g, t)
 	}

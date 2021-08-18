@@ -64,7 +64,6 @@ func AddBanned(c *gin.Context) {
 		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
 		return
 	}
-
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
 	code := 0

@@ -1380,20 +1380,11 @@ var doc = `{
                     "front",
                     "floor"
                 ],
-                "summary": "回复楼层",
+                "summary": "添加楼层",
                 "parameters": [
                     {
                         "description": "用户id",
                         "name": "uid",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "回复楼层id",
-                        "name": "reply_to_floor",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1472,6 +1463,78 @@ var doc = `{
                         "name": "floor_id",
                         "in": "query",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/f/floor/reply": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "front",
+                    "floor"
+                ],
+                "summary": "回复楼层",
+                "parameters": [
+                    {
+                        "description": "用户id",
+                        "name": "uid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "回复楼层id",
+                        "name": "reply_to_floor",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "帖子id",
+                        "name": "post_id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "内容",
+                        "name": "content",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -2157,10 +2220,10 @@ var doc = `{
                     "type": "integer"
                 },
                 "reply_to": {
-                    "type": "string"
-                },
-                "reply_to_floor": {
                     "type": "integer"
+                },
+                "reply_to_name": {
+                    "type": "string"
                 },
                 "uid": {
                     "type": "integer"
