@@ -28,3 +28,11 @@ func E(valid *validation.Validation, errorPhase string) bool {
 	}
 	return !valid.HasErrors()
 }
+
+func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
+	c.JSON(httpCode, gin.H{
+		"code": code,
+		"msg":  e.GetMsg(code),
+		"data": data,
+	})
+}

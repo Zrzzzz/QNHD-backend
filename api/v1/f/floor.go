@@ -2,9 +2,9 @@ package f
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
 	"strconv"
@@ -32,7 +32,7 @@ func GetFloors(c *gin.Context) {
 	valid.Numeric(postId, "podsId")
 	ok := r.E(&valid, "Get floors")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -69,7 +69,7 @@ func AddFloors(c *gin.Context) {
 	valid.Required(content, "content")
 	ok := r.E(&valid, "Add floors")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intpostid, _ := strconv.ParseUint(postId, 10, 64)
@@ -113,7 +113,7 @@ func ReplyFloor(c *gin.Context) {
 	valid.Required(content, "content")
 	ok := r.E(&valid, "Reply floors")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intpostid, _ := strconv.ParseUint(postId, 10, 64)
@@ -156,7 +156,7 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	ok := r.E(&valid, "Get floors")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	models.DeleteFloorByUser(postId, uid, floorId)

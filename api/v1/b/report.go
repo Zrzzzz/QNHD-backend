@@ -2,9 +2,9 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 
 	"github.com/gin-gonic/gin"
 )

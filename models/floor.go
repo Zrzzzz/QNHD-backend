@@ -51,9 +51,9 @@ func AddFloor(maps map[string]interface{}) bool {
 		if floor.Id > 0 {
 			nickname = floor.Nickname
 		} else {
-			var cnt int
+			var cnt int64
 			// 除去owner
-			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Select("count(distinct(uid))").Count(&cnt)
+			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt)
 			nickname = FLOOR_NAME[cnt]
 		}
 	}
@@ -83,9 +83,9 @@ func ReplyFloor(maps map[string]interface{}) bool {
 		if floor.Id > 0 {
 			nickname = floor.Nickname
 		} else {
-			var cnt int
+			var cnt int64
 			// 除去owner
-			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Select("count(distinct(uid))").Count(&cnt)
+			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt)
 			nickname = FLOOR_NAME[cnt]
 		}
 	}

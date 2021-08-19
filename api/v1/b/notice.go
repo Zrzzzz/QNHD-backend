@@ -2,9 +2,9 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -43,7 +43,7 @@ func AddNotices(c *gin.Context) {
 	valid.Required(content, "content")
 	ok := r.E(&valid, "Add notices")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -73,7 +73,7 @@ func EditNotices(c *gin.Context) {
 	valid.Required(content, "content")
 	ok := r.E(&valid, "Edit notices")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -101,7 +101,7 @@ func DeleteNotices(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok := r.E(&valid, "Delete notices")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intid, _ := strconv.ParseUint(id, 10, 64)

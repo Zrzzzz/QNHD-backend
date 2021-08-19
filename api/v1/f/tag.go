@@ -2,9 +2,9 @@ package f
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -45,7 +45,7 @@ func AddTag(c *gin.Context) {
 	valid.Required(name, "name")
 	ok := r.E(&valid, "Add tag")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -74,7 +74,7 @@ func DeleteTag(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok := r.E(&valid, "Delete tag")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 

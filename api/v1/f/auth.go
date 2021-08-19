@@ -2,10 +2,10 @@ package f
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/r"
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
@@ -81,7 +81,7 @@ func RefreshToken(c *gin.Context) {
 	valid.Required(token, "token")
 	ok := r.E(&valid, "Refresh Token Front")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 

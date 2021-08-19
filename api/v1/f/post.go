@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
@@ -76,7 +76,7 @@ func GetPost(c *gin.Context) {
 
 	ok := r.E(&valid, "Get Posts")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -120,7 +120,7 @@ func AddPosts(c *gin.Context) {
 	valid.Required(content, "content")
 	ok := r.E(&valid, "Add posts")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -175,7 +175,7 @@ func DeletePosts(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok := r.E(&valid, "Delete posts")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 

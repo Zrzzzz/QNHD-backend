@@ -6,7 +6,7 @@ import (
 	"qnhd/pkg/e"
 	"strings"
 
-	"qnhd/api/r"
+	"qnhd/pkg/r"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -42,7 +42,7 @@ func GetUsers(c *gin.Context) {
 	}
 	ok := r.E(&valid, "Get user")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -94,7 +94,7 @@ func AddUsers(c *gin.Context) {
 	password := c.PostForm("password")
 
 	if !checkMail(email) {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -122,7 +122,7 @@ func EditUsers(c *gin.Context) {
 	newPass := c.PostForm("new_password")
 
 	if models.ExistUserByEmail(email) {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -147,7 +147,7 @@ func DeleteUsers(c *gin.Context) {
 		models.DeleteUser(email)
 		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
 	} else {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 	}
 }
 

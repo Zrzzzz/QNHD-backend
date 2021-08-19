@@ -3,10 +3,10 @@ package f
 import (
 	"fmt"
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	sender "qnhd/pkg/email"
+	"qnhd/pkg/r"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +38,7 @@ func AddUsers(c *gin.Context) {
 	rightCode := fmt.Sprintf("%06d", sender.Code[email]%1000000)
 
 	if email == "" || checkMail(email) {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	} else if models.ExistUserByEmail(email) {
 		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_EMAIL, nil))

@@ -18,7 +18,7 @@ func AddNotices(data map[string]interface{}) bool {
 }
 
 func EditNotices(id uint64, data map[string]interface{}) bool {
-	db.Model(&Notice{}).Where("id = ?", id).Update(data)
+	db.Model(&Notice{}).Where("id = ?", id).Updates(data)
 	return true
 }
 

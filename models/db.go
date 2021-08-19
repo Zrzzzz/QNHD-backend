@@ -1,43 +1,62 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"os"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
+	"time"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 var db *gorm.DB
+var sqlDB *sql.DB
 
 func Setup() {
 	var (
-		err                                  error
-		dbType, dbName, user, password, host string
+		err                          error
+		dbName, user, password, host string
 	)
 
-	dbType = setting.DatabaseSetting.Type
 	dbName = setting.DatabaseSetting.Name
 	user = setting.DatabaseSetting.User
 	password = setting.DatabaseSetting.Password
 	host = setting.DatabaseSetting.Host
-	db, err = gorm.Open(dbType, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		user,
 		password,
 		host,
-		dbName))
+		dbName)
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // Slow SQL threshold
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: false,         // Ignore ErrRecordNotFound error for logger
+			Colorful:                  true,          // Disable color
+		},
+	)
+
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
 	if err != nil {
 		logging.Fatal("Fail to open database: %v", err)
 	}
-
-	db.SingularTable(true)
-	db.DB().SetMaxIdleConns(10)
-	db.DB().SetMaxOpenConns(100)
-	if setting.ServerSetting.RunMode == "debug" {
-		db.LogMode(true)
-	}
+	sqlDB, err = db.DB()
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
 }
 func CloseDB() {
-	defer db.Close()
+	defer sqlDB.Close()
 }

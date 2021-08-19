@@ -6,7 +6,6 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/astaxie/beego v1.12.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/gin-gonic/gin v1.7.3
 	github.com/go-ini/ini v1.62.0
@@ -14,12 +13,9 @@ require (
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
-	github.com/jinzhu/gorm v0.0.0-20180213101209-6e1387b44c64
-	github.com/jinzhu/inflection v0.0.0-20170102125226-1c35d901db3d // indirect
-	github.com/jinzhu/now v1.0.1 // indirect
+	github.com/jinzhu/gorm v1.9.16
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/lib/pq v1.2.0 // indirect
@@ -36,4 +32,6 @@ require (
 	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
+	gorm.io/driver/mysql v1.1.2
+	gorm.io/gorm v1.21.13
 )

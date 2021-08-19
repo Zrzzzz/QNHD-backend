@@ -2,9 +2,10 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
+	"qnhd/pkg/r"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -27,11 +28,15 @@ func GetAdmins(c *gin.Context) {
 	if name != "" {
 		maps["name"] = name
 	}
-	list := models.GetAdmins(maps)
+	list, err := models.GetAdmins(maps)
+	if err != nil {
+		logging.Error("Get admins error:%v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	data["list"] = list
 	data["total"] = len(list)
-
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, admin
@@ -54,12 +59,18 @@ func AddAdmins(c *gin.Context) {
 
 	ok := r.E(&valid, "Add admin")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	models.AddAdmins(name, password)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.AddAdmins(name, password)
+
+	if err != nil {
+		logging.Error("Add admin error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Tags backend, admin
@@ -82,12 +93,17 @@ func EditAdmins(c *gin.Context) {
 
 	ok := r.E(&valid, "Edit admin")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	models.EditAdmins(name, password)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.EditAdmins(name, password)
+	if err != nil {
+		logging.Error("Edit admin error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Tags backend, admin
@@ -107,10 +123,15 @@ func DeleteAdmins(c *gin.Context) {
 
 	ok := r.E(&valid, "Delete admin")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	models.DeleteAdmins(name)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.DeleteAdmins(name)
+	if err != nil {
+		logging.Error("Delete admin error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }

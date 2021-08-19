@@ -2,10 +2,10 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
 
@@ -43,7 +43,11 @@ func GetAuth(c *gin.Context) {
 	ok, _ := valid.Valid(&a)
 
 	if ok {
-		isExist := models.CheckAdmin(username, password)
+		isExist, err := models.CheckAdmin(username, password)
+		if err != nil {
+			logging.Error("check admin error:%v", err)
+			code = e.ERROR_DATABASE
+		}
 		if isExist {
 			token, err := util.GenerateToken(username)
 			if err != nil {
@@ -61,10 +65,10 @@ func GetAuth(c *gin.Context) {
 		for _, err := range valid.Errors {
 			logging.Error("auth error: %v", err)
 		}
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))
+		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
 		return
 	}
-	c.JSON(http.StatusOK, r.H(code, data))
+	r.R(c, http.StatusOK, code, data)
 }
 
 // @Tags backend, auth
@@ -84,20 +88,26 @@ func RefreshToken(c *gin.Context) {
 	valid.Required(token, "token")
 	ok := r.E(&valid, "Refresh Token Backend")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil))
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
 		return
 	}
 
 	var code int = e.SUCCESS
 	var data = make(map[string]interface{})
-	if models.ExistAdmin(claims.Username) {
+	exist, err := models.ExistAdmin(claims.Username)
+	if err != nil {
+		logging.Error("Judging admin error:%v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if exist {
 		token, err := util.GenerateToken(claims.Username)
 		if err != nil {
 			code = e.ERROR_GENERATE_TOKEN
@@ -105,6 +115,5 @@ func RefreshToken(c *gin.Context) {
 			data["token"] = token
 		}
 	}
-
-	c.JSON(http.StatusOK, r.H(code, data))
+	r.R(c, http.StatusOK, code, data)
 }

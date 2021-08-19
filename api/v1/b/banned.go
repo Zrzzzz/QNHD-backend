@@ -2,9 +2,10 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
+	"qnhd/pkg/r"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -27,7 +28,7 @@ func GetBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok := r.E(&valid, "Get banned")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -38,11 +39,17 @@ func GetBanned(c *gin.Context) {
 		maps["uid"] = uid
 	}
 
-	list := models.GetBanned(maps)
+	list, err := models.GetBanned(maps)
+	if err != nil {
+		logging.Error("get banned error:%v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+
 	data["list"] = list
 	data["total"] = len(list)
 
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, banned
@@ -61,20 +68,29 @@ func AddBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok := r.E(&valid, "Add banned")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
-	code := 0
-	if !models.IfBannedByUid(intuid) {
-		models.AddBannedByUid(intuid)
-		code = e.SUCCESS
+	code := e.SUCCESS
+	ifBanned, err := models.IfBannedByUid(intuid)
+	if err != nil {
+		logging.Error("Judging banned failed: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if !ifBanned {
+		_, err := models.AddBannedByUid(intuid)
+		if err != nil {
+			logging.Error("Add banned error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
 	} else {
 		code = e.ERROR_BANNED_USER
 	}
-	c.JSON(http.StatusOK, r.H(code, nil))
-
+	r.R(c, http.StatusOK, code, nil)
 }
 
 // @Tags backend, banned
@@ -93,17 +109,28 @@ func DeleteBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok := r.E(&valid, "Delete banned")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
-	code := 0
-	if models.IfBannedByUid(intuid) {
-		models.DeleteBannedByUid(intuid)
-		code = e.SUCCESS
+	code := e.SUCCESS
+	ifBanned, err := models.IfBannedByUid(intuid)
+	if err != nil {
+		logging.Error("Judging banned failed: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if ifBanned {
+		_, err := models.DeleteBannedByUid(intuid)
+		if err != nil {
+			logging.Error("Delete banned error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
+		r.R(c, http.StatusOK, e.SUCCESS, nil)
 	} else {
 		code = e.ERROR_NOT_BANNED_USER
 	}
-	c.JSON(http.StatusOK, r.H(code, nil))
+	r.R(c, http.StatusOK, code, nil)
 }

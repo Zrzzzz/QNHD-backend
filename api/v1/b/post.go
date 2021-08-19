@@ -2,9 +2,9 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
 
@@ -49,7 +49,7 @@ func DeletePosts(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok := r.E(&valid, "Delete notices")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 

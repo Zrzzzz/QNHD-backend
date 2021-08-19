@@ -2,9 +2,9 @@ package b
 
 import (
 	"net/http"
-	"qnhd/api/r"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/r"
 	"strconv"
 
 	"github.com/astaxie/beego/validation"
@@ -27,7 +27,7 @@ func GetBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok := r.E(&valid, "Get blocked")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 
@@ -65,13 +65,13 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(last, "last")
 	ok := r.E(&valid, "Add blocked")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	// 因为做过valid了不必考虑错误
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 	intlast, _ := strconv.ParseUint(last, 10, 8)
-	code := 0
+	code := e.SUCCESS
 	if !models.IfBlockedByUid(intuid) {
 		models.AddBlockedByUid(intuid, uint8(intlast))
 		code = e.SUCCESS
@@ -98,12 +98,12 @@ func DeleteBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok := r.E(&valid, "Delete blocked")
 	if !ok {
-		c.JSON(http.StatusOK, r.H(e.INVALID_PARAMS, nil))
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
-	code := 0
+	code := e.SUCCESS
 	if models.IfBlockedByUid(intuid) {
 		models.DeleteBlockedByUid(intuid)
 		code = e.SUCCESS
