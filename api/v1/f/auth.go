@@ -42,7 +42,12 @@ func GetAuth(c *gin.Context) {
 	ok, _ := valid.Valid(&a)
 
 	if ok {
-		isExist := models.CheckUser(email, password)
+		isExist, err := models.CheckUser(email, password)
+		if err != nil {
+			logging.Error("Auth user error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
 		if isExist {
 			token, err := util.GenerateToken(email)
 			if err != nil {
@@ -58,10 +63,9 @@ func GetAuth(c *gin.Context) {
 		for _, err := range valid.Errors {
 			logging.Error("auth error: %v", err)
 		}
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))
-		return
+		code = e.ERROR_AUTH
 	}
-	c.JSON(http.StatusOK, r.H(code, data))
+	r.R(c, http.StatusOK, code, data)
 }
 
 // @Tags front, auth
@@ -88,13 +92,19 @@ func RefreshToken(c *gin.Context) {
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil))
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
 		return
 	}
 
 	var code int = e.SUCCESS
 	var data = make(map[string]interface{})
-	if models.ExistUser(claims.Username) {
+	exist, err := models.ExistUser(claims.Username)
+	if err != nil {
+		logging.Error("Refresh token error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if exist {
 		token, err := util.GenerateToken(claims.Username)
 		if err != nil {
 			code = e.ERROR_GENERATE_TOKEN
@@ -102,6 +112,5 @@ func RefreshToken(c *gin.Context) {
 			data["token"] = token
 		}
 	}
-
-	c.JSON(http.StatusOK, r.H(code, data))
+	r.R(c, http.StatusOK, code, data)
 }

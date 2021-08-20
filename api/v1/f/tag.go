@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"strconv"
 
@@ -24,10 +25,15 @@ func GetTag(c *gin.Context) {
 	name := c.Query("name")
 
 	data := make(map[string]interface{})
-	list := models.GetTags(name)
+	list, err := models.GetTags(name)
+	if err != nil {
+		logging.Error("Get tag error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	data["list"] = list
 	data["total"] = len(list)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, tag
@@ -48,13 +54,24 @@ func AddTag(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
-
-	if !models.ExistTagByName(name) {
-		models.AddTags(name)
-		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
-	} else {
-		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_TAG, nil))
+	exist, err := models.ExistTagByName(name)
+	if err != nil {
+		logging.Error("Add tag error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
 	}
+	if exist {
+		r.R(c, http.StatusOK, e.ERROR_EXIST_TAG, nil)
+	}
+	id, err := models.AddTags(name)
+	if err != nil {
+		logging.Error("Add tag error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, tag
@@ -79,6 +96,11 @@ func DeleteTag(c *gin.Context) {
 	}
 
 	intid, _ := strconv.ParseUint(id, 10, 64)
-	models.DeleteTags(intid)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.DeleteTags(intid)
+	if err != nil {
+		logging.Error("Delete tags error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }

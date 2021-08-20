@@ -1,5 +1,11 @@
 package models
 
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
+
 type Floor struct {
 	Model
 	Uid         uint64 `json:"uid"`
@@ -14,111 +20,171 @@ var FLOOR_NAME = []string{
 	"Angus", "Bertram", "Conrad", "Devin", "Emmanuel", "Fitzgerald", "Gregary", "Herbert", "Ingram", "Joyce", "Kelly", "Leo", "Morton", "Nathaniel", "Orville", "Payne", "Quintion", "Regan", "Sean", "Tracy", "Uriah", "Valentine", "Walker", "Xavier", "Yves", "Zachary",
 }
 
-func GetFloorInPostShort(postId string) (floors []Floor) {
-	db.Where("post_id = ?", postId).Order("created_at").Limit(10).Find(&floors)
-	return
+func GetFloorInPostShort(postId string) ([]Floor, error) {
+	var floors []Floor
+	if err := db.Where("post_id = ?", postId).Order("created_at").Limit(10).Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return floors, nil
 }
 
-func GetFloorInPost(overNum int, pageSize int, postId string) (floors []Floor) {
-	db.Where("post_id = ?", postId).Order("created_at").Offset(overNum).Limit(pageSize).Find(&floors)
-	return
+func GetFloorInPost(overNum int, pageSize int, postId string) ([]Floor, error) {
+	var floors []Floor
+	if err := db.Where("post_id = ?", postId).Order("created_at").Offset(overNum).Limit(pageSize).Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return floors, nil
 }
 
-func GetFloorByUid(uid string) (floors []Floor) {
-	db.Where("uid = ?", uid).Order("created_at").Find(&floors)
-	return
+func GetFloorByUid(uid string) ([]Floor, error) {
+	var floors []Floor
+	if err := db.Where("uid = ?", uid).Order("created_at").Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return floors, nil
 }
 
-func GetFloor(id string) (floor Floor) {
-	db.Where("id = ?", id).First(&floor)
-	return
+func GetFloor(id string) (Floor, error) {
+	var floor Floor
+	if err := db.Where("id = ?", id).First(&floor).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return floor, nil
+		}
+		return floor, err
+	}
+	return floor, nil
 }
 
-func AddFloor(maps map[string]interface{}) bool {
+func AddFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
-	db.First(&post, postId)
+	if err := db.First(&post, postId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, err
+	}
 
 	if post.Uid == uid {
 		nickname = "Owner"
 	} else {
 		// 还有可能已经发过言
 		var floor Floor
-		db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor)
+		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, nil
+			}
+			return 0, err
+		}
 		if floor.Id > 0 {
 			nickname = floor.Nickname
 		} else {
 			var cnt int64
 			// 除去owner
-			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt)
+			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
+				return 0, err
+			}
 			nickname = FLOOR_NAME[cnt]
 		}
 	}
-	db.Select("uid", "post_id", "content", "nickname").Create(&Floor{
+	var newFloor = Floor{
 		Uid:      uid,
 		PostId:   postId,
 		Content:  maps["content"].(string),
 		Nickname: nickname,
-	})
-	return true
+	}
+	if err := db.Select("uid", "post_id", "content", "nickname").Create(&newFloor).Error; err != nil {
+		return 0, err
+	}
+	return newFloor.Id, nil
 }
 
-func ReplyFloor(maps map[string]interface{}) bool {
+func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
-	db.First(&post, postId)
+	if err := db.First(&post, postId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, err
+	}
 
 	if post.Uid == uid {
 		nickname = "Owner"
 	} else {
 		// 还有可能已经发过言
 		var floor Floor
-		db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor)
+		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, nil
+			}
+			return 0, err
+		}
 		if floor.Id > 0 {
 			nickname = floor.Nickname
 		} else {
 			var cnt int64
 			// 除去owner
-			db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt)
+			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
+				return 0, err
+			}
 			nickname = FLOOR_NAME[cnt]
 		}
 	}
 
 	floorId := maps["replyToFloor"].(uint64)
 	var floor Floor
-	db.First(&floor, floorId)
+	if err := db.First(&floor, floorId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, err
+	}
 
-	db.Select("uid", "post_id", "content", "nickname", "reply_to", "reply_to_name").Create(&Floor{
+	var newFloor = Floor{
 		Uid:         uid,
 		PostId:      postId,
 		Content:     maps["content"].(string),
 		Nickname:    nickname,
 		ReplyTo:     floor.Uid,
 		ReplyToName: floor.Nickname,
-	})
+	}
+	if err := db.Select("uid", "post_id", "content", "nickname", "reply_to", "reply_to_name").Create(&newFloor).Error; err != nil {
+		return 0, err
+	}
 
-	return true
+	return newFloor.Id, nil
 }
 
-func DeleteFloorByAdmin(id string) bool {
-	db.Where("id = ?", id).Delete(&Floor{})
-	return true
+func DeleteFloorByAdmin(id string) (uint64, error) {
+	var floor = Floor{}
+	if err := db.Where("id = ?", id).Delete(&floor).Error; err != nil {
+		return 0, err
+	}
+	return floor.Id, nil
 }
 
-func DeleteFloorByUser(postId, uid, floorId string) bool {
-	db.Where("post_id = ? AND uid = ? AND id = ?", postId, uid, floorId).Delete(&Floor{})
-	return true
+func DeleteFloorByUser(postId, uid, floorId string) (uint64, error) {
+	var floor = Floor{}
+	if err := db.Where("post_id = ? AND uid = ? AND id = ?", postId, uid, floorId).Delete(&floor).Error; err != nil {
+		return 0, err
+	}
+	return floor.Id, nil
 }
 
-func DeleteFloorsInPost(postId string) bool {
-	db.Where("post_id = ?", postId).Delete(&Floor{})
-	return true
+func DeleteFloorsInPost(postId string) (uint64, error) {
+	var floor Floor
+	if err := db.Where("post_id = ?", postId).Delete(&floor).Error; err != nil {
+		return 0, err
+	}
+	return floor.Id, nil
+
 }
 
 func (Floor) TableName() string {

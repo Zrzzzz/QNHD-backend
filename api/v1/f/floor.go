@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
@@ -36,13 +37,17 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 
-	list := models.GetFloorInPost(util.GetPage(c), pageSize, postId)
+	list, err := models.GetFloorInPost(util.GetPage(c), pageSize, postId)
+	if err != nil {
+		logging.Error("Get floors error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, floor
@@ -53,7 +58,7 @@ func GetFloors(c *gin.Context) {
 // @Param post_id body string true "帖子id"
 // @Param content body string true "内容"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.IdRes}
 // @Failure 400 {object} models.Response ""
 // @Router /f/floor [post]
 func AddFloors(c *gin.Context) {
@@ -81,8 +86,15 @@ func AddFloors(c *gin.Context) {
 		"content": content,
 	}
 
-	models.AddFloor(maps)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	id, err := models.AddFloor(maps)
+	if err != nil {
+		logging.Error("Add floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, floor
@@ -127,8 +139,13 @@ func ReplyFloor(c *gin.Context) {
 		"content":      content,
 	}
 
-	models.ReplyFloor(maps)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.ReplyFloor(maps)
+	if err != nil {
+		logging.Error("Reply floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Tags front, floor
@@ -159,6 +176,12 @@ func DeleteFloor(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
-	models.DeleteFloorByUser(postId, uid, floorId)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+
+	_, err := models.DeleteFloorByUser(postId, uid, floorId)
+	if err != nil {
+		logging.Error("Delete floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }

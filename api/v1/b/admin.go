@@ -46,7 +46,7 @@ func GetAdmins(c *gin.Context) {
 // @Param name body string true "管理员昵称"
 // @Param password body string true "管理员密码, 32位小写md5"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.IdRes}
 // @Failure 400 {object} models.Response "参数错误"
 // @Router /b/admin [post]
 func AddAdmins(c *gin.Context) {
@@ -63,14 +63,17 @@ func AddAdmins(c *gin.Context) {
 		return
 	}
 
-	_, err := models.AddAdmins(name, password)
+	id, err := models.AddAdmins(name, password)
 
 	if err != nil {
 		logging.Error("Add admin error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, admin
@@ -97,7 +100,7 @@ func EditAdmins(c *gin.Context) {
 		return
 	}
 
-	_, err := models.EditAdmins(name, password)
+	err := models.EditAdmins(name, password)
 	if err != nil {
 		logging.Error("Edit admin error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)

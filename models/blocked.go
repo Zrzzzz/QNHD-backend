@@ -1,9 +1,11 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/uniplaces/carbon"
+	"gorm.io/gorm"
 )
 
 type Blocked struct {
@@ -19,34 +21,52 @@ type BlockedDetail struct {
 	Remain    uint64
 }
 
-func GetBlocked(maps interface{}) (blocked []Blocked) {
-	db.Unscoped().Where(maps).Find(&blocked)
-
-	return
+func GetBlocked(maps interface{}) ([]Blocked, error) {
+	var blocked []Blocked
+	if err := db.Unscoped().Where(maps).Find(&blocked).Error; err != nil {
+		return nil, err
+	}
+	return blocked, nil
 }
 
-func AddBlockedByUid(uid uint64, last uint8) bool {
+func AddBlockedByUid(uid uint64, last uint8) (uint64, error) {
 	expired_at := time.Now().Add(time.Hour * 24 * time.Duration(last)).Format("2006-01-02 15:04:05")
-	db.Select("Uid", "ExpiredAt", "LastTime").Create(&Blocked{Uid: uid, ExpiredAt: expired_at, LastTime: last})
+	var blocked = Blocked{Uid: uid, ExpiredAt: expired_at, LastTime: last}
+	if err := db.Select("Uid", "ExpiredAt", "LastTime").Create(&blocked).Error; err != nil {
+		return 0, err
+	}
 
-	return true
+	return blocked.Id, nil
 }
 
-func DeleteBlockedByUid(uid uint64) bool {
-	db.Where("uid = ?", uid).Delete(&Blocked{})
-	return true
+func DeleteBlockedByUid(uid uint64) (uint64, error) {
+	var blocked = Blocked{}
+	if err := db.Where("uid = ?", uid).Delete(&blocked).Error; err != nil {
+		return 0, err
+	}
+	return blocked.Id, nil
 }
 
-func IfBlockedByUid(uid uint64) bool {
+func IfBlockedByUid(uid uint64) (bool, error) {
 	var ban Blocked
-	db.Where("uid = ?", uid).Last(&ban)
+	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
 
-	return ban.Uid > 0
+	return ban.Uid > 0, nil
 }
 
-func IfBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail) {
+func IfBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 	var ban Blocked
-	db.Where("uid = ?", uid).Last(&ban)
+	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil, nil
+		}
+		return false, nil, err
+	}
 	if ban.Uid > 0 {
 		var nowtime, overtime *carbon.Carbon
 		nowtime = carbon.Now()
@@ -56,7 +76,7 @@ func IfBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail) {
 			Starttime: ban.CreatedAt,
 			Overtime:  ban.ExpiredAt,
 			Remain:    remain,
-		}
+		}, nil
 	}
-	return false, nil
+	return false, nil, nil
 }

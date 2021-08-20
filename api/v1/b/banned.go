@@ -80,8 +80,9 @@ func AddBanned(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
+	var id uint64
 	if !ifBanned {
-		_, err := models.AddBannedByUid(intuid)
+		id, err = models.AddBannedByUid(intuid)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
@@ -90,7 +91,9 @@ func AddBanned(c *gin.Context) {
 	} else {
 		code = e.ERROR_BANNED_USER
 	}
-	r.R(c, http.StatusOK, code, nil)
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, code, data)
 }
 
 // @Tags backend, banned

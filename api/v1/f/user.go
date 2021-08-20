@@ -1,11 +1,11 @@
 package f
 
 import (
-	"fmt"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	sender "qnhd/pkg/email"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"strings"
 
@@ -28,20 +28,27 @@ func checkMail(email string) bool {
 // @Param password query string true "密码，32位md5"
 // @Param code query string false "邮箱验证码"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.IdRes}
 // @Failure 400 {object} models.Response ""
 // @Router /f/user [post]
 func AddUsers(c *gin.Context) {
 	email := c.Query("email")
 	password := c.Query("password")
 	code := c.Query("code")
-	rightCode := fmt.Sprintf("%06d", sender.Code[email]%1000000)
+	rightCode := sender.Code[email]
 
 	if email == "" || checkMail(email) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
-	} else if models.ExistUserByEmail(email) {
-		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_EMAIL, nil))
+	}
+	exist, err := models.ExistUser(email)
+	if err != nil {
+		logging.Error("Add users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if exist {
+		r.R(c, http.StatusOK, e.ERROR_EXIST_EMAIL, nil)
 		return
 	}
 
@@ -49,19 +56,26 @@ func AddUsers(c *gin.Context) {
 		// 进行邮箱验证码发送
 		sender.SendEmail(email,
 			func() {
-				c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+				r.R(c, http.StatusOK, e.SUCCESS, nil)
 			},
 			func() {
-				c.JSON(http.StatusOK, r.H(e.ERROR_SEND_EMAIL, nil))
+				r.R(c, http.StatusOK, e.ERROR_SEND_EMAIL, nil)
 			})
 	} else {
 		if rightCode == code {
 			// 验证码正确
-			models.AddUser(email, password)
-			c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+			id, err := models.AddUser(email, password)
+			if err != nil {
+				logging.Error("Add user error: %v", err)
+				r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+				return
+			}
+			data := make(map[string]interface{})
+			data["id"] = id
+			r.R(c, http.StatusOK, e.SUCCESS, data)
 		} else {
 			// 验证码错误
-			c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))
+			r.R(c, http.StatusOK, e.ERROR_EMAIL_CODE_CHECK, nil)
 		}
 	}
 
@@ -81,12 +95,24 @@ func EditUsers(c *gin.Context) {
 	oldPass := c.Query("old_password")
 	newPass := c.Query("new_password")
 
-	if models.ValidUser(email, oldPass) {
+	ok, err := models.CheckUser(email, oldPass)
+	if err != nil {
+		logging.Error("Edit user error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+
+	if ok {
 		data := make(map[string]interface{})
 		data["password"] = newPass
-		models.EditUser(email, data)
-		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+		err := models.EditUser(email, data)
+		if err != nil {
+			logging.Error("Edit user error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
+		r.R(c, http.StatusOK, e.SUCCESS, nil)
 	} else {
-		c.JSON(http.StatusOK, r.H(e.ERROR_AUTH, nil))
+		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
 	}
 }

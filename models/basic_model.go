@@ -16,3 +16,7 @@ type ListRes struct {
 	List  interface{} `json:"list"`
 	Total int         `json:"total" example:"1"`
 }
+
+type IdRes struct {
+	Id int `json:"id"`
+}

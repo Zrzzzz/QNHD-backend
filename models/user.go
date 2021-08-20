@@ -1,5 +1,11 @@
 package models
 
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
+
 type User struct {
 	Uid          uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"uid"`
 	Password     string `json:"password"`
@@ -8,54 +14,56 @@ type User struct {
 	Status       int8   `json:"status" gorm:"default:null;"`
 }
 
-func CheckUser(email string, password string) bool {
+func CheckUser(email string, password string) (bool, error) {
 	var user User
-	db.Select("uid").Where(User{Email: email, Password: password}).First(&user)
-	return user.Uid > 0
+	if err := db.Select("uid").Where(User{Email: email, Password: password}).First(&user).Error; err != nil {
+		return false, err
+	}
+	return user.Uid > 0, nil
 }
 
-func ExistUser(email string) bool {
+func ExistUser(email string) (bool, error) {
 	var user User
-	db.Select("uid").Where(User{Email: email}).First(&user)
-	return user.Uid > 0
+	if err := db.Where(User{Email: email}).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return user.Uid > 0, nil
 }
 
-func GetUsers(maps interface{}) (users []User) {
-	db.Where(maps).Find(&users)
-	return
+func GetUsers(maps interface{}) ([]User, error) {
+	var users []User
+	if err := db.Where(maps).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
-func AddUser(email string, password string) bool {
-	db.Create(&User{
+func AddUser(email string, password string) (uint64, error) {
+	var user = User{
 		Email:    email,
 		Password: password,
-	})
-	return true
-}
-
-func EditUser(email string, data interface{}) bool {
-	db.Model(&User{}).Where("email = ?", email).Updates(data)
-	return true
-}
-
-func DeleteUser(email string) bool {
-	db.Model(&User{Email: email}).Update("status", 0)
-	return true
-}
-
-func ExistUserByEmail(email string) bool {
-	var user User
-	db.Select("uid").Where("email = ?", email).First(&user)
-	return user.Uid > 0
-}
-
-func ValidUser(email string, password string) bool {
-	var user User
-	db.Where("email = ?", email).First(&user)
-	if user.Email == email {
-		return user.Password == password
 	}
-	return false
+	if err := db.Create(&user).Error; err != nil {
+		return 0, err
+	}
+	return user.Uid, nil
+}
+
+func EditUser(email string, data interface{}) error {
+	if err := db.Model(&User{}).Where("email = ?", email).Updates(data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteUser(email string) error {
+	if err := db.Model(&User{Email: email}).Update("status", 0).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (User) TableName() string {

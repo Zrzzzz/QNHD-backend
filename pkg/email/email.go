@@ -10,10 +10,10 @@ import (
 	"github.com/jordan-wright/email"
 )
 
-var Code map[string]int64
+var Code map[string]string
 
 func init() {
-	Code = make(map[string]int64)
+	Code = make(map[string]string)
 }
 
 func SendEmail(to string, success func(), failure func()) {
@@ -26,7 +26,7 @@ func SendEmail(to string, success func(), failure func()) {
 
 	t := time.Now().Unix()
 	code := fmt.Sprintf("%06d", t%1000000)
-	Code[to] = t
+	Code[to] = code
 	msg := fmt.Sprintf("验证码: %v", code)
 
 	mail := email.NewEmail()

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"strconv"
 
@@ -38,11 +39,16 @@ func GetBlocked(c *gin.Context) {
 		maps["uid"] = uid
 	}
 
-	list := models.GetBlocked(maps)
+	list, err := models.GetBlocked(maps)
+	if err != nil {
+		logging.Error("Get blocked error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	data["list"] = list
 	data["total"] = len(list)
 
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, blocked
@@ -52,7 +58,7 @@ func GetBlocked(c *gin.Context) {
 // @Param uid body int true "用户id"
 // @Param last body int true "持续天数 0<?<=30"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.IdRes}
 // @Failure 400 {object} models.Response "失败不返回数据"
 // @Router /b/blocked [post]
 func AddBlocked(c *gin.Context) {
@@ -72,14 +78,24 @@ func AddBlocked(c *gin.Context) {
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 	intlast, _ := strconv.ParseUint(last, 10, 8)
 	code := e.SUCCESS
-	if !models.IfBlockedByUid(intuid) {
-		models.AddBlockedByUid(intuid, uint8(intlast))
-		code = e.SUCCESS
+	ifBlocked, err := models.IfBlockedByUid(intuid)
+	if err != nil {
+		logging.Error("Add blocked error: %v", err)
+		code = e.ERROR_DATABASE
+	}
+	var id uint64
+	if !ifBlocked {
+		id, err = models.AddBlockedByUid(intuid, uint8(intlast))
+		if err != nil {
+			logging.Error("Add blocked error: %v", err)
+			code = e.ERROR_DATABASE
+		}
 	} else {
 		code = e.ERROR_BLOCKED_USER
 	}
-	c.JSON(http.StatusOK, r.H(code, nil))
-
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, code, data)
 }
 
 // @Tags backend, blocked
@@ -104,11 +120,19 @@ func DeleteBlocked(c *gin.Context) {
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
 	code := e.SUCCESS
-	if models.IfBlockedByUid(intuid) {
-		models.DeleteBlockedByUid(intuid)
-		code = e.SUCCESS
+	ifBlocked, err := models.IfBlockedByUid(intuid)
+	if err != nil {
+		logging.Error("Add blocked error: %v", err)
+		code = e.ERROR_DATABASE
+	}
+	if ifBlocked {
+		_, err := models.DeleteBlockedByUid(intuid)
+		if err != nil {
+			logging.Error("Delete blocked error: %v", err)
+			code = e.ERROR_DATABASE
+		}
 	} else {
 		code = e.ERROR_NOT_BLOCKED_USER
 	}
-	c.JSON(http.StatusOK, r.H(code, nil))
+	r.R(c, http.StatusOK, code, nil)
 }

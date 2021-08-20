@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"strings"
 
 	"qnhd/pkg/r"
@@ -58,12 +59,22 @@ func GetUsers(c *gin.Context) {
 
 	code := e.SUCCESS
 
-	list := models.GetUsers(maps)
+	list, err := models.GetUsers(maps)
+	if err != nil {
+		logging.Error("Get users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	retList := []UserResponse{}
 
 	for _, user := range list {
 		nUser := UserResponse{User: user}
-		isBlocked, detail := models.IfBlockedByUidDetailed(user.Uid)
+		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
+		if err != nil {
+			logging.Error("Get users error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
 		if isBlocked {
 			nUser.BlockedStart = detail.Starttime
 			nUser.BlockedOver = detail.Overtime
@@ -76,7 +87,7 @@ func GetUsers(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	c.JSON(http.StatusOK, r.H(code, data))
+	r.R(c, http.StatusOK, code, data)
 }
 
 // @Tags backend, user
@@ -86,7 +97,7 @@ func GetUsers(c *gin.Context) {
 // @Param email body string true "用户邮箱, 必须10位学号的tju邮箱"
 // @Param password body string true "用户密码, 32位小写md5"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.IdRes}
 // @Failure 400 {object} models.Response "无效的参数"
 // @Router /b/user [post]
 func AddUsers(c *gin.Context) {
@@ -97,14 +108,26 @@ func AddUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
-
-	if models.ExistUserByEmail(email) {
+	exist, err := models.ExistUser(email)
+	if err != nil {
+		logging.Error("Add user error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if exist {
 		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_EMAIL, nil))
 		return
 	}
 
-	models.AddUser(email, password)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	id, err := models.AddUser(email, password)
+	if err != nil {
+		logging.Error("Add users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, user
@@ -121,15 +144,26 @@ func EditUsers(c *gin.Context) {
 	email := c.PostForm("email")
 	newPass := c.PostForm("new_password")
 
-	if models.ExistUserByEmail(email) {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+	exist, err := models.ExistUser(email)
+	if err != nil {
+		logging.Error("Edit user error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	if !exist {
+		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["password"] = newPass
-	models.EditUser(email, data)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	err = models.EditUser(email, data)
+	if err != nil {
+		logging.Error("Edit users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Tags backend, user
@@ -143,12 +177,24 @@ func EditUsers(c *gin.Context) {
 // @Router /b/user [delete]
 func DeleteUsers(c *gin.Context) {
 	email := c.Query("email")
-	if !models.ExistUserByEmail(email) {
-		models.DeleteUser(email)
-		c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
-	} else {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+	exist, err := models.ExistUser(email)
+	if err != nil {
+		logging.Error("Delete users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
 	}
+
+	if !exist {
+		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
+		return
+	}
+	err = models.DeleteUser(email)
+	if err != nil {
+		logging.Error("Delete users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 func checkMail(email string) bool {

@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
 
 type Banned struct {
 	Model
@@ -52,6 +56,9 @@ func IfBannedByEmail(email string) (bool, error) {
 func IfBannedByUid(uid uint64) (bool, error) {
 	var ban Banned
 	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil

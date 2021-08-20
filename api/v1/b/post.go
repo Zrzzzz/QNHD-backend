@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
@@ -25,11 +26,16 @@ func GetPosts(c *gin.Context) {
 
 	data := make(map[string]interface{})
 
-	list := models.GetPosts(util.GetPage(c), pageSize, content)
+	list, err := models.GetPosts(util.GetPage(c), pageSize, content)
+	if err != nil {
+		logging.Error("Get posts error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 
 	data["list"] = list
 	data["total"] = len(list)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags backend, post
@@ -53,6 +59,11 @@ func DeletePosts(c *gin.Context) {
 		return
 	}
 
-	models.DeletePostsAdmin(id)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.DeletePostsAdmin(id)
+	if err != nil {
+		logging.Error("Delete posts error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }

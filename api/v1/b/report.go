@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 
 	"github.com/gin-gonic/gin"
@@ -20,8 +21,13 @@ import (
 func GetReports(c *gin.Context) {
 	data := make(map[string]interface{})
 
-	list := models.GetReports()
+	list, err := models.GetReports()
+	if err != nil {
+		logging.Error("Get reports error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	data["list"] = list
 	data["total"] = len(list)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }

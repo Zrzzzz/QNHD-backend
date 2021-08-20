@@ -27,6 +27,11 @@ type postResponse struct {
 	Floors []models.Floor
 }
 
+type uploadRes struct {
+	Id         int    `json:"id"`
+	PictureUrl string `json:"picture_url"`
+}
+
 // @Tags front, post
 // @Summary 获取多个简短post
 // @Accept json
@@ -40,11 +45,21 @@ type postResponse struct {
 func GetPosts(c *gin.Context) {
 	var pageSize = setting.AppSetting.PageSize
 	content := c.Query("content")
-	list := models.GetPosts(util.GetPage(c), pageSize, content)
+	list, err := models.GetPosts(util.GetPage(c), pageSize, content)
+	if err != nil {
+		logging.Error("Get posts error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tags := models.GetTagsInPost(fmt.Sprintf("%d", p.Id))
-		floors := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
+		tags, err := models.GetTagsInPost(fmt.Sprintf("%d", p.Id))
+		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
 		retList = append(retList, postResponse{
 			Post:   p,
 			Tags:   tags,
@@ -55,7 +70,7 @@ func GetPosts(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, post
@@ -80,9 +95,24 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	post := models.GetPost(id)
-	tags := models.GetTagsInPost(fmt.Sprintf("%d", post.Id))
-	floors := models.GetFloorInPostShort(fmt.Sprintf("%d", post.Id))
+	post, err := models.GetPost(id)
+	if err != nil {
+		logging.Error("Get post error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	tags, err := models.GetTagsInPost(fmt.Sprintf("%d", post.Id))
+	if err != nil {
+		logging.Error("Get post error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", post.Id))
+	if err != nil {
+		logging.Error("Get post error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
 	data := map[string]interface{}{
 		"post": postResponse{
 			Post:   post,
@@ -90,8 +120,7 @@ func GetPost(c *gin.Context) {
 			Floors: floors,
 		},
 	}
-
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, post
@@ -103,7 +132,7 @@ func GetPost(c *gin.Context) {
 // @Param picture formData string false "图片data，最大5MB"
 // @Param tags formData []int false "标签id数组"
 // @Security ApiKeyAuth
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=uploadRes}
 // @Failure 400 {object} models.Response "无效参数"
 // @Router /f/post [post]
 func AddPosts(c *gin.Context) {
@@ -149,8 +178,8 @@ func AddPosts(c *gin.Context) {
 	maps["picture_url"] = imageUrl
 	maps["tags"] = tags
 	log.Println(tags)
-	models.AddPosts(maps)
-
+	id, err := models.AddPosts(maps)
+	data["id"] = id
 	data["pictrue_url"] = imageUrl
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
 }
@@ -179,6 +208,11 @@ func DeletePosts(c *gin.Context) {
 		return
 	}
 
-	models.DeletePostsUser(postId, uid)
-	c.JSON(http.StatusOK, r.H(e.SUCCESS, nil))
+	_, err := models.DeletePostsUser(postId, uid)
+	if err != nil {
+		logging.Error("Delete posts error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }

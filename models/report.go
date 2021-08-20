@@ -7,7 +7,10 @@ type Report struct {
 	Reason string `json:"reason"`
 }
 
-func GetReports() (reports []Report) {
-	db.Find(&reports)
-	return
+func GetReports() ([]Report, error) {
+	var reports []Report
+	if err := db.Find(&reports).Error; err != nil {
+		return nil, err
+	}
+	return reports, nil
 }

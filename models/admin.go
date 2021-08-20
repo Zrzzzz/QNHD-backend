@@ -1,7 +1,10 @@
 package models
 
 import (
+	"errors"
 	"qnhd/pkg/setting"
+
+	"gorm.io/gorm"
 )
 
 type Admin struct {
@@ -16,6 +19,9 @@ func CheckAdmin(name string, password string) (bool, error) {
 	}
 	var admin Admin
 	if err := db.Select("id").Where(Admin{Name: name, Password: password}).First(&admin).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil
@@ -27,6 +33,9 @@ func ExistAdmin(name string) (bool, error) {
 	}
 	var admin Admin
 	if err := db.Select("id").Where(Admin{Name: name}).First(&admin).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil
@@ -48,11 +57,11 @@ func AddAdmins(name string, password string) (uint64, error) {
 	return admin.Id, nil
 }
 
-func EditAdmins(name string, password string) (bool, error) {
+func EditAdmins(name string, password string) error {
 	if err := db.Model(&Admin{}).Where("name = ?", name).Update("password", password).Error; err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 func DeleteAdmins(name string) (uint64, error) {

@@ -27,6 +27,7 @@ var MsgFlags = map[int]string{
 	ERROR_UPLOAD_SAVE_IMAGE_FAIL:   "保存图片失败",
 	ERROR_UPLOAD_CHECK_IMAGE_FAIL:  "检查图片失败",
 	ERROR_UPLOAD_SAVE_IMAGE_FORMAT: "图片格式或大小不合规范",
+	ERROR_EMAIL_CODE_CHECK:         "邮箱验证码错误",
 
 	ERROR_DATABASE: "数据库错误，请上报管理员",
 }
