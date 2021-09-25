@@ -28,6 +28,7 @@ require (
 	github.com/swaggo/swag v1.7.0
 	github.com/ugorji/go v1.2.6 // indirect
 	github.com/uniplaces/carbon v0.1.6
+	github.com/unrolled/secure v1.0.9
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

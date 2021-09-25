@@ -41,9 +41,9 @@ func GetUsers(c *gin.Context) {
 	if email != "" {
 		valid.Email(email, "email")
 	}
-	ok := r.E(&valid, "Get user")
+	ok, verr := r.E(&valid, "Get user")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -108,13 +108,13 @@ func AddUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
-	exist, err := models.ExistUser(email)
+	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	if exist {
+	if uid > 0 {
 		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_EMAIL, nil))
 		return
 	}
@@ -144,13 +144,13 @@ func EditUsers(c *gin.Context) {
 	email := c.PostForm("email")
 	newPass := c.PostForm("new_password")
 
-	exist, err := models.ExistUser(email)
+	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Edit user error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	if !exist {
+	if !(uid > 0) {
 		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
 		return
 	}
@@ -177,14 +177,14 @@ func EditUsers(c *gin.Context) {
 // @Router /b/user [delete]
 func DeleteUsers(c *gin.Context) {
 	email := c.Query("email")
-	exist, err := models.ExistUser(email)
+	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Delete users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
 
-	if !exist {
+	if !(uid > 0) {
 		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
 		return
 	}

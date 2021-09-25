@@ -1,9 +1,11 @@
 package models
 
+import "gorm.io/gorm"
+
 type Model struct {
 	Id        uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	CreatedAt string `json:"create_at"`
-	DeletedAt string `json:"delete_at" gorm:"null;"`
+	DeletedAt gorm.DeletedAt
 }
 
 type Response struct {

@@ -41,13 +41,13 @@ func AddUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
 		return
 	}
-	exist, err := models.ExistUser(email)
+	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	if exist {
+	if uid > 0 {
 		r.R(c, http.StatusOK, e.ERROR_EXIST_EMAIL, nil)
 		return
 	}
@@ -78,7 +78,6 @@ func AddUsers(c *gin.Context) {
 			r.R(c, http.StatusOK, e.ERROR_EMAIL_CODE_CHECK, nil)
 		}
 	}
-
 }
 
 // @Tags front, user
@@ -95,14 +94,14 @@ func EditUsers(c *gin.Context) {
 	oldPass := c.Query("old_password")
 	newPass := c.Query("new_password")
 
-	ok, err := models.CheckUser(email, oldPass)
+	uid, err := models.CheckUser(email, oldPass)
 	if err != nil {
 		logging.Error("Edit user error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
 
-	if ok {
+	if uid > 0 {
 		data := make(map[string]interface{})
 		data["password"] = newPass
 		err := models.EditUser(email, data)
@@ -116,3 +115,5 @@ func EditUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
 	}
 }
+
+// get

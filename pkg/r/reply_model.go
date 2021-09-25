@@ -1,6 +1,7 @@
 package r
 
 import (
+	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -20,13 +21,15 @@ func H(code int, data map[string]interface{}) gin.H {
 }
 
 // 返回是否没有错误
-func E(valid *validation.Validation, errorPhase string) bool {
+func E(valid *validation.Validation, errorPhase string) (bool, error) {
+	s := errorPhase
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
 			logging.Error("%v error: %v", errorPhase, r)
+			s += r.Error()
 		}
 	}
-	return !valid.HasErrors()
+	return !valid.HasErrors(), fmt.Errorf(s)
 }
 
 func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {

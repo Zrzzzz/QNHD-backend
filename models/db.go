@@ -37,10 +37,10 @@ func Setup() {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             time.Second,   // Slow SQL threshold
-			LogLevel:                  logger.Silent, // Log level
-			IgnoreRecordNotFoundError: false,         // Ignore ErrRecordNotFound error for logger
-			Colorful:                  true,          // Disable color
+			SlowThreshold:             time.Second,  // Slow SQL threshold
+			LogLevel:                  logger.Error, // Log level
+			IgnoreRecordNotFoundError: false,        // Ignore ErrRecordNotFound error for logger
+			Colorful:                  true,         // Disable color
 		},
 	)
 
@@ -58,5 +58,5 @@ func Setup() {
 	sqlDB.SetMaxOpenConns(100)
 }
 func CloseDB() {
-	defer sqlDB.Close()
+	sqlDB.Close()
 }

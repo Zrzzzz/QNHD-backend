@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JWT() gin.HandlerFunc {
+func JWT(must int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var code int
 		var data interface{}
@@ -26,7 +26,10 @@ func JWT() gin.HandlerFunc {
 			if err != nil {
 				code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
 			} else if time.Now().Unix() > claims.ExpiresAt {
+				// 时间判断
 				code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
+			} else if claims.Tag != must {
+				code = e.ERROR_AUTH
 			}
 		}
 

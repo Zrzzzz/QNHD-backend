@@ -57,9 +57,9 @@ func AddAdmins(c *gin.Context) {
 	valid.Required(name, "name")
 	valid.Required(password, "password")
 
-	ok := r.E(&valid, "Add admin")
+	ok, verr := r.E(&valid, "Add admin")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -94,9 +94,9 @@ func EditAdmins(c *gin.Context) {
 	valid.Required(name, "name")
 	valid.Required(password, "password")
 
-	ok := r.E(&valid, "Edit admin")
+	ok, verr := r.E(&valid, "Edit admin")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -124,9 +124,9 @@ func DeleteAdmins(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(name, "name")
 
-	ok := r.E(&valid, "Delete admin")
+	ok, verr := r.E(&valid, "Delete admin")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 

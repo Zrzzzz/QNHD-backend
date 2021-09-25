@@ -19,15 +19,15 @@ type auth struct {
 
 type authRes struct {
 	Token string `json:"token"`
+	Uid   int    `json:"uid"`
 }
 
 // @Tags front, auth
 // @Summary 前端获取token
 // @Accept json
 // @Produce json
-// @Param name query string true "admin name"
+// @Param email query string true "admin name"
 // @Param password query string true "admin password，发送密码的32位小写md5"
-// @Param token query string false "jwt token，如果用此参数无需传递name和password，可用于刷新token"
 // @Success 200 {object} models.Response{data=authRes}
 // @Failure 20003 {object} models.Response "失败不返回数据"
 // @Router /f/auth [get]
@@ -42,18 +42,20 @@ func GetAuth(c *gin.Context) {
 	ok, _ := valid.Valid(&a)
 
 	if ok {
-		isExist, err := models.CheckUser(email, password)
+		uid, err := models.CheckUser(email, password)
 		if err != nil {
 			logging.Error("Auth user error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 			return
 		}
-		if isExist {
-			token, err := util.GenerateToken(email)
+		if uid > 0 {
+			// tag = 1 means is USER
+			token, err := util.GenerateToken(email, 1)
 			if err != nil {
 				code = e.ERROR_GENERATE_TOKEN
 			} else {
 				data["token"] = token
+				data["uid"] = uid
 				code = e.SUCCESS
 			}
 		} else {
@@ -83,9 +85,9 @@ func RefreshToken(c *gin.Context) {
 	token := c.Param("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
-	ok := r.E(&valid, "Refresh Token Front")
+	ok, verr := r.E(&valid, "Refresh Token Front")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -96,20 +98,29 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
+	// 判断是否为用户
+	if claims.Tag != util.USER {
+		logging.Error("权限错误, not user")
+		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
+		return
+	}
+	// 判断存在用户
 	var code int = e.SUCCESS
 	var data = make(map[string]interface{})
-	exist, err := models.ExistUser(claims.Username)
+	uid, err := models.ExistUser(claims.Username)
 	if err != nil {
 		logging.Error("Refresh token error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	if exist {
-		token, err := util.GenerateToken(claims.Username)
+	if uid > 0 {
+		// tag = 1 means is USER
+		token, err := util.GenerateToken(claims.Username, 1)
 		if err != nil {
 			code = e.ERROR_GENERATE_TOKEN
 		} else {
 			data["token"] = token
+			data["uid"] = uid
 		}
 	}
 	r.R(c, http.StatusOK, code, data)

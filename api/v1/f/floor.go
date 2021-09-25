@@ -6,7 +6,6 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
 	"strconv"
 
@@ -25,19 +24,18 @@ import (
 // @Failure 400 {object} models.Response ""
 // @Router /f/floors [get]
 func GetFloors(c *gin.Context) {
-	var pageSize = setting.AppSetting.PageSize
 	postId := c.Query("post_id")
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "podsId")
-	ok := r.E(&valid, "Get floors")
+	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-
-	list, err := models.GetFloorInPost(util.GetPage(c), pageSize, postId)
+	base, size := util.HandlePaging(c)
+	list, err := models.GetFloorInPost(base, size, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
@@ -68,13 +66,13 @@ func AddFloors(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
-	valid.Numeric(postId, "podsId")
+	valid.Numeric(postId, "postId")
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Add floors")
+	ok, verr := r.E(&valid, "Add floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intpostid, _ := strconv.ParseUint(postId, 10, 64)
@@ -117,15 +115,15 @@ func ReplyFloor(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
-	valid.Numeric(postId, "podsId")
+	valid.Numeric(postId, "postId")
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Reply floors")
+	ok, verr := r.E(&valid, "Reply floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intpostid, _ := strconv.ParseUint(postId, 10, 64)
@@ -147,6 +145,46 @@ func ReplyFloor(c *gin.Context) {
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
+
+// @method post
+// @way formdata
+// @param uid, floor_id, like
+// @return nil
+func LikeOrUnlikeFloor(c *gin.Context) {
+	uid := c.PostForm("uid")
+	floorId := c.PostForm("floor_id")
+	like := c.PostForm("like")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(floorId, "floorId")
+	valid.Numeric(floorId, "floorId")
+	valid.Required(like, "like")
+	valid.Numeric(like, "like")
+	ok, verr := r.E(&valid, "like or unlike floor")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	// 代表点赞问题
+	var err error
+	if like == "1" {
+		err = models.LikeFloor(floorId, uid)
+	} else {
+		err = models.UnLikeFloor(floorId, uid)
+	}
+	if err != nil {
+		logging.Error("like or unlike floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
+// func LikeFloor(c *gin.Context) {
+// 	fId := c.PostForm("floor_id")
+// }
 
 // @Tags front, floor
 // @Summary 删除楼层
@@ -171,9 +209,9 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	valid.Required(floorId, "floorId")
 	valid.Numeric(floorId, "floorId")
-	ok := r.E(&valid, "Get floors")
+	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 

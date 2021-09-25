@@ -2,6 +2,7 @@ package f
 
 import (
 	"qnhd/middleware/jwt"
+	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,7 @@ const (
 	Tag
 	Post
 	Floor
+	History
 )
 
 var FrontTypes = [...]FrontType{
@@ -20,13 +22,14 @@ var FrontTypes = [...]FrontType{
 	Tag,
 	Post,
 	Floor,
+	History,
 }
 
 func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", RefreshToken)
-	g.Use(jwt.JWT())
+	g.Use(jwt.JWT(util.USER))
 	for _, t := range FrontTypes {
 		initType(g, t)
 	}
@@ -49,8 +52,12 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Post:
 		//查询多个帖子
 		g.GET("/posts", GetPosts)
+		// 获取热搜帖子
+		g.GET("/posts/hot", GetHotPosts)
 		//查询单个帖子
 		g.GET("/post", GetPost)
+		// 收藏或者取消
+		g.POST("/post/favOrUnfav", FavOrUnFavPost)
 		//新建帖子
 		g.POST("/post", AddPosts)
 		//删除指定帖子
@@ -62,6 +69,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/floor", AddFloors)
 		//回复楼层
 		g.POST("/floor/reply", ReplyFloor)
+		// 点赞或者取消
+		g.POST("/floor/likeOrUnlike", LikeOrUnlikeFloor)
 		//删除指定楼层
 		g.DELETE("/floor", DeleteFloor)
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"qnhd/pkg/file"
 	"runtime"
 )
@@ -62,7 +61,8 @@ func Fatal(f string, v ...interface{}) {
 func setPrefix(level Level) {
 	_, file, line, ok := runtime.Caller(DefaultCallerDepth)
 	if ok {
-		logPrefix = fmt.Sprintf("[%s][%s:%d]", levelFlags[level], filepath.Base(file), line)
+		// full, _ = filepath.Abs(file)
+		logPrefix = fmt.Sprintf("[%s][%s:%d]", levelFlags[level], file, line)
 	} else {
 		logPrefix = fmt.Sprintf("[%s]", levelFlags[level])
 	}

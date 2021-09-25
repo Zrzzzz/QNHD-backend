@@ -6,27 +6,23 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
 
-// @Tags backend, post
-// @Summary 获取帖子
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=models.Post}}
-// @Router /b/post [get]
+// @method get
+// @way query
+// @param content page page_size
+// @return list
 func GetPosts(c *gin.Context) {
-	var pageSize = setting.AppSetting.PageSize
+
 	content := c.Query("content")
 
 	data := make(map[string]interface{})
-
-	list, err := models.GetPosts(util.GetPage(c), pageSize, content)
+	base, size := util.HandlePaging(c)
+	list, err := models.GetPosts(base, size, content)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
@@ -53,9 +49,9 @@ func DeletePosts(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok := r.E(&valid, "Delete notices")
+	ok, verr := r.E(&valid, "Delete notices")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 

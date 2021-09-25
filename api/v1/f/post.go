@@ -8,7 +8,6 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/setting"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 	"strconv"
@@ -23,8 +22,10 @@ type postRes struct {
 
 type postResponse struct {
 	models.Post
-	Tags   []models.Tag
-	Floors []models.Floor
+	Tags         []models.Tag   `json:"tags"`
+	Floors       []models.Floor `json:"floors"`
+	StarCount    int            `json:"star_count"`
+	CommentCount int            `json:"comment_count"`
 }
 
 type uploadRes struct {
@@ -38,14 +39,15 @@ type uploadRes struct {
 // @Produce json
 // @Param content query string false "帖子内容"
 // @Param page query string false "页数, 从0开始 默认为0"
+// @Param page_size query int false "页面大小，默认为10"
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response{data=models.ListRes{list=postResponse}}
 // @Failure 400 {object} models.Response "无效参数"
 // @Router /f/posts [get]
 func GetPosts(c *gin.Context) {
-	var pageSize = setting.AppSetting.PageSize
 	content := c.Query("content")
-	list, err := models.GetPosts(util.GetPage(c), pageSize, content)
+	base, size := util.HandlePaging(c)
+	list, err := models.GetPosts(base, size, content)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
@@ -54,6 +56,11 @@ func GetPosts(c *gin.Context) {
 	retList := []postResponse{}
 	for _, p := range list {
 		tags, err := models.GetTagsInPost(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			return
+		}
 		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
@@ -61,11 +68,13 @@ func GetPosts(c *gin.Context) {
 			return
 		}
 		retList = append(retList, postResponse{
-			Post:   p,
-			Tags:   tags,
-			Floors: floors,
+			Post:         p,
+			Tags:         tags,
+			Floors:       floors,
+			CommentCount: len(floors),
 		})
 	}
+
 	data := make(map[string]interface{})
 	data["list"] = retList
 	data["total"] = len(retList)
@@ -74,28 +83,46 @@ func GetPosts(c *gin.Context) {
 }
 
 // @Tags front, post
+// @Summary 获取热搜
+// @Accept json
+// @Produce json
+// @Param content query string false "帖子内容"
+// @Param page query string false "页数, 从0开始 默认为0"
+// @Param page_size query int false "页面大小，默认为10"
+// @Security ApiKeyAuth
+// @Success 200 {object} models.Response{data=models.ListRes{list=postResponse}}
+// @Failure 400 {object} models.Response "无效参数"
+// @Router /f/posts [get]
+func GetHotPosts(c *gin.Context) {
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
+// @Tags front, post
 // @Summary 获取单个post
 // @Accept json
 // @Produce json
-// @Param id query string true "帖子id"
+// @Param id query int true "帖子id"
+// @Param uid query int true "uid"
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response{data=postRes}
 // @Failure 400 {object} models.Response "无效参数"
 // @Router /f/post [get]
 func GetPost(c *gin.Context) {
 	id := c.Query("id")
-
+	uid := c.Query("uid")
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
 
-	ok := r.E(&valid, "Get Posts")
+	ok, verr := r.E(&valid, "Get Posts")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
-	post, err := models.GetPost(id)
+	post, err := models.GetPost(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
@@ -147,9 +174,9 @@ func AddPosts(c *gin.Context) {
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Add posts")
+	ok, verr := r.E(&valid, "Add posts")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -184,6 +211,42 @@ func AddPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))
 }
 
+// @method get
+// @way query
+// @param content page page_size
+// @return list
+func FavOrUnFavPost(c *gin.Context) {
+	uid := c.PostForm("uid")
+	postId := c.PostForm("post_id")
+	fav := c.PostForm("fav")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(postId, "postId")
+	valid.Numeric(postId, "postId")
+	valid.Required(fav, "fav")
+	valid.Numeric(fav, "fav")
+	ok, verr := r.E(&valid, "fav or unfav post")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	// 代表点赞问题
+	var err error
+	if fav == "1" {
+		err = models.FavPost(postId, uid)
+	} else {
+		err = models.UnfavPost(postId, uid)
+	}
+	if err != nil {
+		logging.Error("fav or unfav post error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
 // @Tags front, post
 // @Summary 删除帖子
 // @Accept json
@@ -202,9 +265,9 @@ func DeletePosts(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	ok := r.E(&valid, "Delete posts")
+	ok, verr := r.E(&valid, "Delete posts")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 

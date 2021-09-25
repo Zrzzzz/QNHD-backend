@@ -2,6 +2,7 @@ package b
 
 import (
 	"qnhd/middleware/jwt"
+	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +33,7 @@ func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", RefreshToken)
-	g.Use(jwt.JWT())
+	g.Use(jwt.JWT(util.ADMIN))
 	for _, t := range BackendTypes {
 		initType(g, t)
 	}

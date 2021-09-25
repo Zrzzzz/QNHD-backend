@@ -26,9 +26,9 @@ func GetBlocked(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	ok := r.E(&valid, "Get blocked")
+	ok, verr := r.E(&valid, "Get blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -69,9 +69,9 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	valid.Required(last, "last")
 	valid.Numeric(last, "last")
-	ok := r.E(&valid, "Add blocked")
+	ok, verr := r.E(&valid, "Add blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 因为做过valid了不必考虑错误
@@ -112,9 +112,9 @@ func DeleteBlocked(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok := r.E(&valid, "Delete blocked")
+	ok, verr := r.E(&valid, "Delete blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)

@@ -38,6 +38,7 @@ func main() {
 	models.Setup()
 
 	router := api.InitRouter()
+	// tlscfg := api.InitTlsConfig()
 
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HTTPPort),
@@ -45,8 +46,9 @@ func main() {
 		ReadTimeout:    setting.ServerSetting.ReadTimeout,
 		WriteTimeout:   setting.ServerSetting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
+		// TLSConfig:      tlscfg,
 	}
-	s.ListenAndServe()
-
+	s.ListenAndServeTLS("cert/5193613_zrzz.site.pem", "cert/5193613_zrzz.site.key")
+	// s.ListenAndServe()
 	defer models.CloseDB()
 }

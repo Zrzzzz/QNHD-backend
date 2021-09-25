@@ -14,23 +14,23 @@ type User struct {
 	Status       int8   `json:"status" gorm:"default:null;"`
 }
 
-func CheckUser(email string, password string) (bool, error) {
+func CheckUser(email string, password string) (uint64, error) {
 	var user User
 	if err := db.Select("uid").Where(User{Email: email, Password: password}).First(&user).Error; err != nil {
-		return false, err
+		return 0, err
 	}
-	return user.Uid > 0, nil
+	return user.Uid, nil
 }
 
-func ExistUser(email string) (bool, error) {
+func ExistUser(email string) (uint64, error) {
 	var user User
 	if err := db.Where(User{Email: email}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
+			return 0, nil
 		}
-		return false, err
+		return 0, err
 	}
-	return user.Uid > 0, nil
+	return user.Uid, nil
 }
 
 func GetUsers(maps interface{}) ([]User, error) {

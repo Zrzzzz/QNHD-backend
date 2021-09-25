@@ -2,6 +2,8 @@ package models
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -9,12 +11,21 @@ import (
 type Floor struct {
 	Model
 	Uid         uint64 `json:"uid"`
-	PostId      uint64 `json:"post_id" `
+	PostId      uint64 `json:"post_id"`
 	Content     string `json:"content"`
 	Nickname    string `json:"nickname"`
 	ReplyTo     uint64 `json:"reply_to" `
 	ReplyToName string `json:"reply_to_name"`
+	Likes       uint64 `json:"likes"`
 }
+
+type LogFloorLike struct {
+	Model
+	Uid     uint64 `json:"uid"`
+	FloorId uint64 `json:"floor_id"`
+}
+
+const OWNER_NAME = "Owner"
 
 var FLOOR_NAME = []string{
 	"Angus", "Bertram", "Conrad", "Devin", "Emmanuel", "Fitzgerald", "Gregary", "Herbert", "Ingram", "Joyce", "Kelly", "Leo", "Morton", "Nathaniel", "Orville", "Payne", "Quintion", "Regan", "Sean", "Tracy", "Uriah", "Valentine", "Walker", "Xavier", "Yves", "Zachary",
@@ -22,15 +33,15 @@ var FLOOR_NAME = []string{
 
 func GetFloorInPostShort(postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ?", postId).Order("created_at").Limit(10).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ?", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return floors, nil
 }
 
-func GetFloorInPost(overNum int, pageSize int, postId string) ([]Floor, error) {
+func GetFloorInPost(base int, pageSize int, postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ?", postId).Order("created_at").Offset(overNum).Limit(pageSize).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ?", postId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return floors, nil
@@ -56,28 +67,27 @@ func GetFloor(id string) (Floor, error) {
 }
 
 func AddFloor(maps map[string]interface{}) (uint64, error) {
+	// TODO: 添加锁
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, err
 		}
-		return 0, err
 	}
 
 	if post.Uid == uid {
-		nickname = "Owner"
+		nickname = OWNER_NAME
 	} else {
 		// 还有可能已经发过言
 		var floor Floor
 		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, nil
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, err
 			}
-			return 0, err
 		}
 		if floor.Id > 0 {
 			nickname = floor.Nickname
@@ -103,28 +113,27 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 }
 
 func ReplyFloor(maps map[string]interface{}) (uint64, error) {
+	// TODO: 添加锁
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, err
 		}
-		return 0, err
 	}
 
 	if post.Uid == uid {
-		nickname = "Owner"
+		nickname = OWNER_NAME
 	} else {
 		// 还有可能已经发过言
 		var floor Floor
 		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, nil
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, err
 			}
-			return 0, err
 		}
 		if floor.Id > 0 {
 			nickname = floor.Nickname
@@ -141,10 +150,9 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	floorId := maps["replyToFloor"].(uint64)
 	var floor Floor
 	if err := db.First(&floor, floorId).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, err
 		}
-		return 0, err
 	}
 
 	var newFloor = Floor{
@@ -185,6 +193,92 @@ func DeleteFloorsInPost(postId string) (uint64, error) {
 	}
 	return floor.Id, nil
 
+}
+
+/* 点赞或者取消点赞楼层 */
+func LikeFloor(floorId string, uid string) error {
+	uidint, _ := strconv.ParseUint(uid, 10, 64)
+	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+
+	var exist = false
+	var log = LogFloorLike{Uid: uidint, FloorId: floorIdint}
+
+	// 首先判断点没点过赞
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	if log.Id > 0 {
+		return fmt.Errorf("已被点赞")
+	}
+
+	if err := db.Unscoped().Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+
+	exist = log.Id > 0
+	if exist {
+		if err := db.Unscoped().Model(&log).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := db.Select("uid", "floor_id").Create(&log).Error; err != nil {
+			return err
+		}
+	}
+	// 更新楼的likes
+	var floor Floor
+	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+	if err := db.Model(&floor).Update("likes", floor.Likes+1).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UnLikeFloor(floorId string, uid string) error {
+	uidint, _ := strconv.ParseUint(uid, 10, 64)
+	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+
+	var exist = false
+	var log = LogFloorLike{Uid: uidint, FloorId: floorIdint}
+	// 首先判断点没点过赞
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	if log.Id == 0 {
+		return fmt.Errorf("未被点赞")
+	}
+
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	exist = log.Id > 0
+	if exist {
+		if err := db.Delete(&log).Error; err != nil {
+			return err
+		}
+	}
+
+	// 更新楼的likes
+	var floor Floor
+	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+	if err := db.Model(&floor).Update("likes", floor.Likes-1).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (LogFloorLike) TableName() string {
+	return "log_floor_like"
 }
 
 func (Floor) TableName() string {

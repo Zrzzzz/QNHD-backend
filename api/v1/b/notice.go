@@ -47,9 +47,9 @@ func AddNotices(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Add notices")
+	ok, verr := r.E(&valid, "Add notices")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -85,9 +85,9 @@ func EditNotices(c *gin.Context) {
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
 	valid.Required(content, "content")
-	ok := r.E(&valid, "Edit notices")
+	ok, verr := r.E(&valid, "Edit notices")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -118,9 +118,9 @@ func DeleteNotices(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok := r.E(&valid, "Delete notices")
+	ok, verr := r.E(&valid, "Delete notices")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intid, _ := strconv.ParseUint(id, 10, 64)

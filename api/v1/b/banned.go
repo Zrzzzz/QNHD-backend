@@ -26,9 +26,9 @@ func GetBanned(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	ok := r.E(&valid, "Get banned")
+	ok, verr := r.E(&valid, "Get banned")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -66,9 +66,9 @@ func AddBanned(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok := r.E(&valid, "Add banned")
+	ok, verr := r.E(&valid, "Add banned")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
@@ -110,9 +110,9 @@ func DeleteBanned(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok := r.E(&valid, "Delete banned")
+	ok, verr := r.E(&valid, "Delete banned")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid, _ := strconv.ParseUint(uid, 10, 64)

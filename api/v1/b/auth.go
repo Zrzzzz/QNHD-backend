@@ -21,6 +21,7 @@ type auth struct {
 type authRes struct {
 	Token string `json:"token"`
 	Super bool   `json:"super"`
+	Id    int    `json:"id"`
 }
 
 // @Tags backend, auth
@@ -43,13 +44,14 @@ func GetAuth(c *gin.Context) {
 	ok, _ := valid.Valid(&a)
 
 	if ok {
-		isExist, err := models.CheckAdmin(username, password)
+		id, err := models.CheckAdmin(username, password)
 		if err != nil {
 			logging.Error("check admin error:%v", err)
 			code = e.ERROR_DATABASE
 		}
-		if isExist {
-			token, err := util.GenerateToken(username)
+		if id > 0 {
+			// tag = 0 means ADMIN
+			token, err := util.GenerateToken(username, 0)
 			if err != nil {
 				code = e.ERROR_GENERATE_TOKEN
 			} else {
@@ -86,9 +88,9 @@ func RefreshToken(c *gin.Context) {
 	token := c.Param("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
-	ok := r.E(&valid, "Refresh Token Backend")
+	ok, verr := r.E(&valid, "Refresh Token Backend")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -99,16 +101,25 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
+	// 判断是否为管理员
+	if claims.Tag != util.ADMIN {
+		logging.Error("权限错误, not admin")
+		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
+		return
+	}
+
 	var code int = e.SUCCESS
 	var data = make(map[string]interface{})
-	exist, err := models.ExistAdmin(claims.Username)
+	// 判断管理员是否存在
+	id, err := models.ExistAdmin(claims.Username)
 	if err != nil {
 		logging.Error("Judging admin error:%v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
 		return
 	}
-	if exist {
-		token, err := util.GenerateToken(claims.Username)
+	if id > 0 {
+		// tag = 0 means ADMIN
+		token, err := util.GenerateToken(claims.Username, 0)
 		if err != nil {
 			code = e.ERROR_GENERATE_TOKEN
 		} else {

@@ -49,9 +49,9 @@ func AddTag(c *gin.Context) {
 	name := c.PostForm("name")
 	valid := validation.Validation{}
 	valid.Required(name, "name")
-	ok := r.E(&valid, "Add tag")
+	ok, verr := r.E(&valid, "Add tag")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	exist, err := models.ExistTagByName(name)
@@ -89,9 +89,9 @@ func DeleteTag(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok := r.E(&valid, "Delete tag")
+	ok, verr := r.E(&valid, "Delete tag")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 

@@ -13,32 +13,32 @@ type Admin struct {
 	Password string `json:"password"`
 }
 
-func CheckAdmin(name string, password string) (bool, error) {
-	if name == setting.AppSetting.AdminName {
-		return true, nil
+func CheckAdmin(name string, password string) (uint64, error) {
+	if name == setting.AppSetting.AdminName && password == setting.AppSetting.AdminPass {
+		return 999, nil
 	}
 	var admin Admin
 	if err := db.Select("id").Where(Admin{Name: name, Password: password}).First(&admin).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
+			return 0, nil
 		}
-		return false, err
+		return 0, err
 	}
-	return true, nil
+	return admin.Id, nil
 }
 
-func ExistAdmin(name string) (bool, error) {
+func ExistAdmin(name string) (uint64, error) {
 	if name == setting.AppSetting.AdminName {
-		return true, nil
+		return 999, nil
 	}
 	var admin Admin
 	if err := db.Select("id").Where(Admin{Name: name}).First(&admin).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
+			return 0, nil
 		}
-		return false, err
+		return 0, err
 	}
-	return true, nil
+	return admin.Id, nil
 }
 
 func GetAdmins(maps interface{}) ([]Admin, error) {
