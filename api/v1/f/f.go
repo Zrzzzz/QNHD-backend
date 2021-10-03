@@ -44,16 +44,16 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.PUT("/user", EditUsers)
 	case Tag:
 		//查询标签
-		g.GET("/tag", GetTag)
+		g.GET("/tags", GetTags)
 		//新建标签
 		g.POST("/tag", AddTag)
 		//删除指定标签
 		g.DELETE("/tag", DeleteTag)
+		//获取热议标签
+		g.GET("/tags/hot", GetHotTag)
 	case Post:
 		//查询多个帖子
 		g.GET("/posts", GetPosts)
-		// 获取热搜帖子
-		g.GET("/posts/hot", GetHotPosts)
 		//查询单个帖子
 		g.GET("/post", GetPost)
 		// 收藏或者取消

@@ -193,6 +193,14 @@ func UnfavPost(postId string, uid string) error {
 	return nil
 }
 
+func GetFavPostsById(uid string) ([]Post, error) {
+	var posts []Post
+	if err := db.Where("uid = ?", uid).Find(&posts).Error; err != nil {
+		return posts, err
+	}
+	return posts, nil
+}
+
 func (LogPostFav) TableName() string {
 	return "log_post_fav"
 }

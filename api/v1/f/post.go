@@ -83,21 +83,6 @@ func GetPosts(c *gin.Context) {
 }
 
 // @Tags front, post
-// @Summary 获取热搜
-// @Accept json
-// @Produce json
-// @Param content query string false "帖子内容"
-// @Param page query string false "页数, 从0开始 默认为0"
-// @Param page_size query int false "页面大小，默认为10"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=postResponse}}
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /f/posts [get]
-func GetHotPosts(c *gin.Context) {
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
-}
-
-// @Tags front, post
 // @Summary 获取单个post
 // @Accept json
 // @Produce json
@@ -246,6 +231,11 @@ func FavOrUnFavPost(c *gin.Context) {
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
+
+// @method [get]
+// @way [query]
+// @param
+// @return
 
 // @Tags front, post
 // @Summary 删除帖子

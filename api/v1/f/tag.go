@@ -21,7 +21,7 @@ import (
 // @Success 200 {object} models.Response{data=models.ListRes{list=models.Tag}}
 // @Failure 400 {object} models.Response ""
 // @Router /f/tag [get]
-func GetTag(c *gin.Context) {
+func GetTags(c *gin.Context) {
 	name := c.Query("name")
 
 	data := make(map[string]interface{})
@@ -34,6 +34,14 @@ func GetTag(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 	r.R(c, http.StatusOK, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+func GetHotTag(c *gin.Context) {
+	// list, err := models.GetHota
 }
 
 // @Tags front, tag
