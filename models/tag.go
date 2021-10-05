@@ -17,6 +17,12 @@ type LogTag struct {
 	CreatedAt string `json:"create_at"`
 }
 
+type HotTagResult struct {
+	TagId int    `json:"tag_id"`
+	Count int    `json:"count"`
+	Name  string `json:"name"`
+}
+
 func ExistTagByName(name string) (bool, error) {
 	var tag Tag
 	if err := db.Where("name = ?", name).First(&tag).Error; err != nil {
@@ -37,11 +43,12 @@ func GetTags(name string) ([]Tag, error) {
 }
 
 // 获取24小时内高赞tag
-func GetHotTags() ([]Tag, error) {
-	// var tags []Tag
-	// var logTags []LogTag
-	// if err := db.Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\"").Group("")
-	return []Tag{}, nil
+func GetHotTags() ([]HotTagResult, error) {
+	var results []HotTagResult
+	if err := db.Model(&LogTag{}).Select("tag_id, count(*) as count, name").Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").Group("tag_id").Limit(5).Order("count desc").Joins("LEFT JOIN tags ON tags.id = tag_id").Find(&results).Error; err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func AddTags(name string) (uint64, error) {

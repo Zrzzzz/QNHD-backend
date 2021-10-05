@@ -110,7 +110,7 @@ func RefreshToken(c *gin.Context) {
 	uid, err := models.ExistUser(claims.Username)
 	if err != nil {
 		logging.Error("Refresh token error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if uid > 0 {

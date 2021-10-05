@@ -44,7 +44,7 @@ func AddUsers(c *gin.Context) {
 	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if uid > 0 {
@@ -97,7 +97,7 @@ func EditUsers(c *gin.Context) {
 	uid, err := models.CheckUser(email, oldPass)
 	if err != nil {
 		logging.Error("Edit user error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 

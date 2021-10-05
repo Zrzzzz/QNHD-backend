@@ -42,7 +42,7 @@ func GetBanned(c *gin.Context) {
 	list, err := models.GetBanned(maps)
 	if err != nil {
 		logging.Error("get banned error:%v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -77,7 +77,7 @@ func AddBanned(c *gin.Context) {
 	ifBanned, err := models.IfBannedByUid(intuid)
 	if err != nil {
 		logging.Error("Judging banned failed: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	var id uint64
@@ -121,7 +121,7 @@ func DeleteBanned(c *gin.Context) {
 	ifBanned, err := models.IfBannedByUid(intuid)
 	if err != nil {
 		logging.Error("Judging banned failed: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if ifBanned {

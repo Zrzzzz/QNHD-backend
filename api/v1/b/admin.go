@@ -31,7 +31,7 @@ func GetAdmins(c *gin.Context) {
 	list, err := models.GetAdmins(maps)
 	if err != nil {
 		logging.Error("Get admins error:%v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
@@ -67,7 +67,7 @@ func AddAdmins(c *gin.Context) {
 
 	if err != nil {
 		logging.Error("Add admin error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -103,7 +103,7 @@ func EditAdmins(c *gin.Context) {
 	err := models.EditAdmins(name, password)
 	if err != nil {
 		logging.Error("Edit admin error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
@@ -133,7 +133,7 @@ func DeleteAdmins(c *gin.Context) {
 	_, err := models.DeleteAdmins(name)
 	if err != nil {
 		logging.Error("Delete admin error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

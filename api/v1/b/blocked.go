@@ -42,7 +42,7 @@ func GetBlocked(c *gin.Context) {
 	list, err := models.GetBlocked(maps)
 	if err != nil {
 		logging.Error("Get blocked error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list

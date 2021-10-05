@@ -50,7 +50,7 @@ func GetPosts(c *gin.Context) {
 	list, err := models.GetPosts(base, size, content)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	retList := []postResponse{}
@@ -110,19 +110,19 @@ func GetPost(c *gin.Context) {
 	post, err := models.GetPost(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	tags, err := models.GetTagsInPost(fmt.Sprintf("%d", post.Id))
 	if err != nil {
 		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", post.Id))
 	if err != nil {
 		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := map[string]interface{}{
@@ -264,7 +264,7 @@ func DeletePosts(c *gin.Context) {
 	_, err := models.DeletePostsUser(postId, uid)
 	if err != nil {
 		logging.Error("Delete posts error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

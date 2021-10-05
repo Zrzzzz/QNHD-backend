@@ -114,7 +114,7 @@ func RefreshToken(c *gin.Context) {
 	id, err := models.ExistAdmin(claims.Username)
 	if err != nil {
 		logging.Error("Judging admin error:%v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if id > 0 {

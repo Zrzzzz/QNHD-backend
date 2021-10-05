@@ -23,8 +23,8 @@ func GetReports(c *gin.Context) {
 
 	list, err := models.GetReports()
 	if err != nil {
-		logging.Error("Get reports error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		logging.Error("Get report error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list

@@ -38,7 +38,7 @@ func GetFloors(c *gin.Context) {
 	list, err := models.GetFloorInPost(base, size, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -87,7 +87,7 @@ func AddFloors(c *gin.Context) {
 	id, err := models.AddFloor(maps)
 	if err != nil {
 		logging.Error("Add floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
@@ -140,7 +140,7 @@ func ReplyFloor(c *gin.Context) {
 	_, err := models.ReplyFloor(maps)
 	if err != nil {
 		logging.Error("Reply floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
@@ -218,7 +218,7 @@ func DeleteFloor(c *gin.Context) {
 	_, err := models.DeleteFloorByUser(postId, uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

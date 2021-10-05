@@ -28,7 +28,7 @@ func GetTags(c *gin.Context) {
 	list, err := models.GetTags(name)
 	if err != nil {
 		logging.Error("Get tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
@@ -41,7 +41,16 @@ func GetTags(c *gin.Context) {
 // @param
 // @return
 func GetHotTag(c *gin.Context) {
-	// list, err := models.GetHota
+	list, err := models.GetHotTags()
+	data := make(map[string]interface{})
+	if err != nil {
+		logging.Error("Get hot tag error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	data["list"] = list
+	data["total"] = len(list)
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @Tags front, tag
@@ -65,7 +74,7 @@ func AddTag(c *gin.Context) {
 	exist, err := models.ExistTagByName(name)
 	if err != nil {
 		logging.Error("Add tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if exist {
@@ -74,7 +83,7 @@ func AddTag(c *gin.Context) {
 	id, err := models.AddTags(name)
 	if err != nil {
 		logging.Error("Add tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
@@ -107,7 +116,7 @@ func DeleteTag(c *gin.Context) {
 	_, err := models.DeleteTags(intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

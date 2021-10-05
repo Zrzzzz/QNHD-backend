@@ -62,7 +62,7 @@ func GetUsers(c *gin.Context) {
 	list, err := models.GetUsers(maps)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	retList := []UserResponse{}
@@ -111,7 +111,7 @@ func AddUsers(c *gin.Context) {
 	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if uid > 0 {
@@ -122,7 +122,7 @@ func AddUsers(c *gin.Context) {
 	id, err := models.AddUser(email, password)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
@@ -147,7 +147,7 @@ func EditUsers(c *gin.Context) {
 	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Edit user error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if !(uid > 0) {
@@ -160,7 +160,7 @@ func EditUsers(c *gin.Context) {
 	err = models.EditUser(email, data)
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
@@ -180,7 +180,7 @@ func DeleteUsers(c *gin.Context) {
 	uid, err := models.ExistUser(email)
 	if err != nil {
 		logging.Error("Delete users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -191,7 +191,7 @@ func DeleteUsers(c *gin.Context) {
 	err = models.DeleteUser(email)
 	if err != nil {
 		logging.Error("Delete users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

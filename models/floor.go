@@ -192,7 +192,6 @@ func DeleteFloorsInPost(postId string) (uint64, error) {
 		return 0, err
 	}
 	return floor.Id, nil
-
 }
 
 /* 点赞或者取消点赞楼层 */

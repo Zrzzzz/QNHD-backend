@@ -25,7 +25,7 @@ func GetPosts(c *gin.Context) {
 	list, err := models.GetPosts(base, size, content)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -58,7 +58,7 @@ func DeletePosts(c *gin.Context) {
 	_, err := models.DeletePostsAdmin(id)
 	if err != nil {
 		logging.Error("Delete posts error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

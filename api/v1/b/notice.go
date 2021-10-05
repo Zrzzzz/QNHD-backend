@@ -24,7 +24,7 @@ func GetNotices(c *gin.Context) {
 	list, err := models.GetNotices()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
@@ -59,7 +59,7 @@ func AddNotices(c *gin.Context) {
 	id, err := models.AddNotices(maps)
 	if err != nil {
 		logging.Error("Add notices error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
@@ -97,7 +97,7 @@ func EditNotices(c *gin.Context) {
 	err := models.EditNotices(intid, data)
 	if err != nil {
 		logging.Error("Edit notices error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
@@ -127,7 +127,7 @@ func DeleteNotices(c *gin.Context) {
 	_, err := models.DeleteNotices(intid)
 	if err != nil {
 		logging.Error("Delete notices error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)

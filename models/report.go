@@ -2,9 +2,10 @@ package models
 
 type Report struct {
 	Model
-	Uid    uint64 `json:"uid"`
-	PostId string `json:"post_id"`
-	Reason string `json:"reason"`
+	Uid     uint64 `json:"uid"`
+	PostId  uint64 `json:"post_id"`
+	FloorId uint64 `json:"floor_id"`
+	Reason  string `json:"reason"`
 }
 
 func GetReports() ([]Report, error) {
@@ -13,4 +14,8 @@ func GetReports() ([]Report, error) {
 		return nil, err
 	}
 	return reports, nil
+}
+
+func (Report) TableName() string {
+	return "reports"
 }
