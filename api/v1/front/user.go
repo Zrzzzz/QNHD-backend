@@ -1,4 +1,4 @@
-package f
+package front
 
 import (
 	"net/http"
@@ -67,7 +67,7 @@ func AddUsers(c *gin.Context) {
 			id, err := models.AddUser(email, password)
 			if err != nil {
 				logging.Error("Add user error: %v", err)
-				r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+				r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 				return
 			}
 			data := make(map[string]interface{})
@@ -75,7 +75,7 @@ func AddUsers(c *gin.Context) {
 			r.R(c, http.StatusOK, e.SUCCESS, data)
 		} else {
 			// 验证码错误
-			r.R(c, http.StatusOK, e.ERROR_EMAIL_CODE_CHECK, nil)
+			r.R(c, http.StatusOK, e.ERROR_EMAIL_CODE_CHECK, map[string]interface{}{"error": err.Error()})
 		}
 	}
 }
@@ -107,7 +107,7 @@ func EditUsers(c *gin.Context) {
 		err := models.EditUser(email, data)
 		if err != nil {
 			logging.Error("Edit user error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		r.R(c, http.StatusOK, e.SUCCESS, nil)

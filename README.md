@@ -4,8 +4,6 @@
 
 - `go mod tidy`
 
-- `swag init`
-
 - `make start`
 
 ## Watch Status

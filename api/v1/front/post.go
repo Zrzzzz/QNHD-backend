@@ -1,8 +1,7 @@
-package f
+package front
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -22,15 +21,10 @@ type postRes struct {
 
 type postResponse struct {
 	models.Post
-	Tags         []models.Tag   `json:"tags"`
+	Tag          models.Tag     `json:"tag"`
 	Floors       []models.Floor `json:"floors"`
 	StarCount    int            `json:"star_count"`
 	CommentCount int            `json:"comment_count"`
-}
-
-type uploadRes struct {
-	Id         int    `json:"id"`
-	PictureUrl string `json:"picture_url"`
 }
 
 // @Tags front, post
@@ -55,21 +49,21 @@ func GetPosts(c *gin.Context) {
 	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tags, err := models.GetTagsInPost(fmt.Sprintf("%d", p.Id))
+		tag, err := models.GetTagInPost(fmt.Sprintf("%d", p.Id))
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		retList = append(retList, postResponse{
 			Post:         p,
-			Tags:         tags,
+			Tag:          tag,
 			Floors:       floors,
 			CommentCount: len(floors),
 		})
@@ -113,7 +107,7 @@ func GetPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	tags, err := models.GetTagsInPost(fmt.Sprintf("%d", post.Id))
+	tag, err := models.GetTagInPost(fmt.Sprintf("%d", post.Id))
 	if err != nil {
 		logging.Error("Get post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -128,37 +122,31 @@ func GetPost(c *gin.Context) {
 	data := map[string]interface{}{
 		"post": postResponse{
 			Post:   post,
-			Tags:   tags,
+			Tag:    tag,
 			Floors: floors,
 		},
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, post
-// @Summary 添加帖子
-// @Accept json
-// @Produce json
-// @Param uid formData string true "发帖人id"
-// @Param content formData string true "帖子内容"
-// @Param picture formData string false "图片data，最大5MB"
-// @Param tags formData []int false "标签id数组"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=uploadRes}
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /f/post [post]
+// @method [post]
+// @way [formdata]
+// @param uid content picture tag_id
+// @return uploadres
 func AddPosts(c *gin.Context) {
 	uid := c.PostForm("uid")
 	content := c.PostForm("content")
 	f, image, err := c.Request.FormFile("picture")
 	hasImage := err == nil
 	imageUrl := ""
-	tags := c.PostFormArray("tags")
-
+	tag_id := c.PostForm("tag_id")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(content, "content")
+	if tag_id != "" {
+		valid.Numeric(tag_id, "tag_id")
+	}
 	ok, verr := r.E(&valid, "Add posts")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -169,12 +157,12 @@ func AddPosts(c *gin.Context) {
 		src, err := upload.CheckImage(&f, image)
 		if err != nil {
 			logging.Error("Add post error: %v", err)
-			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_CHECK_IMAGE_FAIL, nil))
+			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_CHECK_IMAGE_FAIL, map[string]interface{}{"error": err.Error()}))
 			return
 		}
 		if err := c.SaveUploadedFile(image, src); err != nil {
 			logging.Error("Add post error: %v", err)
-			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, nil))
+			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, map[string]interface{}{"error": err.Error()}))
 			return
 		}
 		imageName := upload.GetImageName(image.Filename)
@@ -188,9 +176,13 @@ func AddPosts(c *gin.Context) {
 	maps["uid"] = intuid
 	maps["content"] = content
 	maps["picture_url"] = imageUrl
-	maps["tags"] = tags
-	log.Println(tags)
-	id, err := models.AddPosts(maps)
+	maps["tag_id"] = tag_id
+	id, err := models.AddPost(maps)
+	if err != nil {
+		logging.Error("Add post error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
 	data["id"] = id
 	data["pictrue_url"] = imageUrl
 	c.JSON(http.StatusOK, r.H(e.SUCCESS, data))

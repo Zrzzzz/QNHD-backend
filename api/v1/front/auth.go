@@ -1,4 +1,4 @@
-package f
+package front
 
 import (
 	"net/http"
@@ -45,7 +45,7 @@ func GetAuth(c *gin.Context) {
 		uid, err := models.CheckUser(email, password)
 		if err != nil {
 			logging.Error("Auth user error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if uid > 0 {
@@ -94,7 +94,7 @@ func RefreshToken(c *gin.Context) {
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
 		return
 	}
 

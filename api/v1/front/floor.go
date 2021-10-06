@@ -1,4 +1,4 @@
-package f
+package front
 
 import (
 	"net/http"
@@ -28,7 +28,7 @@ func GetFloors(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
-	valid.Numeric(postId, "podsId")
+	valid.Numeric(postId, "postId")
 	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -182,10 +182,6 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
-// func LikeFloor(c *gin.Context) {
-// 	fId := c.PostForm("floor_id")
-// }
-
 // @Tags front, floor
 // @Summary 删除楼层
 // @Accept json
@@ -204,7 +200,7 @@ func DeleteFloor(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
-	valid.Numeric(postId, "podsId")
+	valid.Numeric(postId, "postId")
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	valid.Required(floorId, "floorId")

@@ -1,4 +1,4 @@
-package b
+package backend
 
 import (
 	"net/http"
@@ -72,7 +72,7 @@ func GetUsers(c *gin.Context) {
 		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if isBlocked {

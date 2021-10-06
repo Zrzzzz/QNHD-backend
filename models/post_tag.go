@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"strconv"
 
 	"gorm.io/gorm"
@@ -12,25 +13,27 @@ type PostTag struct {
 	TagId  uint64 `json:"tag_id" `
 }
 
-func GetTagsInPost(postId string) ([]Tag, error) {
-	var tags []Tag
-	if err := db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).Find(&tags).Error; err != nil {
-		return nil, err
+func GetTagInPost(postId string) (Tag, error) {
+	var tag Tag
+	if err := db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).Find(&tag).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return tag, err
+		} else {
+			return tag, nil
+		}
 	}
-	return tags, nil
+	return tag, nil
 }
 
-func AddPostWithTag(postId uint64, tags []string) error {
+func AddPostWithTag(postId uint64, tagId string) error {
 	err := db.Transaction(func(tx *gorm.DB) error {
 		addDb := tx.Select("PostId", "TagId")
-		for _, t := range tags {
-			intt, _ := strconv.ParseUint(t, 10, 64)
-			if err := addDb.Create(&PostTag{
-				PostId: postId,
-				TagId:  intt,
-			}).Error; err != nil {
-				return err
-			}
+		intt, _ := strconv.ParseUint(tagId, 10, 64)
+		if err := addDb.Create(&PostTag{
+			PostId: postId,
+			TagId:  intt,
+		}).Error; err != nil {
+			return err
 		}
 		return nil
 	})

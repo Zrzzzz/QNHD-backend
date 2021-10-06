@@ -1,4 +1,4 @@
-package b
+package backend
 
 import (
 	"qnhd/middleware/jwt"
@@ -17,6 +17,7 @@ const (
 	User
 	Post
 	Report
+	Floor
 )
 
 var BackendTypes = [...]BackendType{
@@ -27,6 +28,7 @@ var BackendTypes = [...]BackendType{
 	User,
 	Post,
 	Report,
+	Floor,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -88,5 +90,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Report:
 		//获取帖子列表
 		g.GET("/report", GetReports)
+	case Floor:
+		//查询多个楼层
+		g.GET("/floors", GetFloors)
+		//删除指定楼层
+		g.DELETE("/floor", DeleteFloor)
 	}
 }

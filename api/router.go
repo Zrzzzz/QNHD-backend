@@ -9,8 +9,8 @@ import (
 	"encoding/pem"
 	"math/big"
 	"net/http"
-	"qnhd/api/v1/b"
-	"qnhd/api/v1/f"
+	"qnhd/api/v1/backend"
+	"qnhd/api/v1/front"
 	"qnhd/middleware/crossfield"
 	"qnhd/middleware/qnhdtls"
 	"qnhd/pkg/setting"
@@ -34,9 +34,9 @@ func InitRouter() (r *gin.Engine) {
 
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 	avb := r.Group("/api/v1/b")
-	b.Setup(avb)
+	backend.Setup(avb)
 	avf := r.Group("api/v1/f")
-	f.Setup(avf)
+	front.Setup(avf)
 
 	return r
 }

@@ -1,4 +1,4 @@
-package f
+package front
 
 import (
 	"qnhd/middleware/jwt"

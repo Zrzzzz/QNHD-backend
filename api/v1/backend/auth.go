@@ -1,4 +1,4 @@
-package b
+package backend
 
 import (
 	"net/http"
@@ -97,14 +97,14 @@ func RefreshToken(c *gin.Context) {
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
 	// 判断是否为管理员
 	if claims.Tag != util.ADMIN {
 		logging.Error("权限错误, not admin")
-		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
+		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
 		return
 	}
 

@@ -1,4 +1,4 @@
-package b
+package backend
 
 import (
 	"net/http"
@@ -85,7 +85,7 @@ func AddBanned(c *gin.Context) {
 		id, err = models.AddBannedByUid(intuid)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 	} else {
@@ -128,7 +128,7 @@ func DeleteBanned(c *gin.Context) {
 		_, err := models.DeleteBannedByUid(intuid)
 		if err != nil {
 			logging.Error("Delete banned error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, nil)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		r.R(c, http.StatusOK, e.SUCCESS, nil)

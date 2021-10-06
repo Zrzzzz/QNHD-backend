@@ -46,7 +46,7 @@ func GetPosts(overNum, limit int, content string) ([]Post, error) {
 	return posts, nil
 }
 
-func AddPosts(maps map[string]interface{}) (uint64, error) {
+func AddPost(maps map[string]interface{}) (uint64, error) {
 	var post = &Post{
 		Uid:        maps["uid"].(uint64),
 		Content:    maps["content"].(string),
@@ -57,9 +57,9 @@ func AddPosts(maps map[string]interface{}) (uint64, error) {
 		if err := tx.Select("uid", "content", "picture_url").Create(post).Error; err != nil {
 			return err
 		}
-		tags, ok := maps["tags"].([]string)
+		tagId, ok := maps["tag_id"].(string)
 		if ok {
-			if err := AddPostWithTag(post.Id, tags); err != nil {
+			if err := AddPostWithTag(post.Id, tagId); err != nil {
 				return err
 			}
 		}
