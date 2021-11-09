@@ -67,6 +67,18 @@ func DeleteTags(id uint64) (uint64, error) {
 	return tag.Id, nil
 }
 
+func AddTagLogInPost(postId uint64) error {
+	var pt PostTag
+	if err := db.Where("post_id = ?", postId).Find(&pt).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		} else {
+			return nil
+		}
+	}
+	return AddTagLog(pt.TagId)
+}
+
 // 增加Tag访问记录
 func AddTagLog(id uint64) error {
 	var tag = LogTag{TagId: id}

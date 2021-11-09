@@ -15,10 +15,10 @@ type Server struct {
 }
 
 type App struct {
-	OfficeEmail, OfficePass string
-	EmailSmtp, EmailPort    string
-	JwtSecret               string
-	AdminName, AdminPass    string
+	OfficeEmail, OfficePass       string
+	EmailSmtp, EmailPort          string
+	JwtSecret                     string
+	AdminId, AdminName, AdminPass string
 
 	RuntimeRootPath string
 
@@ -33,6 +33,10 @@ type App struct {
 	ImagePrefixUrl string
 
 	PageSize int
+
+	WPYDomain    string
+	WPYAppSecret string
+	WPYAppKey    string
 }
 
 type Database struct {

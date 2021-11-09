@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -51,7 +52,7 @@ func GetAuth(c *gin.Context) {
 		}
 		if id > 0 {
 			// tag = 0 means ADMIN
-			token, err := util.GenerateToken(username, 0)
+			token, err := util.GenerateToken(fmt.Sprintf("%d", id), 0)
 			if err != nil {
 				code = e.ERROR_GENERATE_TOKEN
 			} else {
@@ -104,27 +105,18 @@ func RefreshToken(c *gin.Context) {
 	// 判断是否为管理员
 	if claims.Tag != util.ADMIN {
 		logging.Error("权限错误, not admin")
-		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
+		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": "权限错误, not admin"})
 		return
 	}
 
 	var code int = e.SUCCESS
 	var data = make(map[string]interface{})
-	// 判断管理员是否存在
-	id, err := models.ExistAdmin(claims.Username)
+	// tag = 0 means ADMIN
+	token, err = util.GenerateToken(claims.Uid, 0)
 	if err != nil {
-		logging.Error("Judging admin error:%v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	if id > 0 {
-		// tag = 0 means ADMIN
-		token, err := util.GenerateToken(claims.Username, 0)
-		if err != nil {
-			code = e.ERROR_GENERATE_TOKEN
-		} else {
-			data["token"] = token
-		}
+		code = e.ERROR_GENERATE_TOKEN
+	} else {
+		data["token"] = token
 	}
 	r.R(c, http.StatusOK, code, data)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// require content have page and page_size param
 func HandlePaging(c *gin.Context) (int, int) {
 	pageNum := 0
 	pn := c.Query("page")

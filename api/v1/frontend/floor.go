@@ -1,4 +1,4 @@
-package front
+package frontend
 
 import (
 	"net/http"
@@ -13,17 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Tags front, floor
-// @Summary 获取楼层
-// @Accept json
-// @Produce json
-// @Param page query string false "分页数量"
-// @Param post_id query string true "帖子id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=models.Floor}}
-// @Failure 400 {object} models.Response ""
-// @Router /f/floors [get]
+// @method [get]
+// @way [formdata]
+// @param page, page_size, post_id
+// @return floorlist
+// @route /f/floors
 func GetFloors(c *gin.Context) {
+
 	postId := c.Query("post_id")
 
 	valid := validation.Validation{}
@@ -48,27 +44,19 @@ func GetFloors(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, floor
-// @Summary 添加楼层
-// @Accept json
-// @Produce json
-// @Param uid body string true "用户id"
-// @Param post_id body string true "帖子id"
-// @Param content body string true "内容"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.IdRes}
-// @Failure 400 {object} models.Response ""
-// @Router /f/floor [post]
-func AddFloors(c *gin.Context) {
+// @method [post]
+// @way [formdata]
+// @param post_id, content
+// @return nil
+// @route /f/floor
+func AddFloor(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
-	uid := c.PostForm("uid")
 	content := c.PostForm("content")
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
 	valid.Required(content, "content")
 	ok, verr := r.E(&valid, "Add floors")
 	if !ok {
@@ -95,29 +83,21 @@ func AddFloors(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, floor
-// @Summary 回复楼层
-// @Accept json
-// @Produce json
-// @Param uid body string true "用户id"
-// @Param reply_to_floor body string true "回复楼层id"
-// @Param post_id body string true "帖子id"
-// @Param content body string true "内容"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response ""
-// @Router /f/floor/reply [post]
+// @method [post]
+// @way [formdata]
+// @param reply_to_floor, post_id, content
+// @return nil
+// @route /f/floor/reply
 func ReplyFloor(c *gin.Context) {
+	uid := r.GetUid(c)
+
 	postId := c.PostForm("post_id")
-	uid := c.PostForm("uid")
 	replyToFloor := c.PostForm("reply_to_floor")
 	content := c.PostForm("content")
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
@@ -146,42 +126,6 @@ func ReplyFloor(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
-// @method post
-// @way formdata
-// @param uid, floor_id, like
-// @return nil
-func LikeOrUnlikeFloor(c *gin.Context) {
-	uid := c.PostForm("uid")
-	floorId := c.PostForm("floor_id")
-	like := c.PostForm("like")
-	valid := validation.Validation{}
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
-	valid.Required(floorId, "floorId")
-	valid.Numeric(floorId, "floorId")
-	valid.Required(like, "like")
-	valid.Numeric(like, "like")
-	ok, verr := r.E(&valid, "like or unlike floor")
-	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-
-	// 代表点赞问题
-	var err error
-	if like == "1" {
-		err = models.LikeFloor(floorId, uid)
-	} else {
-		err = models.UnLikeFloor(floorId, uid)
-	}
-	if err != nil {
-		logging.Error("like or unlike floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
-}
-
 // @Tags front, floor
 // @Summary 删除楼层
 // @Accept json
@@ -194,15 +138,13 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 // @Failure 400 {object} models.Response ""
 // @Router /f/floor [delete]
 func DeleteFloor(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.Query("post_id")
-	uid := c.Query("uid")
 	floorId := c.Query("floor_id")
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
 	valid.Required(floorId, "floorId")
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.E(&valid, "Get floors")
@@ -214,6 +156,76 @@ func DeleteFloor(c *gin.Context) {
 	_, err := models.DeleteFloorByUser(postId, uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
+// @method post
+// @way formdata
+// @param uid, floor_id, op
+// @return nil
+// @route /f/floor/likeOrUnlike
+func LikeOrUnlikeFloor(c *gin.Context) {
+	uid := r.GetUid(c)
+	floorId := c.PostForm("floor_id")
+	op := c.PostForm("op")
+	valid := validation.Validation{}
+	valid.Required(floorId, "floorId")
+	valid.Numeric(floorId, "floorId")
+	valid.Required(op, "op")
+	valid.Numeric(op, "op")
+	ok, verr := r.E(&valid, "like or unlike floor")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	// 代表点赞问题
+	var err error
+	if op == "1" {
+		err = models.LikeFloor(floorId, uid)
+	} else {
+		err = models.UnlikeFloor(floorId, uid)
+	}
+	if err != nil {
+		logging.Error("like or unlike floor error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
+// @method post
+// @way formdata
+// @param uid, floor_id, op
+// @return nil
+// @route /f/floor/disOrUndis
+func DisOrUndisFloor(c *gin.Context) {
+	uid := r.GetUid(c)
+	floorId := c.PostForm("floor_id")
+	op := c.PostForm("op")
+	valid := validation.Validation{}
+	valid.Required(floorId, "floorId")
+	valid.Numeric(floorId, "floorId")
+	valid.Required(op, "op")
+	valid.Numeric(op, "op")
+	ok, verr := r.E(&valid, "dis or undis floor")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	// 代表点赞问题
+	var err error
+	if op == "1" {
+		err = models.DisFloor(floorId, uid)
+	} else {
+		err = models.UndisFloor(floorId, uid)
+	}
+	if err != nil {
+		logging.Error("dis or undis floor error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}

@@ -5,3 +5,4 @@ tmp/
 .VSCodeCounter/
 docs/
 cert/
+.vscode/*

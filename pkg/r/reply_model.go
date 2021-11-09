@@ -5,11 +5,23 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/fatih/structs"
 	"github.com/gin-gonic/gin"
 )
+
+func GetUid(c *gin.Context) string {
+	var claims *util.Claims
+	token := c.GetHeader("token")
+	if token == "" {
+		return ""
+	} else {
+		claims, _ = util.ParseToken(token)
+		return claims.Uid
+	}
+}
 
 // 通过code和data生成一个gin.H
 func H(code int, data map[string]interface{}) gin.H {

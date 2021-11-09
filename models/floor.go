@@ -16,10 +16,17 @@ type Floor struct {
 	Nickname    string `json:"nickname"`
 	ReplyTo     uint64 `json:"reply_to" `
 	ReplyToName string `json:"reply_to_name"`
-	Likes       uint64 `json:"likes"`
+	LikeCount   uint64 `json:"like_count"`
+	DisCount    uint64 `json:"-"`
 }
 
 type LogFloorLike struct {
+	Model
+	Uid     uint64 `json:"uid"`
+	FloorId uint64 `json:"floor_id"`
+}
+
+type LogFloorDis struct {
 	Model
 	Uid     uint64 `json:"uid"`
 	FloorId uint64 `json:"floor_id"`
@@ -231,14 +238,14 @@ func LikeFloor(floorId string, uid string) error {
 			return err
 		}
 	}
-	if err := db.Model(&floor).Update("likes", floor.Likes+1).Error; err != nil {
+	if err := db.Model(&floor).Update("likes", floor.LikeCount+1).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func UnLikeFloor(floorId string, uid string) error {
+func UnlikeFloor(floorId string, uid string) error {
 	uidint, _ := strconv.ParseUint(uid, 10, 64)
 	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
 
@@ -269,7 +276,89 @@ func UnLikeFloor(floorId string, uid string) error {
 			return err
 		}
 	}
-	if err := db.Model(&floor).Update("likes", floor.Likes-1).Error; err != nil {
+	if err := db.Model(&floor).Update("likes", floor.LikeCount-1).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/* 点赞或者取消点赞楼层 */
+func DisFloor(floorId string, uid string) error {
+	uidint, _ := strconv.ParseUint(uid, 10, 64)
+	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+
+	var exist = false
+	var log = LogFloorDis{Uid: uidint, FloorId: floorIdint}
+
+	// 首先判断点没点过赞
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	if log.Id > 0 {
+		return fmt.Errorf("已被点踩")
+	}
+
+	if err := db.Unscoped().Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+
+	exist = log.Id > 0
+	if exist {
+		if err := db.Unscoped().Model(&log).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
+			return err
+		}
+	} else {
+		if err := db.Select("uid", "floor_id").Create(&log).Error; err != nil {
+			return err
+		}
+	}
+	// 更新楼的likes
+	var floor Floor
+	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+	if err := db.Model(&floor).Update("dis_count", floor.DisCount+1).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UndisFloor(floorId string, uid string) error {
+	uidint, _ := strconv.ParseUint(uid, 10, 64)
+	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+
+	var exist = false
+	var log = LogFloorDis{Uid: uidint, FloorId: floorIdint}
+	// 首先判断点没点过赞
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	if log.Id == 0 {
+		return fmt.Errorf("未被点踩")
+	}
+
+	if err := db.Where(log).Find(&log).Error; err != nil {
+		return err
+	}
+	exist = log.Id > 0
+	if exist {
+		if err := db.Delete(&log).Error; err != nil {
+			return err
+		}
+	}
+
+	// 更新楼的likes
+	var floor Floor
+	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+	if err := db.Model(&floor).Update("dis_count", floor.DisCount-1).Error; err != nil {
 		return err
 	}
 
@@ -278,6 +367,9 @@ func UnLikeFloor(floorId string, uid string) error {
 
 func (LogFloorLike) TableName() string {
 	return "log_floor_like"
+}
+func (LogFloorDis) TableName() string {
+	return "log_floor_dis"
 }
 
 func (Floor) TableName() string {

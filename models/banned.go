@@ -8,7 +8,8 @@ import (
 
 type Banned struct {
 	Model
-	Uid uint64 `json:"uid" `
+	Uid    uint64 `json:"uid"`
+	Reason string `json:"reason"`
 }
 
 func GetBanned(maps interface{}) ([]Banned, error) {
@@ -19,10 +20,10 @@ func GetBanned(maps interface{}) ([]Banned, error) {
 	return bans, nil
 }
 
-func AddBannedByUid(uid uint64) (uint64, error) {
-	var ban = Banned{Uid: uid}
+func AddBannedByUid(uid uint64, reason string) (uint64, error) {
+	var ban = Banned{Uid: uid, Reason: reason}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Select("uid").Create(&ban).Error; err != nil {
+		if err := tx.Select("uid, reason").Create(&ban).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&User{}).Where("uid = ?", uid).Update("status", 0).Error; err != nil {

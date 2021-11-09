@@ -70,6 +70,7 @@ func AddBlocked(c *gin.Context) {
 	valid.Required(last, "last")
 	valid.Numeric(last, "last")
 	ok, verr := r.E(&valid, "Add blocked")
+	reason := c.PostForm("reason")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -85,7 +86,7 @@ func AddBlocked(c *gin.Context) {
 	}
 	var id uint64
 	if !ifBlocked {
-		id, err = models.AddBlockedByUid(intuid, uint8(intlast))
+		id, err = models.AddBlockedByUid(intuid, reason, uint8(intlast))
 		if err != nil {
 			logging.Error("Add blocked error: %v", err)
 			code = e.ERROR_DATABASE

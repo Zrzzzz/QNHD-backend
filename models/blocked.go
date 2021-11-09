@@ -10,7 +10,8 @@ import (
 
 type Blocked struct {
 	Model
-	Uid       uint64 `json:"uid" `
+	Uid       uint64 `json:"uid"`
+	Reason    string `json:"reason"`
 	ExpiredAt string `json:"expired_at"`
 	LastTime  uint8  `json:"last_time"`
 }
@@ -29,10 +30,10 @@ func GetBlocked(maps interface{}) ([]Blocked, error) {
 	return blocked, nil
 }
 
-func AddBlockedByUid(uid uint64, last uint8) (uint64, error) {
+func AddBlockedByUid(uid uint64, reason string, last uint8) (uint64, error) {
 	expired_at := time.Now().Add(time.Hour * 24 * time.Duration(last)).Format("2006-01-02 15:04:05")
-	var blocked = Blocked{Uid: uid, ExpiredAt: expired_at, LastTime: last}
-	if err := db.Select("Uid", "ExpiredAt", "LastTime").Create(&blocked).Error; err != nil {
+	var blocked = Blocked{Uid: uid, Reason: reason, ExpiredAt: expired_at, LastTime: last}
+	if err := db.Select("Uid", "Reason", "ExpiredAt", "LastTime").Create(&blocked).Error; err != nil {
 		return 0, err
 	}
 

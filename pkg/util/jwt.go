@@ -10,8 +10,8 @@ import (
 var jwtSecret = []byte(setting.AppSetting.JwtSecret)
 
 type Claims struct {
-	Username string `json:"username"`
-	Tag      int    `json:"tag"`
+	Uid string `json:"uid"`
+	Tag int    `json:"tag"`
 	jwt.StandardClaims
 }
 

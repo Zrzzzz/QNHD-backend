@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"qnhd/api/v1/backend"
-	"qnhd/api/v1/front"
+	"qnhd/api/v1/frontend"
 	"qnhd/middleware/crossfield"
 	"qnhd/middleware/qnhdtls"
 	"qnhd/pkg/setting"
@@ -36,7 +36,7 @@ func InitRouter() (r *gin.Engine) {
 	avb := r.Group("/api/v1/b")
 	backend.Setup(avb)
 	avf := r.Group("api/v1/f")
-	front.Setup(avf)
+	frontend.Setup(avf)
 
 	return r
 }

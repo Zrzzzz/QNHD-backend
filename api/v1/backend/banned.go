@@ -67,6 +67,7 @@ func AddBanned(c *gin.Context) {
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	ok, verr := r.E(&valid, "Add banned")
+	reason := c.PostForm("reason")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -82,7 +83,7 @@ func AddBanned(c *gin.Context) {
 	}
 	var id uint64
 	if !ifBanned {
-		id, err = models.AddBannedByUid(intuid)
+		id, err = models.AddBannedByUid(intuid, reason)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

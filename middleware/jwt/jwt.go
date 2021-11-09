@@ -45,7 +45,7 @@ func JWT(must int) gin.HandlerFunc {
 		}
 		// 管理员验证
 		if c.FullPath() == "/api/v1/b/admin" {
-			if claims.Username != setting.AppSetting.AdminName {
+			if claims.Uid != setting.AppSetting.AdminId {
 				code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code": code,

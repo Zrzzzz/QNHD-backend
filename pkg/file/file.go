@@ -1,4 +1,4 @@
-package frontile
+package file
 
 import (
 	"fmt"

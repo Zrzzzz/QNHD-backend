@@ -38,6 +38,7 @@ func Setup() {
 
 	logger = log.New(F, DefaultPrefix, log.LstdFlags)
 }
+
 func Debug(f string, v ...interface{}) {
 	setPrefix(DEBUG)
 	logger.Printf(f, v...)

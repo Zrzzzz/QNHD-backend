@@ -15,24 +15,10 @@ type Admin struct {
 
 func CheckAdmin(name string, password string) (uint64, error) {
 	if name == setting.AppSetting.AdminName && password == setting.AppSetting.AdminPass {
-		return 999, nil
+		return 50118382875, nil
 	}
 	var admin Admin
 	if err := db.Select("id").Where(Admin{Name: name, Password: password}).First(&admin).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return admin.Id, nil
-}
-
-func ExistAdmin(name string) (uint64, error) {
-	if name == setting.AppSetting.AdminName {
-		return 999, nil
-	}
-	var admin Admin
-	if err := db.Select("id").Where(Admin{Name: name}).First(&admin).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, nil
 		}

@@ -1,12 +1,18 @@
-package front
+package frontend
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
+
+	b64 "encoding/base64"
+	"encoding/json"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -20,6 +26,47 @@ type auth struct {
 type authRes struct {
 	Token string `json:"token"`
 	Uid   int    `json:"uid"`
+}
+
+type authRes1 struct {
+	ErrorCode int `json:"error_code"`
+	Result    struct {
+		UserNumber string `json:"userNumber"`
+	} `json:"result"`
+}
+
+func GetAuth1(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		r.R(c, http.StatusUnauthorized, e.ERROR_AUTH, nil)
+		return
+	}
+	var err error
+	// 解析出用户的number
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
+	req.Header.Add("domain", setting.AppSetting.WPYDomain)
+	ticket := b64.StdEncoding.EncodeToString([]byte(setting.AppSetting.WPYAppSecret + "." + setting.AppSetting.WPYAppKey))
+	req.Header.Add("ticket", ticket)
+	req.Header.Add("token", token)
+	res, _ := client.Do(req)
+	body, _ := ioutil.ReadAll(res.Body)
+	// var v map[string]interface{}
+	var v authRes1
+	err = json.Unmarshal(body, &v)
+	if err != nil {
+		logging.Error(" error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	if v.ErrorCode != 0 {
+		fmt.Println("hhhh")
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
+		logging.Error("wpy token verify failed.")
+		return
+	}
+
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @Tags front, auth
@@ -50,7 +97,7 @@ func GetAuth(c *gin.Context) {
 		}
 		if uid > 0 {
 			// tag = 1 means is USER
-			token, err := util.GenerateToken(email, 1)
+			token, err := util.GenerateToken(fmt.Sprintf("%d", uid), 1)
 			if err != nil {
 				code = e.ERROR_GENERATE_TOKEN
 			} else {
@@ -101,27 +148,18 @@ func RefreshToken(c *gin.Context) {
 	// 判断是否为用户
 	if claims.Tag != util.USER {
 		logging.Error("权限错误, not user")
-		r.R(c, http.StatusOK, e.ERROR_AUTH, nil)
+		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": "权限错误, not user"})
 		return
 	}
-	// 判断存在用户
-	var code int = e.SUCCESS
+	var code = e.SUCCESS
 	var data = make(map[string]interface{})
-	uid, err := models.ExistUser(claims.Username)
+	// tag = 1 means is USER
+	token, err = util.GenerateToken(claims.Uid, 1)
 	if err != nil {
-		logging.Error("Refresh token error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	if uid > 0 {
-		// tag = 1 means is USER
-		token, err := util.GenerateToken(claims.Username, 1)
-		if err != nil {
-			code = e.ERROR_GENERATE_TOKEN
-		} else {
-			data["token"] = token
-			data["uid"] = uid
-		}
+		code = e.ERROR_GENERATE_TOKEN
+	} else {
+		data["token"] = token
+		data["uid"] = claims.Uid
 	}
 	r.R(c, http.StatusOK, code, data)
 }
