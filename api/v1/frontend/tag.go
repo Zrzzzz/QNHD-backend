@@ -91,16 +91,13 @@ func AddTag(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, tag
-// @Summary 删除标签
-// @Accept json
-// @Produce json
-// @Param id query int true "标签id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response ""
-// @Router /f/tag [get]
+// @method [delete]
+// @way [query]
+// @param id, uid
+// @return
+// @route /f/tag
 func DeleteTag(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -113,7 +110,7 @@ func DeleteTag(c *gin.Context) {
 	}
 
 	intid, _ := strconv.ParseUint(id, 10, 64)
-	_, err := models.DeleteTags(intid)
+	_, err := models.DeleteTags(intid, uid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

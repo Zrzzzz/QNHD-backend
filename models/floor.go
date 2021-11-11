@@ -185,9 +185,9 @@ func DeleteFloorByAdmin(id string) (uint64, error) {
 	return floor.Id, nil
 }
 
-func DeleteFloorByUser(postId, uid, floorId string) (uint64, error) {
+func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	var floor = Floor{}
-	if err := db.Where("post_id = ? AND uid = ? AND id = ?", postId, uid, floorId).Delete(&floor).Error; err != nil {
+	if err := db.Where("uid = ? AND id = ?", uid, floorId).Delete(&floor).Error; err != nil {
 		return 0, err
 	}
 	return floor.Id, nil
@@ -238,7 +238,7 @@ func LikeFloor(floorId string, uid string) error {
 			return err
 		}
 	}
-	if err := db.Model(&floor).Update("likes", floor.LikeCount+1).Error; err != nil {
+	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return err
 	}
 
@@ -276,7 +276,7 @@ func UnlikeFloor(floorId string, uid string) error {
 			return err
 		}
 	}
-	if err := db.Model(&floor).Update("likes", floor.LikeCount-1).Error; err != nil {
+	if err := db.Model(&floor).Update("like_count", floor.LikeCount-1).Error; err != nil {
 		return err
 	}
 

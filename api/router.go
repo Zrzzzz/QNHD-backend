@@ -12,7 +12,6 @@ import (
 	"qnhd/api/v1/backend"
 	"qnhd/api/v1/frontend"
 	"qnhd/middleware/crossfield"
-	"qnhd/middleware/qnhdtls"
 	"qnhd/pkg/setting"
 	"qnhd/pkg/upload"
 	"time"
@@ -25,7 +24,7 @@ func InitRouter() (r *gin.Engine) {
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	r.Use(qnhdtls.LoadTls())
+	// r.Use(qnhdtls.LoadTls())
 	gin.SetMode(setting.ServerSetting.RunMode)
 
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

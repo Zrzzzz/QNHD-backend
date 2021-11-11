@@ -12,13 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Tags backend, notice
-// @Summary 获取公告
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=models.Notice}}
-// @Router /b/notice [get]
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /b/notice
 func GetNotices(c *gin.Context) {
 	data := make(map[string]interface{})
 	list, err := models.GetNotices()
@@ -33,21 +31,17 @@ func GetNotices(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags backend, notice
-// @Summary 添加公告
-// @Accept json
-// @Produce json
-// @Param content body string true "公告内容"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.IdRes}
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/notice [post]
-func AddNotices(c *gin.Context) {
+// @method [get]
+// @way [query]
+// @param content
+// @return
+// @route /b/notice
+func AddNotice(c *gin.Context) {
 	content := c.PostForm("content")
 
 	valid := validation.Validation{}
 	valid.Required(content, "content")
-	ok, verr := r.E(&valid, "Add notices")
+	ok, verr := r.E(&valid, "Add notice")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -67,17 +61,12 @@ func AddNotices(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags backend, notice
-// @Summary 修改公告
-// @Accept json
-// @Produce json
-// @Param id body int true "公告id"
-// @Param content body string true "公告内容"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/notice [put]
-func EditNotices(c *gin.Context) {
+// @method [put]
+// @way [formdata]
+// @param id, content
+// @return
+// @route /b/notice
+func EditNotice(c *gin.Context) {
 	id := c.PostForm("id")
 	content := c.PostForm("content")
 
@@ -103,16 +92,12 @@ func EditNotices(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
-// @Tags backend, notice
-// @Summary 删除公告
-// @Accept json
-// @Produce json
-// @Param id query int true "公告id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/notice [delete]
-func DeleteNotices(c *gin.Context) {
+// @method [delete]
+// @way [query]
+// @param id
+// @return
+// @route /b/notice
+func DeleteNotice(c *gin.Context) {
 	id := c.Query("id")
 
 	valid := validation.Validation{}

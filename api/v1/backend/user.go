@@ -5,7 +5,8 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
-	"strings"
+	"qnhd/pkg/util"
+	"strconv"
 
 	"qnhd/pkg/r"
 
@@ -22,44 +23,17 @@ type UserResponse struct {
 	IsBanned      bool   `json:"is_banned"`
 }
 
-// @Tags backend, user
-// @Summary 获取用户列表
-// @Accept json
-// @Produce json
-// @Param uid query int false "用户id"
-// @Param email query string false "用户邮箱"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=UserResponse}}
-// @Failure 400 {object} models.Response "无效的参数"
-// @Router /b/user [get]
-func GetUsers(c *gin.Context) {
+// @method [get]
+// @way [query]
+// @param uid, page, page_size
+// @return userList
+// @route /b/users/common
+func GetCommonUsers(c *gin.Context) {
 	uid := c.Query("uid")
-	email := c.Query("email")
-
-	valid := validation.Validation{}
-	valid.Numeric(uid, "id")
-	if email != "" {
-		valid.Email(email, "email")
-	}
-	ok, verr := r.E(&valid, "Get user")
-	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-
-	maps := make(map[string]interface{})
-	data := make(map[string]interface{})
-
-	if uid != "" {
-		maps["uid"] = uid
-	}
-	if email != "" {
-		maps["email"] = email
-	}
+	over, pageSize := util.HandlePaging(c)
 
 	code := e.SUCCESS
-
-	list, err := models.GetUsers(maps)
+	list, err := models.GetCommonUsers(uid, over, pageSize)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -81,83 +55,135 @@ func GetUsers(c *gin.Context) {
 			nUser.BlockedRemain = detail.Remain
 		}
 		nUser.IsBlocked = isBlocked
-		nUser.IsBanned = user.Status == 0
+		nUser.IsBanned = user.Active == 0
 		retList = append(retList, nUser)
 	}
+	data := make(map[string]interface{})
 	data["list"] = retList
 	data["total"] = len(retList)
 
 	r.R(c, http.StatusOK, code, data)
 }
 
-// @Tags backend, user
-// @Summary 添加用户，不应使用此接口
-// @Accept json
-// @Produce json
-// @Param email body string true "用户邮箱, 必须10位学号的tju邮箱"
-// @Param password body string true "用户密码, 32位小写md5"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.IdRes}
-// @Failure 400 {object} models.Response "无效的参数"
-// @Router /b/user [post]
-func AddUsers(c *gin.Context) {
-	email := c.PostForm("email")
-	password := c.PostForm("password")
-
-	if !checkMail(email) {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+// @method [get]
+// @way [query]
+// @param uid, page, page_size
+// @return userList
+// @route /b/users/all
+func GetAllUsers(c *gin.Context) {
+	uid := r.GetUid(c)
+	// 权限控制
+	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
+	if err != nil {
+		logging.Error("Edit user right error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	uid, err := models.ExistUser(email)
+	// 需要管理员权限
+	if !ok {
+		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+		return
+	}
+
+	uid = c.Query("uid")
+	over, pageSize := util.HandlePaging(c)
+
+	code := e.SUCCESS
+	list, err := models.GetAllUsers(uid, over, pageSize)
+	if err != nil {
+		logging.Error("Get users error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	retList := []UserResponse{}
+
+	for _, user := range list {
+		nUser := UserResponse{User: user}
+		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
+		if err != nil {
+			logging.Error("Get users error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		if isBlocked {
+			nUser.BlockedStart = detail.Starttime
+			nUser.BlockedOver = detail.Overtime
+			nUser.BlockedRemain = detail.Remain
+		}
+		nUser.IsBlocked = isBlocked
+		nUser.IsBanned = user.Active == 0
+		retList = append(retList, nUser)
+	}
+	data := make(map[string]interface{})
+	data["list"] = retList
+	data["total"] = len(retList)
+
+	r.R(c, http.StatusOK, code, data)
+}
+
+// @method [post]
+// @way [formdata]
+// @param number, password
+// @return uid
+// @route /b/user
+func AddUser(c *gin.Context) {
+	number := c.PostForm("number")
+	password := c.PostForm("password")
+
+	uid, err := models.ExistUser(number)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if uid > 0 {
-		c.JSON(http.StatusOK, r.H(e.ERROR_EXIST_EMAIL, nil))
+		r.R(c, http.StatusOK, e.ERROR_EXIST_USER, nil)
 		return
 	}
 
-	id, err := models.AddUser(email, password)
+	uid, err = models.AddUser(number, password)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
-	data["id"] = id
+	data["uid"] = uid
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags backend, user
-// @Summary 修改用户数据
-// @Accept json
-// @Produce json
-// @Param email body string true "用户邮箱"
-// @Param new_password body string true "用户新密码, 32位小写md5"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效的参数"
-// @Router /b/user [put]
-func EditUsers(c *gin.Context) {
-	email := c.PostForm("email")
+// @method [put]
+// @way [formdata]
+// @param new_password
+// @return
+// @route /b/user
+func EditUser(c *gin.Context) {
+	uid := r.GetUid(c)
+	changeid := c.PostForm("uid")
+	// 超管需要修改密码
+	if changeid != "" {
+		ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
+		if err != nil {
+			logging.Error("check right error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		if !ok {
+			r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+			return
+		}
+	}
 	newPass := c.PostForm("new_password")
-
-	uid, err := models.ExistUser(email)
-	if err != nil {
-		logging.Error("Edit user error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	if !(uid > 0) {
-		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
-		return
-	}
 
 	data := make(map[string]interface{})
 	data["password"] = newPass
-	err = models.EditUser(email, data)
+	var err error
+	// 看是超管更改还是自己更改
+	if changeid != "" {
+		err = models.EditUser(changeid, data)
+	} else {
+		err = models.EditUser(uid, data)
+	}
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -166,41 +192,56 @@ func EditUsers(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
-// @Tags backend, user
-// @Summary 删除用户，不应使用此接口
-// @Accept json
-// @Produce json
-// @Param email query string true "用户邮箱"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效的参数"
-// @Router /b/user [delete]
-func DeleteUsers(c *gin.Context) {
-	email := c.Query("email")
-	uid, err := models.ExistUser(email)
+// @method [put]
+// @way [formdata]
+// @param uid, sch_admin, stu_admin
+// @return
+// @route /b/user/right
+func EditUserRight(c *gin.Context) {
+	uid := r.GetUid(c)
+	// 权限控制
+	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
-		logging.Error("Delete users error: %v", err)
+		logging.Error("Edit user right error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	// 需要超管才能修改
+	if !ok {
+		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
 		return
 	}
 
-	if !(uid > 0) {
-		r.R(c, http.StatusOK, e.ERROR_NOT_EXIST_EMAIL, nil)
+	uid = c.PostForm("uid")
+	schAdmin := c.PostForm("sch_admin")
+	stuAdmin := c.PostForm("stu_admin")
+	valid := validation.Validation{}
+	valid.Numeric(schAdmin, "schAdmin")
+	valid.Numeric(stuAdmin, "stuAdmin")
+	ok, verr := r.E(&valid, "Edit user right")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	err = models.DeleteUser(email)
-	if err != nil {
-		logging.Error("Delete users error: %v", err)
+
+	stui, _ := strconv.ParseUint(schAdmin, 10, 64)
+	schi, _ := strconv.ParseUint(stuAdmin, 10, 64)
+	valid.Range(int(stui), 0, 1, "stuAdmin range")
+	valid.Range(int(schi), 0, 1, "schAdmin range")
+	ok, verr = r.E(&valid, "Edit user right")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	maps := map[string]interface{}{
+		"sch_admin": schAdmin,
+		"stu_admin": stuAdmin,
+	}
+	if err := models.EditUser(uid, maps); err != nil {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		logging.Error("Edit user error: %v", err)
 		return
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
-}
-
-func checkMail(email string) bool {
-	s := strings.Split(email, "@")
-	if len(s) != 2 || len(s[0]) != 10 || s[1] != "tju.edu.cn" {
-		return false
-	}
-	return true
 }

@@ -17,6 +17,7 @@ func LoadTls() gin.HandlerFunc {
 		if err != nil {
 			//如果出现错误，请不要继续。
 			fmt.Println(err)
+			c.Abort()
 			return
 		}
 		// 继续往下处理

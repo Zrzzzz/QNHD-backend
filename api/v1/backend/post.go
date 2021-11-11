@@ -6,33 +6,10 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
-
-// @method get
-// @way query
-// @param content page page_size
-// @return list
-func GetPosts(c *gin.Context) {
-
-	content := c.Query("content")
-
-	data := make(map[string]interface{})
-	base, size := util.HandlePaging(c)
-	list, err := models.GetPosts(base, size, content)
-	if err != nil {
-		logging.Error("Get posts error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-
-	data["list"] = list
-	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
-}
 
 // @Tags backend, post
 // @Summary 删除帖子

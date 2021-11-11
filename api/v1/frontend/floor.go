@@ -126,25 +126,16 @@ func ReplyFloor(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
-// @Tags front, floor
-// @Summary 删除楼层
-// @Accept json
-// @Produce json
-// @Param uid query string true "用户id"
-// @Param post_id query string true "帖子id"
-// @Param floor_id query string true "楼层id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response ""
-// @Router /f/floor [delete]
+// @method [delete]
+// @way [query]
+// @param post_id, floor_id
+// @return
+// @route /f/floor
 func DeleteFloor(c *gin.Context) {
 	uid := r.GetUid(c)
-	postId := c.Query("post_id")
 	floorId := c.Query("floor_id")
 
 	valid := validation.Validation{}
-	valid.Required(postId, "postId")
-	valid.Numeric(postId, "postId")
 	valid.Required(floorId, "floorId")
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.E(&valid, "Get floors")
@@ -153,7 +144,7 @@ func DeleteFloor(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeleteFloorByUser(postId, uid, floorId)
+	_, err := models.DeleteFloorByUser(uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

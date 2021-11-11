@@ -11,25 +11,14 @@ var jwtSecret = []byte(setting.AppSetting.JwtSecret)
 
 type Claims struct {
 	Uid string `json:"uid"`
-	Tag int    `json:"tag"`
 	jwt.StandardClaims
 }
 
-const (
-	ADMIN = 0x53
-	USER  = 0x16
-)
-
-func GenerateToken(username string, role int) (string, error) {
+func GenerateToken(uid string) (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(3 * time.Hour)
-	tag := USER
-	if role != 1 {
-		tag = ADMIN
-	}
+	expireTime := nowTime.Add(12 * time.Hour)
 	claims := Claims{
-		username,
-		tag,
+		uid,
 		jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			Issuer:    "qnhd",

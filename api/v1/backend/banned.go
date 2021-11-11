@@ -52,26 +52,23 @@ func GetBanned(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags backend, banned
-// @Summary 添加封号用户
-// @Accept json
-// @Produce json
-// @Param uid body int true "用户id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/banned [post]
+// @method [post]
+// @way [formdata]
+// @param uid, reason
+// @return
+// @route /b/banned
 func AddBanned(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.PostForm("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	ok, verr := r.E(&valid, "Add banned")
-	reason := c.PostForm("reason")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
+	reason := c.PostForm("reason")
 	intuid, _ := strconv.ParseUint(uid, 10, 64)
 
 	code := e.SUCCESS
@@ -83,7 +80,7 @@ func AddBanned(c *gin.Context) {
 	}
 	var id uint64
 	if !ifBanned {
-		id, err = models.AddBannedByUid(intuid, reason)
+		id, err = models.AddBannedByUid(intuid, doer, reason)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -97,15 +94,11 @@ func AddBanned(c *gin.Context) {
 	r.R(c, http.StatusOK, code, data)
 }
 
-// @Tags backend, banned
-// @Summary 删除封号用户(解禁), 此接口不使用
-// @Accept json
-// @Produce json
-// @Param uid query int true "用户id"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/banned [delete]
+// @method [delete]
+// @way [query]
+// @param uid
+// @return
+// @route /b/banned
 func DeleteBanned(c *gin.Context) {
 	uid := c.Query("uid")
 	valid := validation.Validation{}
@@ -132,7 +125,6 @@ func DeleteBanned(c *gin.Context) {
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		r.R(c, http.StatusOK, e.SUCCESS, nil)
 	} else {
 		code = e.ERROR_NOT_BANNED_USER
 	}

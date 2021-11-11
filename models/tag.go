@@ -45,7 +45,7 @@ func GetTags(name string) ([]Tag, error) {
 // 获取24小时内高赞tag
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
-	if err := db.Model(&LogTag{}).Select("tag_id, count(*) as count, name").Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").Group("tag_id").Limit(5).Order("count desc").Joins("LEFT JOIN tags ON tags.id = tag_id").Find(&results).Error; err != nil {
+	if err := db.Model(&LogTag{}).Select("tag_id", "count(*) as count", "name").Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").Group("tag_id").Limit(5).Order("count desc").Joins("LEFT JOIN tags ON tags.id = tag_id").Find(&results).Error; err != nil {
 		return nil, err
 	}
 	return results, nil
@@ -59,9 +59,9 @@ func AddTags(name string) (uint64, error) {
 	return tag.Id, nil
 }
 
-func DeleteTags(id uint64) (uint64, error) {
+func DeleteTags(id uint64, uid string) (uint64, error) {
 	var tag = Tag{}
-	if err := db.Where("id = ?", id).Delete(&tag).Error; err != nil {
+	if err := db.Where("id = ? AND uid = ?", id, uid).Delete(&tag).Error; err != nil {
 		return 0, err
 	}
 	return tag.Id, nil

@@ -127,7 +127,7 @@ func GetUserPosts(c *gin.Context) {
 // @way [query]
 // @param page page_size
 // @return postList
-// @route /f/posts/user
+// @route /f/posts/fav
 func GetFavPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 	base, size := util.HandlePaging(c)
@@ -174,7 +174,7 @@ func GetFavPosts(c *gin.Context) {
 // @way [query]
 // @param page page_size
 // @return postList
-// @route /f/posts/user
+// @route /f/posts/history
 func GetHistoryPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 	base, size := util.HandlePaging(c)
@@ -294,12 +294,12 @@ func AddPost(c *gin.Context) {
 		src, err := upload.CheckImage(&f, image)
 		if err != nil {
 			logging.Error("Add post error: %v", err)
-			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_CHECK_IMAGE_FAIL, map[string]interface{}{"error": err.Error()}))
+			r.R(c, http.StatusOK, e.ERROR_UPLOAD_CHECK_IMAGE_FAIL, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if err := c.SaveUploadedFile(image, src); err != nil {
 			logging.Error("Add post error: %v", err)
-			c.JSON(http.StatusOK, r.H(e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, map[string]interface{}{"error": err.Error()}))
+			r.R(c, http.StatusOK, e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		imageName := upload.GetImageName(image.Filename)

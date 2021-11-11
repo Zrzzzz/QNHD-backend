@@ -3,6 +3,9 @@
 tstart:
 	go run main.go
 
+tstop:
+	kill -9 
+
 start:
 	air >> /tmp/qnhd.log 2>&1 &
 

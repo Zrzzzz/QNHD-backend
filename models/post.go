@@ -70,7 +70,7 @@ func GetUserPosts(overNum, limit int, uid string) ([]Post, error) {
 
 func GetFavPosts(overNum, limit int, uid string) ([]Post, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.uid = log_post_fav.uid AND posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil

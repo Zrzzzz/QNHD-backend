@@ -2,7 +2,6 @@ package frontend
 
 import (
 	"qnhd/middleware/jwt"
-	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,15 +9,13 @@ import (
 type FrontType int
 
 const (
-	User FrontType = iota
-	Tag
+	Tag FrontType = iota
 	Post
 	Floor
 	History
 )
 
 var FrontTypes = [...]FrontType{
-	User,
 	Tag,
 	Post,
 	Floor,
@@ -27,9 +24,9 @@ var FrontTypes = [...]FrontType{
 
 func Setup(g *gin.RouterGroup) {
 	// 获取token
-	g.GET("/auth", GetAuth1)
+	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", RefreshToken)
-	g.Use(jwt.JWT(util.USER))
+	g.Use(jwt.JWT(jwt.USER))
 	for _, t := range FrontTypes {
 		initType(g, t)
 	}
@@ -37,11 +34,6 @@ func Setup(g *gin.RouterGroup) {
 
 func initType(g *gin.RouterGroup, t FrontType) {
 	switch t {
-	case User:
-		//新建用户
-		g.POST("/user", AddUsers)
-		//修改用户
-		g.PUT("/user", EditUsers)
 	case Tag:
 		//查询标签
 		g.GET("/tags", GetTags)
@@ -63,11 +55,11 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		//查询单个帖子
 		g.GET("/post", GetPost)
 		// 收藏或者取消
-		g.POST("/post/favOrUnfav", FavOrUnfavPost)
+		g.PUT("/post/favOrUnfav", FavOrUnfavPost)
 		// 点赞或者取消
-		g.POST("/post/likeOrUnlike", LikeOrUnlikePost)
+		g.PUT("/post/likeOrUnlike", LikeOrUnlikePost)
 		// 点踩或者取消
-		g.POST("/post/disOrUndis", DisOrUndisPost)
+		g.PUT("/post/disOrUndis", DisOrUndisPost)
 		//新建帖子
 		g.POST("/post", AddPost)
 		//删除指定帖子
@@ -80,9 +72,9 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		//回复楼层
 		g.POST("/floor/reply", ReplyFloor)
 		// 点赞或者取消
-		g.POST("/floor/likeOrUnlike", LikeOrUnlikeFloor)
+		g.PUT("/floor/likeOrUnlike", LikeOrUnlikeFloor)
 		// 点踩或者取消
-		g.POST("/floor/disOrUndis", DisOrUndisFloor)
+		g.PUT("/floor/disOrUndis", DisOrUndisFloor)
 		//删除指定楼层
 		g.DELETE("/floor", DeleteFloor)
 	}

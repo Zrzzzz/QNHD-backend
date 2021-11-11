@@ -1,8 +1,10 @@
 package frontend
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -18,121 +20,117 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type auth struct {
-	Email    string `valid:"Required; MaxSize(50)"`
-	Password string `valid:"Required; MaxSize(50)"`
-}
-
 type authRes struct {
-	Token string `json:"token"`
-	Uid   int    `json:"uid"`
-}
-
-type authRes1 struct {
-	ErrorCode int `json:"error_code"`
+	ErrorCode int    `json:"error_code"`
+	Message   string `json:"message"`
 	Result    struct {
 		UserNumber string `json:"userNumber"`
 	} `json:"result"`
 }
 
-func GetAuth1(c *gin.Context) {
+// @method [get]
+// @way [query]
+// @param token
+// @return token
+// @route /f/auth
+func GetAuth(c *gin.Context) {
 	token := c.Query("token")
-	if token == "" {
-		r.R(c, http.StatusUnauthorized, e.ERROR_AUTH, nil)
+	user := c.Query("user")
+	password := c.Query("password")
+	var pass = false
+	var req *http.Request
+	if token != "" {
+		pass = true
+		req, _ = http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
+		req.Header.Add("token", token)
+	}
+	if user != "" || password != "" {
+		pass = true
+		payload := &bytes.Buffer{}
+		writer := multipart.NewWriter(payload)
+		_ = writer.WriteField("account", user)
+		_ = writer.WriteField("password", password)
+		err := writer.Close()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		req, err = http.NewRequest("POST", "https://api.twt.edu.cn/api/auth/common", payload)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+	}
+
+	if !pass {
+		r.R(c, http.StatusUnauthorized, e.INVALID_PARAMS, nil)
 		return
 	}
+
 	var err error
 	// 解析出用户的number
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
 	req.Header.Add("domain", setting.AppSetting.WPYDomain)
 	ticket := b64.StdEncoding.EncodeToString([]byte(setting.AppSetting.WPYAppSecret + "." + setting.AppSetting.WPYAppKey))
 	req.Header.Add("ticket", ticket)
-	req.Header.Add("token", token)
 	res, _ := client.Do(req)
 	body, _ := ioutil.ReadAll(res.Body)
 	// var v map[string]interface{}
-	var v authRes1
+	var v authRes
 	err = json.Unmarshal(body, &v)
 	if err != nil {
-		logging.Error(" error: %v", err)
+		logging.Error("Auth error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if v.ErrorCode != 0 {
-		fmt.Println("hhhh")
-		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, nil)
-		logging.Error("wpy token verify failed.")
+		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
+		logging.Error("Auth er%v", v)
 		return
 	}
 
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
-}
-
-// @Tags front, auth
-// @Summary 前端获取token
-// @Accept json
-// @Produce json
-// @Param email query string true "admin name"
-// @Param password query string true "admin password，发送密码的32位小写md5"
-// @Success 200 {object} models.Response{data=authRes}
-// @Failure 20003 {object} models.Response "失败不返回数据"
-// @Router /f/auth [get]
-func GetAuth(c *gin.Context) {
+	uid, err := models.ExistUser(v.Result.UserNumber)
 	data := make(map[string]interface{})
-	code := e.INVALID_PARAMS
-	email := c.Query("email")
-	password := c.Query("password")
-
-	valid := validation.Validation{}
-	a := auth{Email: email, Password: password}
-	ok, _ := valid.Valid(&a)
-
-	if ok {
-		uid, err := models.CheckUser(email, password)
-		if err != nil {
-			logging.Error("Auth user error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		if uid > 0 {
-			// tag = 1 means is USER
-			token, err := util.GenerateToken(fmt.Sprintf("%d", uid), 1)
-			if err != nil {
-				code = e.ERROR_GENERATE_TOKEN
-			} else {
-				data["token"] = token
-				data["uid"] = uid
-				code = e.SUCCESS
-			}
-		} else {
-			code = e.ERROR_AUTH
-		}
-	} else {
-		for _, err := range valid.Errors {
-			logging.Error("auth error: %v", err)
-		}
-		code = e.ERROR_AUTH
+	if err != nil {
+		logging.Error("auth error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
 	}
-	r.R(c, http.StatusOK, code, data)
+	// 如果不存在就创建一个用户
+	if uid == 0 {
+		uid, err = models.AddUser(v.Result.UserNumber, "")
+	}
+
+	if err != nil {
+		logging.Error("auth error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+
+	token, err = util.GenerateToken(fmt.Sprintf("%d", uid))
+	if err != nil {
+		logging.Error("auth error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	data["token"] = token
+	data["uid"] = uid
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, auth
-// @Summary 前端刷新token
-// @Accept json
-// @Produce json
-// @Param token query string true "用户token"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=authRes}
-// @Failure 400 {object} models.Response "无token"
-// @Failure 20001 {object} models.Response "token检查失败"
-// @Failure 20003 {object} models.Response "token生成失败"
-// @Router /f/auth/{token} [get]
+// @method [get]
+// @way [query]
+// @param token
+// @return token
+// @route /f/auth/:token | /b/auth/:token
 func RefreshToken(c *gin.Context) {
 	token := c.Param("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
-	ok, verr := r.E(&valid, "Refresh Token Front")
+	ok, verr := r.E(&valid, "Refresh Token")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -145,16 +143,10 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// 判断是否为用户
-	if claims.Tag != util.USER {
-		logging.Error("权限错误, not user")
-		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": "权限错误, not user"})
-		return
-	}
 	var code = e.SUCCESS
 	var data = make(map[string]interface{})
 	// tag = 1 means is USER
-	token, err = util.GenerateToken(claims.Uid, 1)
+	token, err = util.GenerateToken(claims.Uid)
 	if err != nil {
 		code = e.ERROR_GENERATE_TOKEN
 	} else {

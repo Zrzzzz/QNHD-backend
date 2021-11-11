@@ -9,6 +9,7 @@ import (
 type Banned struct {
 	Model
 	Uid    uint64 `json:"uid"`
+	Doer   string `json:"doer"`
 	Reason string `json:"reason"`
 }
 
@@ -20,13 +21,13 @@ func GetBanned(maps interface{}) ([]Banned, error) {
 	return bans, nil
 }
 
-func AddBannedByUid(uid uint64, reason string) (uint64, error) {
-	var ban = Banned{Uid: uid, Reason: reason}
+func AddBannedByUid(uid uint64, doer string, reason string) (uint64, error) {
+	var ban = Banned{Uid: uid, Doer: doer, Reason: reason}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Select("uid, reason").Create(&ban).Error; err != nil {
+		if err := tx.Select("uid", "reason").Create(&ban).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&User{}).Where("uid = ?", uid).Update("status", 0).Error; err != nil {
+		if err := tx.Model(&User{}).Where("id = ?", uid).Update("active", 0).Error; err != nil {
 			return err
 		}
 		return nil
@@ -44,14 +45,6 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 		return 0, err
 	}
 	return ban.Id, nil
-}
-
-func IfBannedByEmail(email string) (bool, error) {
-	var user User
-	if err := db.Where("email = ?", email).Find(&user).Error; err != nil {
-		return false, err
-	}
-	return IfBannedByUid(user.Uid)
 }
 
 func IfBannedByUid(uid uint64) (bool, error) {

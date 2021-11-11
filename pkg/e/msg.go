@@ -22,6 +22,7 @@ var MsgFlags = map[int]string{
 	ERROR_AUTH_CHECK_TOKEN_TIMEOUT: "Token已超时",
 	ERROR_GENERATE_TOKEN:           "Token生成失败",
 	ERROR_AUTH:                     "账号密码错误",
+	ERROR_RIGHT:                    "无权访问",
 
 	ERROR_SEND_EMAIL:               "发送邮件失败",
 	ERROR_UPLOAD_SAVE_IMAGE_FAIL:   "保存图片失败",

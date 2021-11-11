@@ -1,8 +1,8 @@
 package backend
 
 import (
+	"qnhd/api/v1/frontend"
 	"qnhd/middleware/jwt"
-	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,8 +10,7 @@ import (
 type BackendType int
 
 const (
-	Admin BackendType = iota
-	Banned
+	Banned BackendType = iota
 	Blocked
 	Notice
 	User
@@ -21,7 +20,6 @@ const (
 )
 
 var BackendTypes = [...]BackendType{
-	Admin,
 	Banned,
 	Blocked,
 	Notice,
@@ -34,8 +32,11 @@ var BackendTypes = [...]BackendType{
 func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
-	g.GET("/auth/:token", RefreshToken)
-	g.Use(jwt.JWT(util.ADMIN))
+	g.GET("/auth/:token", frontend.RefreshToken)
+	//新建用户，不需要token
+	g.POST("/user", AddUser)
+
+	g.Use(jwt.JWT(jwt.ADMIN))
 	for _, t := range BackendTypes {
 		initType(g, t)
 	}
@@ -43,20 +44,13 @@ func Setup(g *gin.RouterGroup) {
 
 func initType(g *gin.RouterGroup, t BackendType) {
 	switch t {
-	case Admin:
-		//获取管理员列表
-		g.GET("/admin", GetAdmins)
-		//新建管理员
-		g.POST("/admin", AddAdmins)
-		//修改管理员
-		g.PUT("/admin", EditAdmins)
-		//删除指定管理员
-		g.DELETE("/admin", DeleteAdmins)
 	case Banned:
 		//获取封禁用户列表
 		g.GET("/banned", GetBanned)
 		//新建封禁用户
 		g.POST("/banned", AddBanned)
+		//删除封禁用户
+		g.DELETE("/banned", DeleteBanned)
 	case Blocked:
 		//获取禁言用户列表
 		g.GET("/blocked", GetBlocked)
@@ -68,23 +62,25 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		//获取公告列表
 		g.GET("/notice", GetNotices)
 		//新建公告
-		g.POST("/notice", AddNotices)
+		g.POST("/notice", AddNotice)
 		//修改公告
-		g.PUT("/notice", EditNotices)
+		g.PUT("/notice", EditNotice)
 		//删除指定公告
-		g.DELETE("/notice", DeleteNotices)
+		g.DELETE("/notice", DeleteNotice)
 	case User:
-		//获取用户列表
-		g.GET("/user", GetUsers)
-		//新建用户
-		g.POST("/user", AddUsers)
-		//修改用户
-		g.PUT("/user", EditUsers)
-		//删除指定用户
-		g.DELETE("/user", DeleteUsers)
+		//获取普通用户列表
+		g.GET("/users/common", GetCommonUsers)
+		//获取所有用户列表
+		g.GET("/users/all", GetAllUsers)
+		//修改用户密码
+		g.PUT("/user", EditUser)
+		//修改用户权限
+		g.PUT("/user/right", EditUserRight)
 	case Post:
 		//获取帖子列表
-		g.GET("/post", GetPosts)
+		g.GET("/posts", frontend.GetPosts)
+		//获取帖子
+		g.GET("/post", frontend.GetPost)
 		//删除指定帖子
 		g.DELETE("/post", DeletePosts)
 	case Report:

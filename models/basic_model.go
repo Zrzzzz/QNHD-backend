@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 type Model struct {
 	Id        uint64         `gorm:"primaryKey;autoIncrement;" json:"id"`
 	CreatedAt string         `json:"create_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at"`
+	DeletedAt gorm.DeletedAt `json:"-"`
 }
 
 type Response struct {

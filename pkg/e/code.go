@@ -22,6 +22,7 @@ const (
 	ERROR_AUTH_CHECK_TOKEN_TIMEOUT = 20002
 	ERROR_GENERATE_TOKEN           = 20003
 	ERROR_AUTH                     = 20004
+	ERROR_RIGHT                    = 20005
 
 	ERROR_SEND_EMAIL               = 30001
 	ERROR_UPLOAD_SAVE_IMAGE_FAIL   = 30002
