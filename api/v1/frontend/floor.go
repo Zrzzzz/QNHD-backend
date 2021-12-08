@@ -6,8 +6,8 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
-	"strconv"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -63,13 +63,34 @@ func AddFloor(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	intpostid, _ := strconv.ParseUint(postId, 10, 64)
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	// 处理图片
+	form, err := c.MultipartForm()
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	pics := form.File["pictures"]
+	if len(pics) > 1 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 1."})
+		return
+	}
+	imageURLs, err := upload.SaveImagesFromFromData(pics, c)
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
 
+	intpostid := util.AsUint(postId)
+	intuid := util.AsUint(uid)
+	imageURL := ""
+	if len(imageURLs) > 0 {
+		imageURL = imageURLs[0]
+	}
 	maps := map[string]interface{}{
-		"uid":     intuid,
-		"postId":  intpostid,
-		"content": content,
+		"uid":       intuid,
+		"postId":    intpostid,
+		"content":   content,
+		"image_url": imageURL,
 	}
 
 	id, err := models.AddFloor(maps)
@@ -90,7 +111,6 @@ func AddFloor(c *gin.Context) {
 // @route /f/floor/reply
 func ReplyFloor(c *gin.Context) {
 	uid := r.GetUid(c)
-
 	postId := c.PostForm("post_id")
 	replyToFloor := c.PostForm("reply_to_floor")
 	content := c.PostForm("content")
@@ -106,18 +126,39 @@ func ReplyFloor(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	intpostid, _ := strconv.ParseUint(postId, 10, 64)
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
-	intfloor, _ := strconv.ParseUint(replyToFloor, 10, 64)
+	// 处理图片
+	form, err := c.MultipartForm()
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	pics := form.File["pictures"]
+	if len(pics) > 1 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 1."})
+		return
+	}
+	imageURLs, err := upload.SaveImagesFromFromData(pics, c)
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
 
+	intpostid := util.AsUint(postId)
+	intuid := util.AsUint(uid)
+	intfloor := util.AsUint(replyToFloor)
+	imageURL := ""
+	if len(imageURLs) > 0 {
+		imageURL = imageURLs[0]
+	}
 	maps := map[string]interface{}{
 		"uid":          intuid,
 		"postId":       intpostid,
 		"replyToFloor": intfloor,
 		"content":      content,
+		"image_url":    imageURL,
 	}
 
-	_, err := models.ReplyFloor(maps)
+	_, err = models.ReplyFloor(maps)
 	if err != nil {
 		logging.Error("Reply floor error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

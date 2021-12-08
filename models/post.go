@@ -4,20 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"qnhd/pkg/logging"
-	"strconv"
+	"qnhd/pkg/upload"
+	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
 )
 
 type Post struct {
 	Model
-	Uid        uint64 `json:"uid"`
-	Content    string `json:"content"`
-	PictureUrl string `json:"picture_url"`
-	FavCount   uint64 `json:"fav_count"`
-	LikeCount  uint64 `json:"like_count"`
-	DisCount   uint64 `json:"-"`
-	UpdatedAt  string `json:"updated_at" gorm:"null;"`
+	Uid       uint64 `json:"uid"`
+	Content   string `json:"content"`
+	FavCount  uint64 `json:"fav_count"`
+	LikeCount uint64 `json:"like_count"`
+	DisCount  uint64 `json:"-"`
+	UpdatedAt string `json:"updated_at" gorm:"null;"`
 }
 
 type LogPostFav struct {
@@ -44,8 +44,7 @@ func GetPost(postId string, uid string) (Post, error) {
 	if _, err := AddVisitHistory(uid, postId); err != nil {
 		return post, err
 	}
-	postIdInt, _ := strconv.ParseUint(postId, 10, 64)
-	if err := AddTagLogInPost(postIdInt); err != nil {
+	if err := AddTagLogInPost(util.AsUint(postId)); err != nil {
 		return post, err
 	}
 
@@ -91,14 +90,18 @@ func GetHistoryPosts(overNum, limit int, uid string) ([]Post, error) {
 
 func AddPost(maps map[string]interface{}) (uint64, error) {
 	var post = &Post{
-		Uid:        maps["uid"].(uint64),
-		Content:    maps["content"].(string),
-		PictureUrl: maps["picture_url"].(string),
+		Uid:     maps["uid"].(uint64),
+		Content: maps["content"].(string),
 	}
-
+	pics, pic_ok := maps["picture_url"].([]string)
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Select("uid", "content", "picture_url").Create(post).Error; err != nil {
+		if err := tx.Select("uid", "content").Create(post).Error; err != nil {
 			return err
+		}
+		if pic_ok {
+			if err := AddImageInPost(post.Id, pics); err != nil {
+				return err
+			}
 		}
 		tagId, ok := maps["tag_id"].(string)
 		if ok {
@@ -109,6 +112,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		return nil
 	})
 	if err != nil {
+		upload.DeleteImageUrls(pics)
 		return 0, err
 	}
 	return post.Id, nil
@@ -117,13 +121,19 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 func DeletePostsUser(id, uid string) (uint64, error) {
 	var post = Post{}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ? AND uid = ?", id, uid).Delete(&post).Error; err != nil {
+		if err := tx.Where("id = ? AND uid = ?", id, uid).First(&post).Error; err != nil {
 			return err
 		}
-		if err := DeleteTagInPost(id); err != nil {
+		if err := tx.Delete(&post).Error; err != nil {
 			return err
 		}
-		if _, err := DeleteFloorsInPost(id); err != nil {
+		if err := DeleteTagInPost(tx, id); err != nil {
+			return err
+		}
+		if err := DeleteFloorsInPost(tx, id); err != nil {
+			return err
+		}
+		if err := DeleteImageInPost(tx, id); err != nil {
 			return err
 		}
 		return nil
@@ -138,13 +148,19 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 func DeletePostsAdmin(id string) (uint64, error) {
 	var post = Post{}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).Delete(&post).Error; err != nil {
+		if err := tx.Where("id = ?", id).First(&post).Error; err != nil {
 			return err
 		}
-		if err := DeleteTagInPost(id); err != nil {
+		if err := tx.Delete(post).Error; err != nil {
 			return err
 		}
-		if _, err := DeleteFloorsInPost(id); err != nil {
+		if err := DeleteTagInPost(tx, id); err != nil {
+			return err
+		}
+		if err := DeleteFloorsInPost(tx, id); err != nil {
+			return err
+		}
+		if err := DeleteImageInPost(tx, id); err != nil {
 			return err
 		}
 		return nil
@@ -157,11 +173,8 @@ func DeletePostsAdmin(id string) (uint64, error) {
 }
 
 func FavPost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
-
 	var exist = false
-	var log = LogPostFav{Uid: uidint, PostId: postIdint}
+	var log = LogPostFav{Uid: util.AsUint(uid), PostId: util.AsUint(postId)}
 
 	// 首先判断点没点过赞
 	if err := db.Where(log).Find(&log).Error; err != nil {
@@ -199,8 +212,8 @@ func FavPost(postId string, uid string) error {
 }
 
 func UnfavPost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
+	uidint := util.AsUint(uid)
+	postIdint := util.AsUint(postId)
 
 	var exist = false
 	var log = LogPostFav{Uid: uidint, PostId: postIdint}
@@ -236,8 +249,8 @@ func UnfavPost(postId string, uid string) error {
 }
 
 func LikePost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
+	uidint := util.AsUint(uid)
+	postIdint := util.AsUint(postId)
 
 	var exist = false
 	var log = LogPostLike{Uid: uidint, PostId: postIdint}
@@ -278,8 +291,8 @@ func LikePost(postId string, uid string) error {
 }
 
 func UnLikePost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
+	uidint := util.AsUint(uid)
+	postIdint := util.AsUint(postId)
 
 	var exist = false
 	var log = LogPostLike{Uid: uidint, PostId: postIdint}
@@ -315,8 +328,8 @@ func UnLikePost(postId string, uid string) error {
 }
 
 func DisPost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
+	uidint := util.AsUint(uid)
+	postIdint := util.AsUint(postId)
 
 	var exist = false
 	var log = LogPostDis{Uid: uidint, PostId: postIdint}
@@ -357,8 +370,8 @@ func DisPost(postId string, uid string) error {
 }
 
 func UnDisPost(postId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	postIdint, _ := strconv.ParseUint(postId, 10, 64)
+	uidint := util.AsUint(uid)
+	postIdint := util.AsUint(postId)
 
 	var exist = false
 	var log = LogPostDis{Uid: uidint, PostId: postIdint}

@@ -6,7 +6,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"strconv"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -68,8 +68,8 @@ func AddBlocked(c *gin.Context) {
 	}
 	reason := c.PostForm("reason")
 	// 因为做过valid了不必考虑错误
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
-	intlast, _ := strconv.ParseUint(last, 10, 8)
+	intuid := util.AsUint(uid)
+	intlast := util.AsUint(last)
 	code := e.SUCCESS
 	ifBlocked, err := models.IfBlockedByUid(intuid)
 	if err != nil {
@@ -106,7 +106,7 @@ func DeleteBlocked(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
 	ifBlocked, err := models.IfBlockedByUid(intuid)

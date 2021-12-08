@@ -52,7 +52,10 @@ func EditAdmins(name string, password string) error {
 
 func DeleteAdmins(name string) (uint64, error) {
 	var admin = Admin{}
-	if err := db.Where("name = ?", name).Delete(&admin).Error; err != nil {
+	if err := db.Where("name = ?", name).First(&admin).Error; err != nil {
+		return 0, err
+	}
+	if err := db.Delete(&admin).Error; err != nil {
 		return 0, err
 	}
 	return admin.Id, nil

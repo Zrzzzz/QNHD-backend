@@ -13,7 +13,7 @@ func GetNotices() ([]Notice, error) {
 	return notices, nil
 }
 
-func AddNotices(data map[string]interface{}) (uint64, error) {
+func AddNotice(data map[string]interface{}) (uint64, error) {
 	var notice = Notice{
 		Content: data["content"].(string),
 	}
@@ -23,7 +23,7 @@ func AddNotices(data map[string]interface{}) (uint64, error) {
 	return notice.Id, nil
 }
 
-func EditNotices(id uint64, data map[string]interface{}) error {
+func EditNotice(id uint64, data map[string]interface{}) error {
 
 	if err := db.Model(&Notice{}).Where("id = ?", id).Updates(data).Error; err != nil {
 		return err
@@ -32,9 +32,12 @@ func EditNotices(id uint64, data map[string]interface{}) error {
 	return nil
 }
 
-func DeleteNotices(id uint64) (uint64, error) {
+func DeleteNotice(id uint64) (uint64, error) {
 	var notice = Notice{}
-	if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&notice).Error; err != nil {
+		return 0, err
+	}
+	if err := db.Delete(&notice).Error; err != nil {
 		return 0, err
 	}
 	return notice.Id, nil

@@ -6,7 +6,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"strconv"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -69,7 +69,7 @@ func AddBanned(c *gin.Context) {
 		return
 	}
 	reason := c.PostForm("reason")
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
 	ifBanned, err := models.IfBannedByUid(intuid)
@@ -109,7 +109,7 @@ func DeleteBanned(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
 	ifBanned, err := models.IfBannedByUid(intuid)

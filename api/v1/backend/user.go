@@ -6,7 +6,6 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
-	"strconv"
 
 	"qnhd/pkg/r"
 
@@ -224,8 +223,8 @@ func EditUserRight(c *gin.Context) {
 		return
 	}
 
-	stui, _ := strconv.ParseUint(schAdmin, 10, 64)
-	schi, _ := strconv.ParseUint(stuAdmin, 10, 64)
+	stui := util.AsUint(schAdmin)
+	schi := util.AsUint(stuAdmin)
 	valid.Range(int(stui), 0, 1, "stuAdmin range")
 	valid.Range(int(schi), 0, 1, "schAdmin range")
 	ok, verr = r.E(&valid, "Edit user right")
@@ -239,6 +238,47 @@ func EditUserRight(c *gin.Context) {
 		"stu_admin": stuAdmin,
 	}
 	if err := models.EditUser(uid, maps); err != nil {
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		logging.Error("Edit user error: %v", err)
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
+}
+
+// @method [put]
+// @way [formdata]
+// @param uid, department_id
+// @return
+// @route /b/user/department
+func EditUserDepartment(c *gin.Context) {
+	uid := r.GetUid(c)
+	// 权限控制
+	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
+	if err != nil {
+		logging.Error("Edit user right error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	// 需要超管才能修改
+	if !ok {
+		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+		return
+	}
+
+	uid = c.PostForm("uid")
+	departmentId := c.PostForm("department_id")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(departmentId, "departmentId")
+	valid.Numeric(departmentId, "departmentId")
+	ok, verr := r.E(&valid, "Edit user right Error")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	if err := models.AddUserToDepartment(util.AsUint(uid), util.AsUint(departmentId)); err != nil {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		logging.Error("Edit user error: %v", err)
 		return

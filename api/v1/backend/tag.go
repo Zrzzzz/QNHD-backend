@@ -1,4 +1,4 @@
-package frontend
+package backend
 
 import (
 	"net/http"
@@ -12,15 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Tags front, tag
-// @Summary 获取标签
-// @Accept json
-// @Produce json
-// @Param name query string false "标签名称"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=models.Tag}}
-// @Failure 400 {object} models.Response ""
-// @Router /f/tag [get]
+// @method [get]
+// @way [query]
+// @param name
+// @return taglist
+// @route /b/tags
 func GetTags(c *gin.Context) {
 	name := c.Query("name")
 
@@ -40,6 +36,7 @@ func GetTags(c *gin.Context) {
 // @way [query]
 // @param
 // @return
+// @route /b/tags/hot
 func GetHotTag(c *gin.Context) {
 	list, err := models.GetHotTags()
 	data := make(map[string]interface{})
@@ -53,51 +50,12 @@ func GetHotTag(c *gin.Context) {
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
-// @Tags front, tag
-// @Summary 添加标签
-// @Accept json
-// @Produce json
-// @Param name body string true "标签名称"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response ""
-// @Router /f/tag [post]
-func AddTag(c *gin.Context) {
-	name := c.PostForm("name")
-	valid := validation.Validation{}
-	valid.Required(name, "name")
-	ok, verr := r.E(&valid, "Add tag")
-	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-	exist, err := models.ExistTagByName(name)
-	if err != nil {
-		logging.Error("Add tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	if exist {
-		r.R(c, http.StatusOK, e.ERROR_EXIST_TAG, nil)
-	}
-	id, err := models.AddTag(name)
-	if err != nil {
-		logging.Error("Add tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	data := make(map[string]interface{})
-	data["id"] = id
-	r.R(c, http.StatusOK, e.SUCCESS, data)
-}
-
 // @method [delete]
 // @way [query]
 // @param id, uid
 // @return
-// @route /f/tag
+// @route /b/tag
 func DeleteTag(c *gin.Context) {
-	uid := r.GetUid(c)
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -110,7 +68,7 @@ func DeleteTag(c *gin.Context) {
 	}
 
 	intid := util.AsUint(id)
-	_, err := models.DeleteTag(intid, uid)
+	_, err := models.DeleteTagAdmin(intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

@@ -41,7 +41,10 @@ func AddBannedByUid(uid uint64, doer string, reason string) (uint64, error) {
 
 func DeleteBannedByUid(uid uint64) (uint64, error) {
 	var ban Banned
-	if err := db.Where("uid = ?", uid).Delete(&ban).Error; err != nil {
+	if err := db.Where("uid = ?", uid).First(&ban).Error; err != nil {
+		return 0, err
+	}
+	if err := db.Delete(&ban).Error; err != nil {
 		return 0, err
 	}
 	return ban.Id, nil

@@ -1,6 +1,8 @@
 package models
 
-import "strconv"
+import (
+	"qnhd/pkg/util"
+)
 
 type LogVisitHistory struct {
 	Model
@@ -9,9 +11,8 @@ type LogVisitHistory struct {
 }
 
 func AddVisitHistory(uid string, postId string) (uint64, error) {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	pidint, _ := strconv.ParseUint(postId, 10, 64)
-	var ps = LogVisitHistory{Uid: uidint, PostId: pidint}
+
+	var ps = LogVisitHistory{Uid: util.AsUint(uid), PostId: util.AsUint(postId)}
 	if err := db.Select("post_id", "uid").Create(&ps).Error; err != nil {
 		return 0, err
 	}

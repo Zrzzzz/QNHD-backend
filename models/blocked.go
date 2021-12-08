@@ -43,7 +43,10 @@ func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64
 
 func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	var blocked = Blocked{}
-	if err := db.Where("uid = ?", uid).Delete(&blocked).Error; err != nil {
+	if err := db.Where("uid = ?", uid).First(&blocked).Error; err != nil {
+		return 0, err
+	}
+	if err := db.Delete(&blocked).Error; err != nil {
 		return 0, err
 	}
 	return blocked.Id, nil

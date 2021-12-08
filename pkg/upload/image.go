@@ -11,6 +11,8 @@ import (
 	"qnhd/pkg/util"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func GetImageFullUrl(name string) string {
@@ -25,8 +27,11 @@ func GetImageName(name string) string {
 func GetImagePath() string {
 	return setting.AppSetting.ImageSavePath
 }
+func GetRuntimePath() string {
+	return setting.AppSetting.RuntimeRootPath
+}
 func GetImageFullPath() string {
-	return setting.AppSetting.RuntimeRootPath + GetImagePath()
+	return GetRuntimePath() + GetImagePath()
 }
 func CheckImageExt(fileName string) bool {
 	ext := file.GetExt(fileName)
@@ -37,13 +42,9 @@ func CheckImageExt(fileName string) bool {
 	}
 	return false
 }
-func CheckImageSize(f multipart.File) bool {
-	size, err := file.GetSize(f)
-	if err != nil {
-		logging.Warn("%v", err)
-		return false
-	}
-	return size <= setting.AppSetting.ImageMaxSize
+func CheckImageSize(f *multipart.FileHeader) bool {
+	size := f.Size
+	return int(size) <= setting.AppSetting.ImageMaxSize
 }
 func CheckPath(src string) error {
 	dir, err := os.Getwd()
@@ -60,21 +61,56 @@ func CheckPath(src string) error {
 	}
 	return nil
 }
-
-func CheckImage(file *multipart.File, image *multipart.FileHeader) (string, error) {
-	imageName := GetImageName(image.Filename)
+func CheckImage(image *multipart.FileHeader) error {
 	fullPath := GetImageFullPath()
-
-	src := fullPath + imageName
+	imageName := GetImageName(image.Filename)
 	var err error
-	if !CheckImageExt(imageName) || !CheckImageSize(*file) {
+	if !CheckImageExt(imageName) || !CheckImageSize(image) {
 		err = fmt.Errorf("Check image failed")
-		return "", err
+		return err
 	} else {
 		if err = CheckPath(fullPath); err != nil {
-			return "", err
+			return err
 		}
-		return src, nil
+		return nil
 	}
-
+}
+func GetImageSrc(image *multipart.FileHeader) string {
+	imageName := GetImageName(image.Filename)
+	fullPath := GetImageFullPath()
+	src := fullPath + imageName
+	return src
+}
+func SaveImagesFromFromData(pics []*multipart.FileHeader, c *gin.Context) ([]string, error) {
+	var imageUrls []string
+	var err error
+	// 检查每张图
+	for _, pic := range pics {
+		err = CheckImage(pic)
+		if err != nil {
+			logging.Error("Add post error: %v", err)
+			return imageUrls, err
+		}
+	}
+	// 对每个图片进行处理
+	for _, pic := range pics {
+		src := GetImageSrc(pic)
+		if err := c.SaveUploadedFile(pic, src); err != nil {
+			logging.Error("Add post error: %v", err)
+			return imageUrls, err
+		}
+		imageName := GetImageName(pic.Filename)
+		imageUrls = append(imageUrls, GetImagePath()+imageName)
+	}
+	return imageUrls, nil
+}
+func DeleteImageUrls(urls []string) error {
+	for _, url := range urls {
+		err := os.Remove(GetRuntimePath() + url)
+		if err != nil {
+			logging.Error(err.Error())
+			return err
+		}
+	}
+	return nil
 }

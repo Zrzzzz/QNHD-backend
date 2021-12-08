@@ -3,7 +3,9 @@ package models
 import (
 	"errors"
 	"fmt"
-	"strconv"
+	"qnhd/pkg/logging"
+	"qnhd/pkg/upload"
+	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +16,7 @@ type Floor struct {
 	PostId      uint64 `json:"post_id"`
 	Content     string `json:"content"`
 	Nickname    string `json:"nickname"`
+	ImageURL    string `json:"image_url"`
 	ReplyTo     uint64 `json:"reply_to" `
 	ReplyToName string `json:"reply_to_name"`
 	LikeCount   uint64 `json:"like_count"`
@@ -74,7 +77,6 @@ func GetFloor(id string) (Floor, error) {
 }
 
 func AddFloor(maps map[string]interface{}) (uint64, error) {
-	// TODO: 添加锁
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
@@ -112,15 +114,15 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		PostId:   postId,
 		Content:  maps["content"].(string),
 		Nickname: nickname,
+		ImageURL: maps["image_url"].(string),
 	}
-	if err := db.Select("uid", "post_id", "content", "nickname").Create(&newFloor).Error; err != nil {
+	if err := db.Select("uid", "post_id", "content", "nickname", "image_url").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
 	return newFloor.Id, nil
 }
 
 func ReplyFloor(maps map[string]interface{}) (uint64, error) {
-	// TODO: 添加锁
 	var post Post
 	var nickname string
 	uid := maps["uid"].(uint64)
@@ -167,10 +169,11 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		PostId:      postId,
 		Content:     maps["content"].(string),
 		Nickname:    nickname,
+		ImageURL:    maps["image_url"].(string),
 		ReplyTo:     floor.Uid,
 		ReplyToName: floor.Nickname,
 	}
-	if err := db.Select("uid", "post_id", "content", "nickname", "reply_to", "reply_to_name").Create(&newFloor).Error; err != nil {
+	if err := db.Select("uid", "post_id", "content", "nickname", "image_url", "reply_to", "reply_to_name").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
 
@@ -179,7 +182,15 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 
 func DeleteFloorByAdmin(id string) (uint64, error) {
 	var floor = Floor{}
-	if err := db.Where("id = ?", id).Delete(&floor).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&floor).Error; err != nil {
+		return 0, err
+	}
+	// 删除本地文件
+	if err := upload.DeleteImageUrls([]string{floor.ImageURL}); err != nil {
+		logging.Error(err.Error())
+		return 0, err
+	}
+	if err := db.Delete(&floor).Error; err != nil {
 		return 0, err
 	}
 	return floor.Id, nil
@@ -187,24 +198,47 @@ func DeleteFloorByAdmin(id string) (uint64, error) {
 
 func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	var floor = Floor{}
-	if err := db.Where("uid = ? AND id = ?", uid, floorId).Delete(&floor).Error; err != nil {
+	if err := db.Where("uid = ? AND id = ?", uid, floorId).First(&floor).Error; err != nil {
+		return 0, err
+	}
+	// 删除本地文件
+	if err := upload.DeleteImageUrls([]string{floor.ImageURL}); err != nil {
+		logging.Error(err.Error())
+		return 0, err
+	}
+	if err := db.Delete(&floor).Error; err != nil {
 		return 0, err
 	}
 	return floor.Id, nil
 }
 
-func DeleteFloorsInPost(postId string) (uint64, error) {
-	var floor Floor
-	if err := db.Where("post_id = ?", postId).Delete(&floor).Error; err != nil {
-		return 0, err
+func DeleteFloorsInPost(tx *gorm.DB, postId string) error {
+	if tx == nil {
+		tx = db
 	}
-	return floor.Id, nil
+	var floors []Floor
+	var imgs = []string{}
+	if err := tx.Where("post_id = ?", postId).Find(&floors).Error; err != nil {
+		return err
+	}
+	for _, f := range floors {
+		imgs = append(imgs, f.ImageURL)
+	}
+	// 删除本地文件
+	if err := upload.DeleteImageUrls(imgs); err != nil {
+		logging.Error(err.Error())
+		return err
+	}
+	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 /* 点赞或者取消点赞楼层 */
 func LikeFloor(floorId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+	uidint := util.AsUint(uid)
+	floorIdint := util.AsUint(floorId)
 
 	var exist = false
 	var log = LogFloorLike{Uid: uidint, FloorId: floorIdint}
@@ -246,9 +280,8 @@ func LikeFloor(floorId string, uid string) error {
 }
 
 func UnlikeFloor(floorId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
-
+	uidint := util.AsUint(uid)
+	floorIdint := util.AsUint(floorId)
 	var exist = false
 	var log = LogFloorLike{Uid: uidint, FloorId: floorIdint}
 	// 首先判断点没点过赞
@@ -285,8 +318,8 @@ func UnlikeFloor(floorId string, uid string) error {
 
 /* 点赞或者取消点赞楼层 */
 func DisFloor(floorId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+	uidint := util.AsUint(uid)
+	floorIdint := util.AsUint(floorId)
 
 	var exist = false
 	var log = LogFloorDis{Uid: uidint, FloorId: floorIdint}
@@ -328,8 +361,8 @@ func DisFloor(floorId string, uid string) error {
 }
 
 func UndisFloor(floorId string, uid string) error {
-	uidint, _ := strconv.ParseUint(uid, 10, 64)
-	floorIdint, _ := strconv.ParseUint(floorId, 10, 64)
+	uidint := util.AsUint(uid)
+	floorIdint := util.AsUint(floorId)
 
 	var exist = false
 	var log = LogFloorDis{Uid: uidint, FloorId: floorIdint}

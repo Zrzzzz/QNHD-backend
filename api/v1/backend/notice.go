@@ -6,7 +6,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"strconv"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -50,7 +50,7 @@ func AddNotice(c *gin.Context) {
 	maps := make(map[string]interface{})
 	maps["content"] = content
 
-	id, err := models.AddNotices(maps)
+	id, err := models.AddNotice(maps)
 	if err != nil {
 		logging.Error("Add notices error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -80,10 +80,10 @@ func EditNotice(c *gin.Context) {
 		return
 	}
 
-	intid, _ := strconv.ParseUint(id, 10, 64)
+	intid := util.AsUint(id)
 	data := make(map[string]interface{})
 	data["content"] = content
-	err := models.EditNotices(intid, data)
+	err := models.EditNotice(intid, data)
 	if err != nil {
 		logging.Error("Edit notices error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -108,8 +108,8 @@ func DeleteNotice(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	intid, _ := strconv.ParseUint(id, 10, 64)
-	_, err := models.DeleteNotices(intid)
+	intid := util.AsUint(id)
+	_, err := models.DeleteNotice(intid)
 	if err != nil {
 		logging.Error("Delete notices error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

@@ -51,7 +51,7 @@ func GetHotTags() ([]HotTagResult, error) {
 	return results, nil
 }
 
-func AddTags(name string) (uint64, error) {
+func AddTag(name string) (uint64, error) {
 	var tag = Tag{Name: name}
 	if err := db.Select("name").Create(&tag).Error; err != nil {
 		return 0, err
@@ -59,8 +59,16 @@ func AddTags(name string) (uint64, error) {
 	return tag.Id, nil
 }
 
-func DeleteTags(id uint64, uid string) (uint64, error) {
-	var tag = Tag{}
+func DeleteTagAdmin(id uint64) (uint64, error) {
+	var tag Tag
+	if err := db.Where("id = ?", id).Delete(&tag).Error; err != nil {
+		return 0, err
+	}
+	return tag.Id, nil
+}
+
+func DeleteTag(id uint64, uid string) (uint64, error) {
+	var tag Tag
 	if err := db.Where("id = ? AND uid = ?", id, uid).Delete(&tag).Error; err != nil {
 		return 0, err
 	}

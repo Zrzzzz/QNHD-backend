@@ -2,7 +2,7 @@ package models
 
 import (
 	"errors"
-	"strconv"
+	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
 )
@@ -28,10 +28,9 @@ func GetTagInPost(postId string) (Tag, error) {
 func AddPostWithTag(postId uint64, tagId string) error {
 	err := db.Transaction(func(tx *gorm.DB) error {
 		addDb := tx.Select("PostId", "TagId")
-		intt, _ := strconv.ParseUint(tagId, 10, 64)
 		if err := addDb.Create(&PostTag{
 			PostId: postId,
-			TagId:  intt,
+			TagId:  util.AsUint(tagId),
 		}).Error; err != nil {
 			return err
 		}
@@ -43,8 +42,11 @@ func AddPostWithTag(postId uint64, tagId string) error {
 	return nil
 }
 
-func DeleteTagInPost(postId string) error {
-	if err := db.Where("post_id = ?", postId).Delete(&PostTag{}).Error; err != nil {
+func DeleteTagInPost(tx *gorm.DB, postId string) error {
+	if tx == nil {
+		tx = db
+	}
+	if err := tx.Where("post_id = ?", postId).Delete(&PostTag{}).Error; err != nil {
 		return err
 	}
 	return nil

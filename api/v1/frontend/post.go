@@ -9,23 +9,20 @@ import (
 	"qnhd/pkg/r"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
-	"strconv"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
 
-type postRes struct {
-	post postResponse
-}
 type postResponse struct {
 	models.Post
-	Tag          models.Tag     `json:"tag"`
-	Floors       []models.Floor `json:"floors"`
 	CommentCount int            `json:"comment_count"`
 	IsLike       bool           `json:"is_like"`
 	IsDis        bool           `json:"is_dis"`
 	IsFav        bool           `json:"is_fav"`
+	Tag          models.Tag     `json:"tag"`
+	Floors       []models.Floor `json:"floors"`
+	Pictures     []string       `json:"pictures"`
 }
 
 // @method [get]
@@ -57,6 +54,12 @@ func GetPosts(c *gin.Context) {
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
+		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
 
 		retList = append(retList, postResponse{
 			Post:         p,
@@ -66,6 +69,7 @@ func GetPosts(c *gin.Context) {
 			IsLike:       models.IsLikePostByUid(uid),
 			IsDis:        models.IsDisPostByUid(uid),
 			IsFav:        models.IsFavPostByUid(uid),
+			Pictures:     pics,
 		})
 	}
 
@@ -105,6 +109,13 @@ func GetUserPosts(c *gin.Context) {
 			return
 		}
 
+		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+
 		retList = append(retList, postResponse{
 			Post:         p,
 			Tag:          tag,
@@ -113,6 +124,7 @@ func GetUserPosts(c *gin.Context) {
 			IsLike:       models.IsLikePostByUid(uid),
 			IsDis:        models.IsDisPostByUid(uid),
 			IsFav:        models.IsFavPostByUid(uid),
+			Pictures:     pics,
 		})
 	}
 
@@ -152,6 +164,13 @@ func GetFavPosts(c *gin.Context) {
 			return
 		}
 
+		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+
 		retList = append(retList, postResponse{
 			Post:         p,
 			Tag:          tag,
@@ -160,6 +179,7 @@ func GetFavPosts(c *gin.Context) {
 			IsLike:       models.IsLikePostByUid(uid),
 			IsDis:        models.IsDisPostByUid(uid),
 			IsFav:        models.IsFavPostByUid(uid),
+			Pictures:     pics,
 		})
 	}
 
@@ -199,6 +219,13 @@ func GetHistoryPosts(c *gin.Context) {
 			return
 		}
 
+		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+
 		retList = append(retList, postResponse{
 			Post:         p,
 			Tag:          tag,
@@ -207,6 +234,7 @@ func GetHistoryPosts(c *gin.Context) {
 			IsLike:       models.IsLikePostByUid(uid),
 			IsDis:        models.IsDisPostByUid(uid),
 			IsFav:        models.IsFavPostByUid(uid),
+			Pictures:     pics,
 		})
 	}
 
@@ -253,6 +281,12 @@ func GetPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
+	pics, err := models.GetImageInPost(fmt.Sprintf("%d", post.Id))
+	if err != nil {
+		logging.Error("Get posts error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
 	data := map[string]interface{}{
 		"post": postResponse{
 			Post:         post,
@@ -262,6 +296,7 @@ func GetPost(c *gin.Context) {
 			IsLike:       models.IsLikePostByUid(uid),
 			IsDis:        models.IsDisPostByUid(uid),
 			IsFav:        models.IsFavPostByUid(uid),
+			Pictures:     pics,
 		},
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, data)
@@ -275,9 +310,6 @@ func GetPost(c *gin.Context) {
 func AddPost(c *gin.Context) {
 	uid := r.GetUid(c)
 	content := c.PostForm("content")
-	f, image, err := c.Request.FormFile("picture")
-	hasImage := err == nil
-	imageUrl := ""
 	tag_id := c.PostForm("tag_id")
 	valid := validation.Validation{}
 	valid.Required(content, "content")
@@ -289,30 +321,30 @@ func AddPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-
-	if hasImage {
-		src, err := upload.CheckImage(&f, image)
-		if err != nil {
-			logging.Error("Add post error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_UPLOAD_CHECK_IMAGE_FAIL, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		if err := c.SaveUploadedFile(image, src); err != nil {
-			logging.Error("Add post error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		imageName := upload.GetImageName(image.Filename)
-		imageUrl = upload.GetImagePath() + imageName
+	// 处理图片
+	form, err := c.MultipartForm()
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	pics := form.File["pictures"]
+	if len(pics) > 3 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 3."})
+		return
+	}
+	imageUrls, err := upload.SaveImagesFromFromData(pics, c)
+	if err != nil {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
 	}
 
 	maps := make(map[string]interface{})
 	data := make(map[string]interface{})
 
-	intuid, _ := strconv.ParseUint(uid, 10, 64)
+	intuid := util.AsUint(uid)
 	maps["uid"] = intuid
 	maps["content"] = content
-	maps["picture_url"] = imageUrl
+	maps["picture_url"] = imageUrls
 	maps["tag_id"] = tag_id
 	id, err := models.AddPost(maps)
 	if err != nil {
@@ -321,7 +353,7 @@ func AddPost(c *gin.Context) {
 		return
 	}
 	data["id"] = id
-	data["pictrue_url"] = imageUrl
+	data["pictrue_url"] = imageUrls
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 

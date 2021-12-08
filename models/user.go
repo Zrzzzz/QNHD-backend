@@ -112,5 +112,5 @@ func EditUser(uid string, maps map[string]interface{}) error {
 }
 
 func (User) TableName() string {
-	return "roles"
+	return "users"
 }
