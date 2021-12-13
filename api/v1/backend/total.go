@@ -94,7 +94,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post/delete", DeletePosts)
 	case Report:
 		// 获取帖子列表
-		g.GET("/report", GetReports)
+		g.GET("/reports", GetReports)
 	case Floor:
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)

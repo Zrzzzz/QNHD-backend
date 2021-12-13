@@ -99,7 +99,7 @@ func AddUser(number, password, phoneNumber string) (uint64, error) {
 }
 
 func EditUser(uid string, maps map[string]interface{}) error {
-	if err := db.Model(&User{}).Where("id = ? AND (super = 1 OR stu_admin = 1 OR sch_admin = 1)", uid).Updates(maps).Error; err != nil {
+	if err := db.Model(&User{}).Where("id = ? AND id <> 1", uid).Updates(maps).Error; err != nil {
 		return err
 	}
 	return nil

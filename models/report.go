@@ -9,9 +9,9 @@ type Report struct {
 	Reason  string `json:"reason"`
 }
 
-func GetReports() ([]Report, error) {
+func GetReports(rType string) ([]Report, error) {
 	var reports []Report
-	if err := db.Find(&reports).Error; err != nil {
+	if err := db.Where("type = ?", rType).Find(&reports).Error; err != nil {
 		return nil, err
 	}
 	return reports, nil

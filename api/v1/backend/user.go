@@ -226,6 +226,8 @@ func EditUserRight(c *gin.Context) {
 	schAdmin := c.PostForm("sch_admin")
 	stuAdmin := c.PostForm("stu_admin")
 	valid := validation.Validation{}
+	valid.Required(schAdmin, "schAdmin")
+	valid.Required(stuAdmin, "stuAdmin")
 	valid.Numeric(schAdmin, "schAdmin")
 	valid.Numeric(stuAdmin, "stuAdmin")
 	ok, verr := r.E(&valid, "Edit user right")

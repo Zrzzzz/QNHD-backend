@@ -216,17 +216,18 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 
 	// 代表点赞问题
 	var err error
+	var cnt uint64
 	if op == "1" {
-		err = models.LikeFloor(floorId, uid)
+		cnt, err = models.LikeFloor(floorId, uid)
 	} else {
-		err = models.UnlikeFloor(floorId, uid)
+		cnt, err = models.UnlikeFloor(floorId, uid)
 	}
 	if err != nil {
 		logging.Error("like or unlike floor error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method post
@@ -251,15 +252,16 @@ func DisOrUndisFloor(c *gin.Context) {
 
 	// 代表点赞问题
 	var err error
+	var cnt uint64
 	if op == "1" {
-		err = models.DisFloor(floorId, uid)
+		cnt, err = models.DisFloor(floorId, uid)
 	} else {
-		err = models.UndisFloor(floorId, uid)
+		cnt, err = models.UndisFloor(floorId, uid)
 	}
 	if err != nil {
 		logging.Error("dis or undis floor error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
 }

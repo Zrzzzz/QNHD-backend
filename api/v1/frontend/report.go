@@ -48,6 +48,10 @@ func AddReport(c *gin.Context) {
 	if floorId != "" {
 		floorIdint = util.AsUint(floorId)
 	}
+	if rTypeint == 2 && floorIdint == 0 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
 	maps := map[string]interface{}{
 		"uid":      util.AsUint(uid),
 		"type":     rTypeint,

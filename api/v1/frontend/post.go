@@ -388,17 +388,18 @@ func FavOrUnfavPost(c *gin.Context) {
 	}
 
 	var err error
+	var cnt uint64
 	if op == "1" {
-		err = models.FavPost(postId, uid)
+		cnt, err = models.FavPost(postId, uid)
 	} else {
-		err = models.UnfavPost(postId, uid)
+		cnt, err = models.UnfavPost(postId, uid)
 	}
 	if err != nil {
 		logging.Error("fav or unfav post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method [post]
@@ -422,17 +423,18 @@ func LikeOrUnlikePost(c *gin.Context) {
 	}
 
 	var err error
+	var cnt uint64
 	if op == "1" {
-		err = models.LikePost(postId, uid)
+		cnt, err = models.LikePost(postId, uid)
 	} else {
-		err = models.UnLikePost(postId, uid)
+		cnt, err = models.UnLikePost(postId, uid)
 	}
 	if err != nil {
 		logging.Error("like or unlike post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method [post]
@@ -456,15 +458,16 @@ func DisOrUndisPost(c *gin.Context) {
 	}
 
 	var err error
+	var cnt uint64
 	if op == "1" {
-		err = models.DisPost(postId, uid)
+		cnt, err = models.DisPost(postId, uid)
 	} else {
-		err = models.UnDisPost(postId, uid)
+		cnt, err = models.UnDisPost(postId, uid)
 	}
 	if err != nil {
 		logging.Error("dis or undis post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
