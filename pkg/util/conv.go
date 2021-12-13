@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"qnhd/pkg/logging"
 	"strconv"
 )
@@ -17,4 +18,12 @@ func AsUint(a string) uint64 {
 func AsInt(a string) int {
 	b := AsUint(a)
 	return int(b)
+}
+
+func AsStrU(a uint64) string {
+	return fmt.Sprintf("%d", a)
+}
+
+func AsStr(a int) string {
+	return fmt.Sprintf("%d", a)
 }

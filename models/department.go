@@ -7,7 +7,7 @@ import (
 )
 
 type Department struct {
-	Id           uint64 `gorm:"primaryKey;autoIncrement;null;" json:"id"`
+	Id           uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"id"`
 	Name         string `json:"name"`
 	Introduction string `json:"introduction"`
 }
@@ -20,15 +20,19 @@ func GetDepartments(name string) ([]Department, error) {
 	return departs, nil
 }
 
+func GetDepartment(id uint64) (Department, error) {
+	var depart Department
+	err := db.Where("id = ?", id).First(&depart).Error
+	return depart, err
+}
+
 func AddDepartment(maps map[string]interface{}) (uint64, error) {
 	var depart = Department{
 		Name:         maps["name"].(string),
 		Introduction: maps["introduction"].(string),
 	}
-	if err := db.Create(&depart).Error; err != nil {
-		return 0, err
-	}
-	return depart.Id, nil
+	err := db.Create(&depart).Error
+	return depart.Id, err
 }
 
 func EditDepartment(id, introduction string) error {

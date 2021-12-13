@@ -26,17 +26,15 @@ func GetTagInPost(postId string) (Tag, error) {
 }
 
 func AddPostWithTag(postId uint64, tagId string) error {
-	err := db.Transaction(func(tx *gorm.DB) error {
-		addDb := tx.Select("PostId", "TagId")
-		if err := addDb.Create(&PostTag{
-			PostId: postId,
-			TagId:  util.AsUint(tagId),
-		}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	// 先查询是否有tag
+	var tag Tag
+	if err := db.Where("id = ?", tagId).First(&tag).Error; err != nil {
+		return err
+	}
+	if err := db.Create(&PostTag{
+		PostId: postId,
+		TagId:  util.AsUint(tagId),
+	}).Error; err != nil {
 		return err
 	}
 	return nil

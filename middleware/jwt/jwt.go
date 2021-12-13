@@ -33,25 +33,32 @@ func JWT(must int) gin.HandlerFunc {
 			} else if time.Now().Unix() > claims.ExpiresAt {
 				// 时间判断
 				code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
+			} else {
+				var ok bool
+				if must == ADMIN {
+					// 管理员验证
+					ok, err = models.AdminRightDemand(claims.Uid, models.UserRight{Super: true, SchAdmin: true, StuAdmin: true})
+
+				} else {
+					ok, err = models.UserRightDemand(claims.Uid)
+				}
+				if !ok {
+					code = e.ERROR_RIGHT
+				}
 			}
 		}
-		var ok bool
-		if must == ADMIN {
-			// 管理员验证
-			ok, err = models.AdminRightDemand(claims.Uid, models.UserRight{Super: true, SchAdmin: true, StuAdmin: true})
 
-		} else {
-			ok, err = models.UserRightDemand(claims.Uid)
-		}
 		if err != nil {
 			code = e.ERROR_DATABASE
 		}
-		if !ok {
-			code = e.ERROR_RIGHT
-		}
+
 		if code != e.SUCCESS {
-			r.R(c, http.StatusUnauthorized, code, map[string]interface{}{"error": err})
-			logging.Info("Auth Fail: %v", code)
+			if err != nil {
+				r.R(c, http.StatusUnauthorized, code, map[string]interface{}{"error": err.Error()})
+			} else {
+				r.R(c, http.StatusUnauthorized, code, nil)
+			}
+			logging.Error("Auth Fail: %v, reason: %v", code, err)
 			c.Abort()
 			return
 		}

@@ -35,7 +35,10 @@ var BackendTypes = [...]BackendType{
 
 func Setup(g *gin.RouterGroup) {
 	// 获取token
-	g.GET("/auth", GetAuth)
+	// 昵称认证
+	g.GET("/auth/number", GetAuthNumber)
+	// 电话认证
+	g.GET("/auth/phone", GetAuthPhone)
 	g.GET("/auth/:token", frontend.RefreshToken)
 	// 新建用户，不需要token
 	g.POST("/user", AddUser)

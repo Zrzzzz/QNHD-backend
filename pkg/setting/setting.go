@@ -15,10 +15,9 @@ type Server struct {
 }
 
 type App struct {
-	OfficeEmail, OfficePass       string
-	EmailSmtp, EmailPort          string
 	JwtSecret                     string
 	AdminId, AdminName, AdminPass string
+	TokenExpireTime               int
 
 	RuntimeRootPath string
 

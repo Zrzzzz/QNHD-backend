@@ -82,7 +82,7 @@ func GetImageSrc(image *multipart.FileHeader) string {
 	return src
 }
 func SaveImagesFromFromData(pics []*multipart.FileHeader, c *gin.Context) ([]string, error) {
-	var imageUrls []string
+	var imageUrls = []string{}
 	var err error
 	// 检查每张图
 	for _, pic := range pics {

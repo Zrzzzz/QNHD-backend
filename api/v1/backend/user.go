@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -128,7 +129,17 @@ func GetAllUsers(c *gin.Context) {
 func AddUser(c *gin.Context) {
 	number := c.PostForm("number")
 	password := c.PostForm("password")
-
+	phoneNumber := c.PostForm("phone_number")
+	valid := validation.Validation{}
+	valid.Required(number, "number")
+	valid.Required(password, "password")
+	valid.Required(phoneNumber, "phoneNumber")
+	fmt.Println(number, password, phoneNumber)
+	ok, verr := r.E(&valid, "Add backend user")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
 	uid, err := models.ExistUser(number)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
@@ -140,7 +151,7 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	uid, err = models.AddUser(number, password)
+	uid, err = models.AddUser(number, password, phoneNumber)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -225,8 +236,8 @@ func EditUserRight(c *gin.Context) {
 
 	stui := util.AsUint(schAdmin)
 	schi := util.AsUint(stuAdmin)
-	valid.Range(int(stui), 0, 1, "stuAdmin range")
-	valid.Range(int(schi), 0, 1, "schAdmin range")
+	valid.Range(int(stui), 0, 1, "stuAdmin")
+	valid.Range(int(schi), 0, 1, "schAdmin")
 	ok, verr = r.E(&valid, "Edit user right")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})

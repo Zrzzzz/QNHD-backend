@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"fmt"
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -16,13 +15,49 @@ import (
 
 type postResponse struct {
 	models.Post
-	CommentCount int            `json:"comment_count"`
-	IsLike       bool           `json:"is_like"`
-	IsDis        bool           `json:"is_dis"`
-	IsFav        bool           `json:"is_fav"`
-	Tag          models.Tag     `json:"tag"`
-	Floors       []models.Floor `json:"floors"`
-	Pictures     []string       `json:"pictures"`
+	Tag          models.Tag        `json:"tag"`
+	Floors       []models.Floor    `json:"floors"`
+	CommentCount int               `json:"comment_count"`
+	IsLike       bool              `json:"is_like"`
+	IsDis        bool              `json:"is_dis"`
+	IsFav        bool              `json:"is_fav"`
+	Pictures     []string          `json:"pictures"`
+	Department   models.Department `json:"department"`
+}
+
+func makePostResponse(p models.Post, uid string) (postResponse, error) {
+	var pr postResponse
+	tag, err := models.GetTagInPost(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	floors, err := models.GetFloorInPostShort(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	pics, err := models.GetImageInPost(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	var depart models.Department
+	if p.DepartmentId > 0 {
+		d, err := models.GetDepartment(p.DepartmentId)
+		if err != nil {
+			return pr, err
+		}
+		depart = d
+	}
+	return postResponse{
+		Post:         p,
+		Tag:          tag,
+		Floors:       floors,
+		CommentCount: len(floors),
+		IsLike:       models.IsLikePostByUid(uid, util.AsStrU(p.Id)),
+		IsDis:        models.IsDisPostByUid(uid, util.AsStrU(p.Id)),
+		IsFav:        models.IsFavPostByUid(uid, util.AsStrU(p.Id)),
+		Pictures:     pics,
+		Department:   depart,
+	}, nil
 }
 
 // @method [get]
@@ -31,10 +66,35 @@ type postResponse struct {
 // @return postList
 // @route /f/posts
 func GetPosts(c *gin.Context) {
+	postType := c.Query("type")
 	content := c.Query("content")
+	departmentId := c.Query("department_id")
+	valid := validation.Validation{}
+	valid.Required(postType, "type")
+	valid.Numeric(postType, "type")
+	if departmentId != "" {
+		valid.Numeric(departmentId, "department_id")
+	}
+	ok, verr := r.E(&valid, "Get posts")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	postTypeint := util.AsInt(postType)
+	valid.Range(postTypeint, 0, 2, "postType")
+	ok, verr = r.E(&valid, "Get posts")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
 	uid := r.GetUid(c)
 	base, size := util.HandlePaging(c)
-	list, err := models.GetPosts(base, size, content)
+	maps := map[string]interface{}{
+		"type":          postTypeint,
+		"content":       content,
+		"department_id": departmentId,
+	}
+	list, err := models.GetPosts(base, size, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -42,35 +102,13 @@ func GetPosts(c *gin.Context) {
 	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tag, err := models.GetTagInPost(fmt.Sprintf("%d", p.Id))
+		pr, err := makePostResponse(p, uid)
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		retList = append(retList, postResponse{
-			Post:         p,
-			Tag:          tag,
-			Floors:       floors,
-			CommentCount: len(floors),
-			IsLike:       models.IsLikePostByUid(uid),
-			IsDis:        models.IsDisPostByUid(uid),
-			IsFav:        models.IsFavPostByUid(uid),
-			Pictures:     pics,
-		})
+		retList = append(retList, pr)
 	}
 
 	data := make(map[string]interface{})
@@ -96,36 +134,13 @@ func GetUserPosts(c *gin.Context) {
 	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tag, err := models.GetTagInPost(fmt.Sprintf("%d", p.Id))
+		pr, err := makePostResponse(p, uid)
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		retList = append(retList, postResponse{
-			Post:         p,
-			Tag:          tag,
-			Floors:       floors,
-			CommentCount: len(floors),
-			IsLike:       models.IsLikePostByUid(uid),
-			IsDis:        models.IsDisPostByUid(uid),
-			IsFav:        models.IsFavPostByUid(uid),
-			Pictures:     pics,
-		})
+		retList = append(retList, pr)
 	}
 
 	data := make(map[string]interface{})
@@ -151,36 +166,13 @@ func GetFavPosts(c *gin.Context) {
 	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tag, err := models.GetTagInPost(fmt.Sprintf("%d", p.Id))
+		pr, err := makePostResponse(p, uid)
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		retList = append(retList, postResponse{
-			Post:         p,
-			Tag:          tag,
-			Floors:       floors,
-			CommentCount: len(floors),
-			IsLike:       models.IsLikePostByUid(uid),
-			IsDis:        models.IsDisPostByUid(uid),
-			IsFav:        models.IsFavPostByUid(uid),
-			Pictures:     pics,
-		})
+		retList = append(retList, pr)
 	}
 
 	data := make(map[string]interface{})
@@ -206,36 +198,13 @@ func GetHistoryPosts(c *gin.Context) {
 	}
 	retList := []postResponse{}
 	for _, p := range list {
-		tag, err := models.GetTagInPost(fmt.Sprintf("%d", p.Id))
+		pr, err := makePostResponse(p, uid)
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
 			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		pics, err := models.GetImageInPost(fmt.Sprintf("%d", p.Id))
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-
-		retList = append(retList, postResponse{
-			Post:         p,
-			Tag:          tag,
-			Floors:       floors,
-			CommentCount: len(floors),
-			IsLike:       models.IsLikePostByUid(uid),
-			IsDis:        models.IsDisPostByUid(uid),
-			IsFav:        models.IsFavPostByUid(uid),
-			Pictures:     pics,
-		})
+		retList = append(retList, pr)
 	}
 
 	data := make(map[string]interface{})
@@ -269,35 +238,14 @@ func GetPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	tag, err := models.GetTagInPost(fmt.Sprintf("%d", post.Id))
-	if err != nil {
-		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	floors, err := models.GetFloorInPostShort(fmt.Sprintf("%d", post.Id))
-	if err != nil {
-		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	pics, err := models.GetImageInPost(fmt.Sprintf("%d", post.Id))
+	pr, err := makePostResponse(post, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := map[string]interface{}{
-		"post": postResponse{
-			Post:         post,
-			Tag:          tag,
-			Floors:       floors,
-			CommentCount: len(floors),
-			IsLike:       models.IsLikePostByUid(uid),
-			IsDis:        models.IsDisPostByUid(uid),
-			IsFav:        models.IsFavPostByUid(uid),
-			Pictures:     pics,
-		},
+		"post": pr,
 	}
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
@@ -309,18 +257,47 @@ func GetPost(c *gin.Context) {
 // @route /f/post
 func AddPost(c *gin.Context) {
 	uid := r.GetUid(c)
+	postType := c.PostForm("type")
 	content := c.PostForm("content")
-	tag_id := c.PostForm("tag_id")
+	tagId := c.PostForm("tag_id")
+	campus := c.PostForm("campus")
+	departId := c.PostForm("department_id")
 	valid := validation.Validation{}
 	valid.Required(content, "content")
-	if tag_id != "" {
-		valid.Numeric(tag_id, "tag_id")
-	}
+	valid.Required(postType, "postType")
+	valid.Required(campus, "campus")
+	valid.Numeric(campus, "campus")
+	valid.Numeric(postType, "postType")
 	ok, verr := r.E(&valid, "Add posts")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
+	campusint := util.AsInt(campus)
+	valid.Range(campusint, 0, 2, "campus")
+	postTypeint := util.AsInt(postType)
+	valid.Range(postTypeint, 0, 1, "postType")
+	ok, verr = r.E(&valid, "Add posts")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	// 需要根据类型判断返回类型
+	// 0为树洞帖子
+	// 1为校务帖子
+
+	// 判断type
+	if postTypeint == 0 {
+		// 可选tag
+		if tagId != "" {
+			valid.Numeric(tagId, "tag_id")
+		}
+	} else if postTypeint == 1 {
+		// 必须要求部门id不为0
+		valid.Required(departId, "department_id")
+		valid.Numeric(departId, "department_id")
+	}
+
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -343,9 +320,16 @@ func AddPost(c *gin.Context) {
 
 	intuid := util.AsUint(uid)
 	maps["uid"] = intuid
+	maps["type"] = postTypeint
+	maps["campus"] = campusint
 	maps["content"] = content
-	maps["picture_url"] = imageUrls
-	maps["tag_id"] = tag_id
+	maps["picture_urls"] = imageUrls
+
+	if postTypeint == 0 {
+		maps["tag_id"] = tagId
+	} else if postTypeint == 1 {
+		maps["department_id"] = util.AsUint(departId)
+	}
 	id, err := models.AddPost(maps)
 	if err != nil {
 		logging.Error("Add post error: %v", err)

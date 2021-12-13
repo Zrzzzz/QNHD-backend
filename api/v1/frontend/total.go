@@ -14,6 +14,7 @@ const (
 	Floor
 	History
 	Department
+	Report
 )
 
 var FrontTypes = [...]FrontType{
@@ -22,6 +23,7 @@ var FrontTypes = [...]FrontType{
 	Floor,
 	History,
 	Department,
+	Report,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -82,5 +84,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Department:
 		// 查询部门
 		g.GET("/departments", GetDepartments)
+	case Report:
+		g.POST("/report", AddReport)
 	}
 }

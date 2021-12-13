@@ -1,7 +1,7 @@
 package models
 
 type UserDepartment struct {
-	Id           uint64 `gorm:"primaryKey;autoIncrement;null;" json:"id"`
+	Id           uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"id"`
 	Uid          uint64 `json:"uid"`
 	DepartmentId uint64 `json:"department_id"`
 }

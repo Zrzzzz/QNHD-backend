@@ -12,12 +12,15 @@ import (
 
 type Post struct {
 	Model
-	Uid       uint64 `json:"uid"`
-	Content   string `json:"content"`
-	FavCount  uint64 `json:"fav_count"`
-	LikeCount uint64 `json:"like_count"`
-	DisCount  uint64 `json:"-"`
-	UpdatedAt string `json:"updated_at" gorm:"null;"`
+	Type         int    `json:"type"`
+	Uid          uint64 `json:"-" gorm:"column:uid"`
+	DepartmentId uint64 `json:"-" gorm:"column:department_id"`
+	Campus       int    `json:"campus"`
+	Content      string `json:"content"`
+	FavCount     uint64 `json:"fav_count"`
+	LikeCount    uint64 `json:"like_count"`
+	DisCount     uint64 `json:"-"`
+	UpdatedAt    string `json:"-" gorm:"default:null;"`
 }
 
 type LogPostFav struct {
@@ -51,9 +54,20 @@ func GetPost(postId string, uid string) (Post, error) {
 	return post, nil
 }
 
-func GetPosts(overNum, limit int, content string) ([]Post, error) {
+func GetPosts(overNum, limit int, maps map[string]interface{}) ([]Post, error) {
 	var posts []Post
-	if err := db.Where("content LIKE ?", "%"+content+"%").Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	content := maps["content"].(string)
+	postTypeint := maps["type"].(int)
+	departmentId := maps["department_id"].(string)
+	var d = db.Where("content LIKE ?", "%"+content+"%")
+	if postTypeint != 2 {
+		d = d.Where("type = ?", postTypeint)
+	}
+	if departmentId != "" {
+		d = d.Where("department_id = ?", departmentId)
+	}
+
+	if err := d.Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
@@ -89,32 +103,66 @@ func GetHistoryPosts(overNum, limit int, uid string) ([]Post, error) {
 }
 
 func AddPost(maps map[string]interface{}) (uint64, error) {
+	var err error
 	var post = &Post{
+		Type:    maps["type"].(int),
 		Uid:     maps["uid"].(uint64),
+		Campus:  maps["campus"].(int),
 		Content: maps["content"].(string),
 	}
-	pics, pic_ok := maps["picture_url"].([]string)
-	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Select("uid", "content").Create(post).Error; err != nil {
-			return err
-		}
-		if pic_ok {
-			if err := AddImageInPost(post.Id, pics); err != nil {
-				return err
-			}
-		}
-		tagId, ok := maps["tag_id"].(string)
-		if ok {
-			if err := AddPostWithTag(post.Id, tagId); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		upload.DeleteImageUrls(pics)
-		return 0, err
+	postType, ok := maps["type"].(int)
+	if !ok {
+		return 0, fmt.Errorf("maps not contain ok")
 	}
+	if postType == 0 {
+		pics, pic_ok := maps["picture_url"].([]string)
+		err = db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Select("type", "uid", "content").Create(post).Error; err != nil {
+				return err
+			}
+			if pic_ok {
+				if err := AddImageInPost(post.Id, pics); err != nil {
+					return err
+				}
+			}
+			// 如果有tag_id
+			tagId, ok := maps["tag_id"].(string)
+			if ok {
+				if err := AddPostWithTag(post.Id, tagId); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			upload.DeleteImageUrls(pics)
+			return 0, err
+		}
+	} else if postType == 1 {
+		// 先对department_id进行查找，不存在要报错
+		departId := maps["department_id"].(uint64)
+		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {
+			return 0, err
+		}
+		post.DepartmentId = departId
+		pics, pic_ok := maps["picture_url"].([]string)
+		err = db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Select("type", "uid", "content", "department_id").Create(post).Error; err != nil {
+				return err
+			}
+			if pic_ok {
+				if err := AddImageInPost(post.Id, pics); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			upload.DeleteImageUrls(pics)
+			return 0, err
+		}
+	}
+
 	return post.Id, nil
 }
 
@@ -141,7 +189,6 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	return post.Id, nil
 }
 
@@ -406,27 +453,27 @@ func UnDisPost(postId string, uid string) error {
 	return nil
 }
 
-func IsLikePostByUid(uid string) bool {
+func IsLikePostByUid(uid, postId string) bool {
 	var log LogPostLike
-	if err := db.Where("uid = ?", uid).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		logging.Error(err.Error())
 		return false
 	}
 	return log.Id > 0
 }
 
-func IsDisPostByUid(uid string) bool {
+func IsDisPostByUid(uid, postId string) bool {
 	var log LogPostDis
-	if err := db.Where("uid = ?", uid).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		logging.Error(err.Error())
 		return false
 	}
 	return log.Id > 0
 }
 
-func IsFavPostByUid(uid string) bool {
+func IsFavPostByUid(uid, postId string) bool {
 	var log LogPostFav
-	if err := db.Where("uid = ?", uid).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		logging.Error(err.Error())
 		return false
 	}

@@ -16,7 +16,7 @@ type Claims struct {
 
 func GenerateToken(uid string) (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(12 * time.Hour)
+	expireTime := nowTime.Add(time.Duration(setting.AppSetting.TokenExpireTime) * time.Hour)
 	claims := Claims{
 		uid,
 		jwt.StandardClaims{

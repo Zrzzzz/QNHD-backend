@@ -7,14 +7,15 @@ import (
 )
 
 type User struct {
-	Uid       uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Number    string `json:"number"`
-	Password  string `json:"-"`
-	Super     int    `json:"super"`
-	SchAdmin  int    `json:"sch_admin"`
-	StuAdmin  int    `json:"stu_admin"`
-	Active    int    `json:"active" gorm:"default:1"`
-	CreatedAt string `json:"created_at" gorm:"autoCreateTime;default:null;"`
+	Uid         uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
+	Number      string `json:"number"`
+	Password    string `json:"-" gorm:"column:password;"`
+	PhoneNumber string `json:"phone_number"`
+	Super       int    `json:"super"`
+	SchAdmin    int    `json:"sch_admin"`
+	StuAdmin    int    `json:"stu_admin"`
+	Active      int    `json:"active" gorm:"default:1"`
+	CreatedAt   string `json:"created_at" gorm:"autoCreateTime;default:null;"`
 }
 type UserRight struct {
 	Super    bool
@@ -48,14 +49,6 @@ func UserRightDemand(uid string) (bool, error) {
 		return false, err
 	}
 	return user.Super == 0 && user.StuAdmin == 0 && user.SchAdmin == 0, nil
-}
-
-func CheckUser(number string, password string) (uint64, error) {
-	var user User
-	if err := db.Where(User{Number: number, Password: password}).First(&user).Error; err != nil {
-		return 0, err
-	}
-	return user.Uid, nil
 }
 
 func ExistUser(number string) (uint64, error) {
@@ -93,12 +86,13 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	return u, nil
 }
 
-func AddUser(number, password string) (uint64, error) {
+func AddUser(number, password, phoneNumber string) (uint64, error) {
 	var user = User{
-		Number:   number,
-		Password: password,
+		Number:      number,
+		Password:    password,
+		PhoneNumber: phoneNumber,
 	}
-	if err := db.Select("number", "password").Create(&user).Error; err != nil {
+	if err := db.Select("number", "password", "phone_number").Create(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil

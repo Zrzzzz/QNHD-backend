@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
-	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
@@ -37,8 +36,7 @@ func E(valid *validation.Validation, errorPhase string) (bool, error) {
 	s := errorPhase
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
-			logging.Error("%v error: %v", errorPhase, r)
-			s += r.Error()
+			s += fmt.Sprintf("\n%v %v\n", r.Key, r.Message)
 		}
 	}
 	return !valid.HasErrors(), fmt.Errorf(s)
