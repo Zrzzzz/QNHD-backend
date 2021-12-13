@@ -12,15 +12,16 @@ import (
 
 type Floor struct {
 	Model
-	Uid         uint64 `json:"uid"`
-	PostId      uint64 `json:"post_id"`
-	Content     string `json:"content"`
-	Nickname    string `json:"nickname"`
-	ImageURL    string `json:"image_url"`
-	ReplyTo     uint64 `json:"reply_to" `
-	ReplyToName string `json:"reply_to_name"`
-	LikeCount   uint64 `json:"like_count"`
-	DisCount    uint64 `json:"-"`
+	Uid         uint64  `json:"uid"`
+	PostId      uint64  `json:"post_id"`
+	Content     string  `json:"content"`
+	Nickname    string  `json:"nickname"`
+	ImageURL    string  `json:"image_url"`
+	ReplyTo     uint64  `json:"reply_to" `
+	ReplyToName string  `json:"reply_to_name"`
+	LikeCount   uint64  `json:"like_count"`
+	DisCount    uint64  `json:"-"`
+	SubFloors   []Floor `json:"sub_floors" gorm:"-"`
 }
 
 type LogFloorLike struct {
@@ -37,24 +38,56 @@ type LogFloorDis struct {
 
 const OWNER_NAME = "Owner"
 
-var FLOOR_NAME = []string{
-	"Angus", "Bertram", "Conrad", "Devin", "Emmanuel", "Fitzgerald", "Gregary", "Herbert", "Ingram", "Joyce", "Kelly", "Leo", "Morton", "Nathaniel", "Orville", "Payne", "Quintion", "Regan", "Sean", "Tracy", "Uriah", "Valentine", "Walker", "Xavier", "Yves", "Zachary",
-}
+// var FLOOR_NAME = []string{
+// 	"Angus", "Bertram", "Conrad", "Devin", "Emmanuel", "Fitzgerald", "Gregary", "Herbert", "Ingram", "Joyce", "Kelly", "Leo", "Morton", "Nathaniel", "Orville", "Payne", "Quintion", "Regan", "Sean", "Tracy", "Uriah", "Valentine", "Walker", "Xavier", "Yves", "Zachary",
+// }
+const FLOOR_NAME = "测试"
 
-func GetFloorInPostShort(postId string) ([]Floor, error) {
+// 缩略返回帖子内楼层，即返回5条
+func GetShortFloorsInPost(postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ?", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
 		return nil, err
+	}
+	// 处理回复
+	for idx := range floors {
+		rps, err := GetFloorShortReplys(util.AsStrU(floors[idx].Id))
+		if err != nil {
+			return floors, nil
+		}
+		floors[idx].SubFloors = rps
 	}
 	return floors, nil
 }
 
-func GetFloorInPost(base int, pageSize int, postId string) ([]Floor, error) {
+// 分页返回帖子里的楼层
+func GetFloorsInPost(base int, pageSize int, postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ?", postId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error; err != nil {
 		return nil, err
 	}
+	for idx := range floors {
+		rps, err := GetFloorShortReplys(util.AsStrU(floors[idx].Id))
+		if err != nil {
+			return floors, nil
+		}
+		floors[idx].SubFloors = rps
+	}
 	return floors, nil
+}
+
+// 缩略返回楼层内的回复，即返回5条
+func GetFloorShortReplys(floorId string) ([]Floor, error) {
+	var floors []Floor
+	err := db.Where("reply_to = ?", floorId).Order("created_at").Limit(5).Find(&floors).Error
+	return floors, err
+}
+
+// 分页返回楼层内的回复
+func GetFloorReplys(base int, pageSize int, floorId string) ([]Floor, error) {
+	var floors []Floor
+	err := db.Where("reply_to = ?", floorId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error
+	return floors, err
 }
 
 func GetFloorByUid(uid string) ([]Floor, error) {
@@ -63,17 +96,6 @@ func GetFloorByUid(uid string) ([]Floor, error) {
 		return nil, err
 	}
 	return floors, nil
-}
-
-func GetFloor(id string) (Floor, error) {
-	var floor Floor
-	if err := db.Where("id = ?", id).First(&floor).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return floor, nil
-		}
-		return floor, err
-	}
-	return floor, nil
 }
 
 func AddFloor(maps map[string]interface{}) (uint64, error) {
@@ -106,7 +128,8 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
-			nickname = FLOOR_NAME[cnt]
+			// nickname = FLOOR_NAME[cnt]
+			nickname = fmt.Sprintf("%v%d", FLOOR_NAME, cnt)
 		}
 	}
 	var newFloor = Floor{
@@ -152,7 +175,8 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
-			nickname = FLOOR_NAME[cnt]
+			// nickname = FLOOR_NAME[cnt]
+			nickname = fmt.Sprintf("%v%d", FLOOR_NAME, cnt)
 		}
 	}
 

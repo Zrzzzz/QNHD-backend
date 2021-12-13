@@ -28,7 +28,7 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 	base, size := util.HandlePaging(c)
-	list, err := models.GetFloorInPost(base, size, postId)
+	list, err := models.GetFloorsInPost(base, size, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

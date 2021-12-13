@@ -31,7 +31,7 @@ func makePostResponse(p models.Post, uid string) (postResponse, error) {
 	if err != nil {
 		return pr, err
 	}
-	floors, err := models.GetFloorInPostShort(util.AsStrU(p.Id))
+	floors, err := models.GetShortFloorsInPost(util.AsStrU(p.Id))
 	if err != nil {
 		return pr, err
 	}
