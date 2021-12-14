@@ -75,6 +75,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除指定公告
 		g.GET("/notice/delete", DeleteNotice)
 	case User:
+		// 获取请求者用户信息
+		g.GET("/user/info", GetUserInfo)
 		// 获取普通用户列表
 		g.GET("/users/common", GetCommonUsers)
 		// 获取所有用户列表

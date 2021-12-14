@@ -26,6 +26,12 @@ func GetDepartment(id uint64) (Department, error) {
 	return depart, err
 }
 
+func GetDepartmentHasUser(uid uint64) (Department, error) {
+	var depart Department
+	err := db.Joins("JOIN user_department AS ud ON ud.department_id = departments.id AND ud.uid = ?", uid).First(&depart).Error
+	return depart, err
+}
+
 func AddDepartment(maps map[string]interface{}) (uint64, error) {
 	var depart = Department{
 		Name:         maps["name"].(string),

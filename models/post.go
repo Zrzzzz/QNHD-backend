@@ -13,16 +13,20 @@ import (
 
 type Post struct {
 	Model
+	Uid uint64 `json:"-" gorm:"column:uid"`
+	// 帖子分类
 	Type         int    `json:"type"`
-	Uid          uint64 `json:"-" gorm:"column:uid"`
 	DepartmentId uint64 `json:"-" gorm:"column:department_id"`
 	Campus       int    `json:"campus"`
-	Title        string `json:"title"`
-	Content      string `json:"content"`
-	FavCount     uint64 `json:"fav_count"`
-	LikeCount    uint64 `json:"like_count"`
-	DisCount     uint64 `json:"-"`
-	UpdatedAt    string `json:"-" gorm:"default:null;"`
+	Solved       int    `json:"solved"`
+	// 帖子内容
+	Title   string `json:"title"`
+	Content string `json:"content"`
+	// 各种数量
+	FavCount  uint64 `json:"fav_count"`
+	LikeCount uint64 `json:"like_count"`
+	DisCount  uint64 `json:"-"`
+	UpdatedAt string `json:"-" gorm:"default:null;"`
 }
 
 type LogPostFav struct {
@@ -52,7 +56,6 @@ func GetPost(postId string, uid string) (Post, error) {
 	if err := AddTagLogInPost(util.AsUint(postId)); err != nil {
 		return post, err
 	}
-
 	return post, nil
 }
 
@@ -60,13 +63,21 @@ func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
 	var posts []Post
 	content := maps["content"].(string)
 	postTypeint := maps["type"].(int)
-	departmentId := maps["department_id"].(string)
+	departmentId, departOk := maps["department_id"].(string)
+	solved, solvedOk := maps["solved"].(string)
+
 	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
+	// 校区 不为全部时加上区分
 	if postTypeint != 2 {
 		d = d.Where("type = ?", postTypeint)
 	}
-	if departmentId != "" {
+	// 如果有部门要加上
+	if departOk {
 		d = d.Where("department_id = ?", departmentId)
+	}
+	// 如果要加上是否解决的字段
+	if solvedOk {
+		d = d.Where("solved = ?", solved)
 	}
 
 	if err := d.Find(&posts).Error; err != nil {

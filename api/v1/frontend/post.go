@@ -69,9 +69,13 @@ func GetPosts(c *gin.Context) {
 	postType := c.Query("type")
 	content := c.Query("content")
 	departmentId := c.Query("department_id")
+	solved := c.Query("solved")
 	valid := validation.Validation{}
 	valid.Required(postType, "type")
 	valid.Numeric(postType, "type")
+	if solved != "" {
+		valid.Numeric(solved, "solved")
+	}
 	if departmentId != "" {
 		valid.Numeric(departmentId, "department_id")
 	}
@@ -82,6 +86,10 @@ func GetPosts(c *gin.Context) {
 	}
 	postTypeint := util.AsInt(postType)
 	valid.Range(postTypeint, 0, 2, "postType")
+	if solved != "" {
+		solvedint := util.AsInt(solved)
+		valid.Range(solvedint, 0, 1, "solved")
+	}
 	ok, verr = r.E(&valid, "Get posts")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -89,9 +97,12 @@ func GetPosts(c *gin.Context) {
 	}
 	uid := r.GetUid(c)
 	maps := map[string]interface{}{
-		"type":          postTypeint,
-		"content":       content,
-		"department_id": departmentId,
+		"type":    postTypeint,
+		"solved":  solved,
+		"content": content,
+	}
+	if departmentId != "" {
+		maps["department_id"] = departmentId
 	}
 	list, err := models.GetPosts(c, maps)
 	if err != nil {

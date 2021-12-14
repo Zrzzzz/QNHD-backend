@@ -14,13 +14,43 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserResponse struct {
+type userResponse struct {
 	models.User
 	IsBlocked     bool   `json:"is_blocked"`
 	BlockedStart  string `json:"bloced_start"`
 	BlockedRemain uint64 `json:"blocked_remain"`
 	BlockedOver   string `json:"blocked_over"`
 	IsBanned      bool   `json:"is_banned"`
+}
+
+type userInfo struct {
+	models.User
+	Department models.Department `json:"department"`
+}
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /b/user/info
+func GetUserInfo(c *gin.Context) {
+	uid := r.GetUid(c)
+	user, err := models.GetUser(map[string]interface{}{"id": uid})
+	if err != nil {
+		logging.Error("get user info error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	depart, err := models.GetDepartmentHasUser(util.AsUint(uid))
+	if err != nil {
+		logging.Error("get user info error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	data := map[string]interface{}{
+		"user_info": userInfo{User: user, Department: depart},
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -37,10 +67,10 @@ func GetCommonUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []UserResponse{}
+	retList := []userResponse{}
 
 	for _, user := range list {
-		nUser := UserResponse{User: user}
+		nUser := userResponse{User: user}
 		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
@@ -91,10 +121,10 @@ func GetAllUsers(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []UserResponse{}
+	retList := []userResponse{}
 
 	for _, user := range list {
-		nUser := UserResponse{User: user}
+		nUser := userResponse{User: user}
 		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
