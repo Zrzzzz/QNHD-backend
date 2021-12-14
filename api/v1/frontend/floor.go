@@ -29,8 +29,8 @@ func GetFloors(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	base, size := util.HandlePaging(c)
-	list, err := models.GetFloorsInPost(base, size, postId)
+
+	list, err := models.GetFloorsInPost(c, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -59,8 +59,8 @@ func GetFloorReplys(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	base, size := util.HandlePaging(c)
-	list, err := models.GetFloorReplys(base, size, floorId)
+
+	list, err := models.GetFloorReplys(c, floorId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

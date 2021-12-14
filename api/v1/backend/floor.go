@@ -6,7 +6,6 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -27,8 +26,8 @@ func GetFloors(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	base, size := util.HandlePaging(c)
-	list, err := models.GetFloorsInPost(base, size, postId)
+
+	list, err := models.GetFloorsInPost(c, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

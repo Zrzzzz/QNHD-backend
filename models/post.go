@@ -7,6 +7,7 @@ import (
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,7 @@ type Post struct {
 	Uid          uint64 `json:"-" gorm:"column:uid"`
 	DepartmentId uint64 `json:"-" gorm:"column:department_id"`
 	Campus       int    `json:"campus"`
+	Title        string `json:"title"`
 	Content      string `json:"content"`
 	FavCount     uint64 `json:"fav_count"`
 	LikeCount    uint64 `json:"like_count"`
@@ -54,12 +56,12 @@ func GetPost(postId string, uid string) (Post, error) {
 	return post, nil
 }
 
-func GetPosts(overNum, limit int, maps map[string]interface{}) ([]Post, error) {
+func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
 	var posts []Post
 	content := maps["content"].(string)
 	postTypeint := maps["type"].(int)
 	departmentId := maps["department_id"].(string)
-	var d = db.Where("content LIKE ?", "%"+content+"%")
+	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	if postTypeint != 2 {
 		d = d.Where("type = ?", postTypeint)
 	}
@@ -67,36 +69,36 @@ func GetPosts(overNum, limit int, maps map[string]interface{}) ([]Post, error) {
 		d = d.Where("department_id = ?", departmentId)
 	}
 
-	if err := d.Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	if err := d.Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
 }
 
-func GetUserPosts(overNum, limit int, uid string) ([]Post, error) {
+func GetUserPosts(c *gin.Context, uid string) ([]Post, error) {
 	var posts []Post
-	if err := db.Where("uid = ?", uid).Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
 }
 
-func GetFavPosts(overNum, limit int, uid string) ([]Post, error) {
+func GetFavPosts(c *gin.Context, uid string) ([]Post, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
 }
 
-func GetHistoryPosts(overNum, limit int, uid string) ([]Post, error) {
+func GetHistoryPosts(c *gin.Context, uid string) ([]Post, error) {
 	var posts []Post
 	var ids []string
-	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id").Offset(overNum).Limit(limit).Scan(&ids).Error; err != nil {
+	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id").Scopes(util.Paginate(c)).Scan(&ids).Error; err != nil {
 		return nil, err
 	}
 
-	if err := db.Where("id IN (?)", ids).Offset(overNum).Limit(limit).Find(&posts).Error; err != nil {
+	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
@@ -108,6 +110,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		Type:    maps["type"].(int),
 		Uid:     maps["uid"].(uint64),
 		Campus:  maps["campus"].(int),
+		Title:   maps["title"].(string),
 		Content: maps["content"].(string),
 	}
 	postType, ok := maps["type"].(int)
@@ -115,9 +118,9 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		return 0, fmt.Errorf("maps not contain ok")
 	}
 	if postType == 0 {
-		pics, pic_ok := maps["picture_url"].([]string)
+		pics, pic_ok := maps["picture_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "content").Create(post).Error; err != nil {
+			if err := tx.Select("type", "uid", "title", "content").Create(post).Error; err != nil {
 				return err
 			}
 			if pic_ok {
@@ -145,9 +148,9 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			return 0, err
 		}
 		post.DepartmentId = departId
-		pics, pic_ok := maps["picture_url"].([]string)
+		pics, pic_ok := maps["picture_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "content", "department_id").Create(post).Error; err != nil {
+			if err := tx.Select("type", "uid", "title", "content", "department_id").Create(post).Error; err != nil {
 				return err
 			}
 			if pic_ok {

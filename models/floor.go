@@ -7,6 +7,7 @@ import (
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -61,9 +62,9 @@ func GetShortFloorsInPost(postId string) ([]Floor, error) {
 }
 
 // 分页返回帖子里的楼层
-func GetFloorsInPost(base int, pageSize int, postId string) ([]Floor, error) {
+func GetFloorsInPost(c *gin.Context, postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	for idx := range floors {
@@ -84,9 +85,9 @@ func GetFloorShortReplys(floorId string) ([]Floor, error) {
 }
 
 // 分页返回楼层内的回复
-func GetFloorReplys(base int, pageSize int, floorId string) ([]Floor, error) {
+func GetFloorReplys(c *gin.Context, floorId string) ([]Floor, error) {
 	var floors []Floor
-	err := db.Where("reply_to = ?", floorId).Order("created_at").Offset(base).Limit(pageSize).Find(&floors).Error
+	err := db.Where("reply_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
 	return floors, err
 }
 

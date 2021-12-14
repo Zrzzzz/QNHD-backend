@@ -1,24 +1,30 @@
 package util
 
 import (
-	"qnhd/pkg/setting"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // require content have page and page_size param
 // return overnum, neednum
-func HandlePaging(c *gin.Context) (int, int) {
-	pageNum := 0
-	pn := c.Query("page")
-	if pn != "" {
-		pageNum = AsInt(pn)
-	}
+func Paginate(c *gin.Context) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		page, _ := strconv.Atoi(c.Query("page"))
+		if page == 0 {
+			page = 1
+		}
 
-	pageSize := setting.AppSetting.PageSize
-	ps := c.Query("page_size")
-	if ps != "" {
-		pageSize = AsInt(ps)
+		pageSize, _ := strconv.Atoi(c.Query("page_size"))
+		switch {
+		case pageSize > 100:
+			pageSize = 100
+		case pageSize <= 0:
+			pageSize = 10
+		}
+
+		offset := (page - 1) * pageSize
+		return db.Offset(offset).Limit(pageSize)
 	}
-	return int(pageNum) * pageSize, pageSize
 }

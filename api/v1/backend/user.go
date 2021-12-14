@@ -30,10 +30,8 @@ type UserResponse struct {
 // @route /b/users/common
 func GetCommonUsers(c *gin.Context) {
 	uid := c.Query("uid")
-	over, pageSize := util.HandlePaging(c)
-
 	code := e.SUCCESS
-	list, err := models.GetCommonUsers(uid, over, pageSize)
+	list, err := models.GetCommonUsers(c, uid)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -86,10 +84,8 @@ func GetAllUsers(c *gin.Context) {
 	}
 
 	uid = c.Query("uid")
-	over, pageSize := util.HandlePaging(c)
-
 	code := e.SUCCESS
-	list, err := models.GetAllUsers(uid, over, pageSize)
+	list, err := models.GetAllUsers(c, uid)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

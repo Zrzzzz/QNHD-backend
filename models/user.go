@@ -2,7 +2,9 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/util"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -62,17 +64,17 @@ func ExistUser(number string) (uint64, error) {
 	return user.Uid, nil
 }
 
-func GetCommonUsers(uid string, overnum, pageSize int) ([]User, error) {
+func GetCommonUsers(c *gin.Context, uid string) ([]User, error) {
 	var users []User
-	if err := db.Where("id like ? AND super = 0 AND sch_admin = 0 AND stu_admin = 0", "%"+uid+"%").Offset(overnum).Limit(pageSize).Find(&users).Error; err != nil {
+	if err := db.Where("id like ? AND super = 0 AND sch_admin = 0 AND stu_admin = 0", "%"+uid+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-func GetAllUsers(uid string, overnum, pageSize int) ([]User, error) {
+func GetAllUsers(c *gin.Context, uid string) ([]User, error) {
 	var users []User
-	if err := db.Where("id like ? AND Super <> 1", "%"+uid+"%").Offset(overnum).Limit(pageSize).Find(&users).Error; err != nil {
+	if err := db.Where("id like ? AND Super <> 1", "%"+uid+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

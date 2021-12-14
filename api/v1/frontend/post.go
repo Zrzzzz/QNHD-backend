@@ -88,13 +88,12 @@ func GetPosts(c *gin.Context) {
 		return
 	}
 	uid := r.GetUid(c)
-	base, size := util.HandlePaging(c)
 	maps := map[string]interface{}{
 		"type":          postTypeint,
 		"content":       content,
 		"department_id": departmentId,
 	}
-	list, err := models.GetPosts(base, size, maps)
+	list, err := models.GetPosts(c, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -125,8 +124,8 @@ func GetPosts(c *gin.Context) {
 // @route /f/posts/user
 func GetUserPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	base, size := util.HandlePaging(c)
-	list, err := models.GetUserPosts(base, size, uid)
+
+	list, err := models.GetUserPosts(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -157,8 +156,7 @@ func GetUserPosts(c *gin.Context) {
 // @route /f/posts/fav
 func GetFavPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	base, size := util.HandlePaging(c)
-	list, err := models.GetFavPosts(base, size, uid)
+	list, err := models.GetFavPosts(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -189,8 +187,8 @@ func GetFavPosts(c *gin.Context) {
 // @route /f/posts/history
 func GetHistoryPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	base, size := util.HandlePaging(c)
-	list, err := models.GetHistoryPosts(base, size, uid)
+
+	list, err := models.GetHistoryPosts(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -252,12 +250,13 @@ func GetPost(c *gin.Context) {
 
 // @method [post]
 // @way [formdata]
-// @param uid content picture tag_id
+// @param uid, type, title, content, campus, department_id, pictures
 // @return uploadres
 // @route /f/post
 func AddPost(c *gin.Context) {
 	uid := r.GetUid(c)
 	postType := c.PostForm("type")
+	title := c.PostForm("title")
 	content := c.PostForm("content")
 	tagId := c.PostForm("tag_id")
 	campus := c.PostForm("campus")
@@ -268,6 +267,8 @@ func AddPost(c *gin.Context) {
 	valid.Required(campus, "campus")
 	valid.Numeric(campus, "campus")
 	valid.Numeric(postType, "postType")
+	valid.Required(title, "title")
+	valid.MaxSize(title, 30, "title")
 	ok, verr := r.E(&valid, "Add posts")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -315,17 +316,17 @@ func AddPost(c *gin.Context) {
 		return
 	}
 
-	maps := make(map[string]interface{})
-	data := make(map[string]interface{})
-
 	intuid := util.AsUint(uid)
-	maps["uid"] = intuid
-	maps["type"] = postTypeint
-	maps["campus"] = campusint
-	maps["content"] = content
-	maps["picture_urls"] = imageUrls
+	maps := map[string]interface{}{
+		"uid":          intuid,
+		"type":         postTypeint,
+		"campus":       campusint,
+		"title":        title,
+		"content":      content,
+		"picture_urls": imageUrls,
+	}
 
-	if postTypeint == 0 {
+	if postTypeint == 0 && tagId != "" {
 		maps["tag_id"] = tagId
 	} else if postTypeint == 1 {
 		maps["department_id"] = util.AsUint(departId)
@@ -336,8 +337,9 @@ func AddPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
+	data := make(map[string]interface{})
 	data["id"] = id
-	data["pictrue_url"] = imageUrls
+	data["pictrue_urls"] = imageUrls
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 

@@ -30,22 +30,15 @@ func GetImageInPost(postId string) ([]string, error) {
 }
 
 func AddImageInPost(postId uint64, imageUrls []string) error {
-	err := db.Transaction(func(tx *gorm.DB) error {
-		addDb := tx.Select("post_id", "image_url")
-		for _, url := range imageUrls {
-			if err := addDb.Create(&PostImage{
-				PostId:   postId,
-				ImageUrl: url,
-			}).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
+	var pis = []PostImage{}
+	for _, url := range imageUrls {
+		pis = append(pis, PostImage{
+			PostId:   postId,
+			ImageUrl: url,
+		})
 	}
-	return nil
+	err := db.Create(&pis).Error
+	return err
 }
 
 func DeleteImageInPost(tx *gorm.DB, postId string) error {
@@ -62,10 +55,7 @@ func DeleteImageInPost(tx *gorm.DB, postId string) error {
 		return err
 	}
 	err = tx.Where("post_id = ?", postId).Delete(&PostImage{}).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (PostImage) TableName() string {
