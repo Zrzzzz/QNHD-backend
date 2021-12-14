@@ -14,12 +14,11 @@ import (
 )
 
 // @method [get]
-// @way [formdata]
+// @way [query]
 // @param page, page_size, post_id
 // @return floorlist
 // @route /f/floors
 func GetFloors(c *gin.Context) {
-
 	postId := c.Query("post_id")
 
 	valid := validation.Validation{}
@@ -32,6 +31,36 @@ func GetFloors(c *gin.Context) {
 	}
 	base, size := util.HandlePaging(c)
 	list, err := models.GetFloorsInPost(base, size, postId)
+	if err != nil {
+		logging.Error("Get floors error: %v", err)
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["list"] = list
+	data["total"] = len(list)
+	r.R(c, http.StatusOK, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
+// @param page, page_size, floor_id
+// @return floorlist
+// @route /f/floor/replys
+func GetFloorReplys(c *gin.Context) {
+	floorId := c.Query("floor_id")
+
+	valid := validation.Validation{}
+	valid.Required(floorId, "floor_id")
+	valid.Numeric(floorId, "floor_id")
+	ok, verr := r.E(&valid, "Get floorreplys")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	base, size := util.HandlePaging(c)
+	list, err := models.GetFloorReplys(base, size, floorId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
