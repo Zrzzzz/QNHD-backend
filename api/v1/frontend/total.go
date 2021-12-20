@@ -15,6 +15,7 @@ const (
 	History
 	Department
 	Report
+	Notice
 )
 
 var FrontTypes = [...]FrontType{
@@ -24,6 +25,7 @@ var FrontTypes = [...]FrontType{
 	History,
 	Department,
 	Report,
+	Notice,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -58,14 +60,20 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/posts/history", GetHistoryPosts)
 		// 查询单个帖子
 		g.GET("/post", GetPost)
-		//  收藏或者取消
-		g.POST("/post/favOrUnfav/modify", FavOrUnfavPost)
-		//  点赞或者取消
-		g.POST("/post/likeOrUnlike/modify", LikeOrUnlikePost)
-		//  点踩或者取消
-		g.POST("/post/disOrUndis/modify", DisOrUndisPost)
 		// 新建帖子
 		g.POST("/post", AddPost)
+		// 解决问题
+		g.POST("/post/solve", EditPostSolved)
+		// 获取帖子回复
+		g.GET("/post/replys", GetPostReplys)
+		// 帖子回复校方回应
+		g.POST("/post/reply", AddPostReply)
+		// 收藏或者取消
+		g.POST("/post/favOrUnfav/modify", FavOrUnfavPost)
+		// 点赞或者取消
+		g.POST("/post/likeOrUnlike/modify", LikeOrUnlikePost)
+		// 点踩或者取消
+		g.POST("/post/disOrUndis/modify", DisOrUndisPost)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
 	case Floor:
@@ -88,5 +96,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/departments", GetDepartments)
 	case Report:
 		g.POST("/report", AddReport)
+	case Notice:
+		g.GET("/notice", GetNotices)
 	}
 }

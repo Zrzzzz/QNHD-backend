@@ -21,7 +21,7 @@ type postResponse struct {
 	IsLike       bool              `json:"is_like"`
 	IsDis        bool              `json:"is_dis"`
 	IsFav        bool              `json:"is_fav"`
-	Pictures     []string          `json:"pictures"`
+	ImageUrls    []string          `json:"image_urls"`
 	Department   models.Department `json:"department"`
 }
 
@@ -35,7 +35,7 @@ func makePostResponse(p models.Post, uid string) (postResponse, error) {
 	if err != nil {
 		return pr, err
 	}
-	pics, err := models.GetImageInPost(util.AsStrU(p.Id))
+	imgs, err := models.GetImageInPost(util.AsStrU(p.Id))
 	if err != nil {
 		return pr, err
 	}
@@ -55,7 +55,7 @@ func makePostResponse(p models.Post, uid string) (postResponse, error) {
 		IsLike:       models.IsLikePostByUid(uid, util.AsStrU(p.Id)),
 		IsDis:        models.IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        models.IsFavPostByUid(uid, util.AsStrU(p.Id)),
-		Pictures:     pics,
+		ImageUrls:    imgs,
 		Department:   depart,
 	}, nil
 }
@@ -241,7 +241,7 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	post, err := models.GetPost(id, uid)
+	post, err := models.GetPostAndVisit(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -261,7 +261,7 @@ func GetPost(c *gin.Context) {
 
 // @method [post]
 // @way [formdata]
-// @param uid, type, title, content, campus, department_id, pictures
+// @param uid, type, title, content, campus, department_id, images
 // @return uploadres
 // @route /f/post
 func AddPost(c *gin.Context) {
@@ -299,12 +299,12 @@ func AddPost(c *gin.Context) {
 	// 1为校务帖子
 
 	// 判断type
-	if postTypeint == 0 {
+	if postTypeint == int(models.School) {
 		// 可选tag
 		if tagId != "" {
 			valid.Numeric(tagId, "tag_id")
 		}
-	} else if postTypeint == 1 {
+	} else if postTypeint == int(models.Hole) {
 		// 必须要求部门id不为0
 		valid.Required(departId, "department_id")
 		valid.Numeric(departId, "department_id")
@@ -316,12 +316,12 @@ func AddPost(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	pics := form.File["pictures"]
-	if len(pics) > 3 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 3."})
+	imgs := form.File["images"]
+	if len(imgs) > 3 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 3."})
 		return
 	}
-	imageUrls, err := upload.SaveImagesFromFromData(pics, c)
+	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
@@ -329,12 +329,12 @@ func AddPost(c *gin.Context) {
 
 	intuid := util.AsUint(uid)
 	maps := map[string]interface{}{
-		"uid":          intuid,
-		"type":         postTypeint,
-		"campus":       campusint,
-		"title":        title,
-		"content":      content,
-		"picture_urls": imageUrls,
+		"uid":        intuid,
+		"type":       models.PostType(postTypeint),
+		"campus":     models.PostCampusType(campusint),
+		"title":      title,
+		"content":    content,
+		"image_urls": imageUrls,
 	}
 
 	if postTypeint == 0 && tagId != "" {
@@ -350,8 +350,49 @@ func AddPost(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	data["pictrue_urls"] = imageUrls
+	data["image_urls"] = imageUrls
 	r.R(c, http.StatusOK, e.SUCCESS, data)
+}
+
+// @method [put]
+// @way [formdata]
+// @param post_id, rating
+// @return
+// @route /f/post/solve
+func EditPostSolved(c *gin.Context) {
+	uid := r.GetUid(c)
+	postId := c.Query("post_id")
+	rating := c.Query("rating")
+	valid := validation.Validation{}
+	valid.Required(postId, "postId")
+	valid.Numeric(postId, "postId")
+	valid.Required(rating, "rating")
+	valid.Numeric(rating, "rating")
+	ok, verr := r.E(&valid, "Delete posts")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	// 限制评分范围
+	valid.Range(util.AsInt(rating), 1, 10, "rating")
+	ok, verr = r.E(&valid, "Delete posts")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	// 判断是否为发帖人
+	// 校验有无权限回复
+	post, err := models.GetPost(postId)
+	if util.AsStrU(post.Uid) != uid {
+		r.R(c, http.StatusOK, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	err = models.EditPostSolved(postId, rating)
+	if err != nil {
+		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.R(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // @method [delete]

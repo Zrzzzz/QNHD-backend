@@ -13,14 +13,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type floorResponse struct {
+	models.Floor
+	SubFloors []models.Floor `json:"sub_floors"`
+	IsLike    bool           `json:"is_like"`
+	IsDis     bool           `json:"is_dis"`
+}
+
+func makeFloorResponse(floor models.Floor, uid string) (floorResponse, error) {
+	var fr floorResponse
+	// 处理回复的回复
+
+	rps, err := models.GetFloorShortReplys(util.AsStrU(floor.Id))
+	if err != nil {
+		return fr, nil
+	}
+	return floorResponse{
+		Floor:     floor,
+		SubFloors: rps,
+		IsLike:    models.IsLikeFloorByUid(uid, util.AsStrU(floor.Id)),
+		IsDis:     models.IsDisFloorByUid(uid, util.AsStrU(floor.Id)),
+	}, nil
+}
+
 // @method [get]
 // @way [query]
 // @param page, page_size, post_id
 // @return floorlist
 // @route /f/floors
 func GetFloors(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.Query("post_id")
-
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
@@ -37,9 +60,20 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 
+	retList := []floorResponse{}
+	for _, f := range list {
+		pr, err := makeFloorResponse(f, uid)
+		if err != nil {
+			logging.Error("Get posts error: %v", err)
+			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		retList = append(retList, pr)
+	}
+
 	data := make(map[string]interface{})
-	data["list"] = list
-	data["total"] = len(list)
+	data["list"] = retList
+	data["total"] = len(retList)
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
 
@@ -98,12 +132,12 @@ func AddFloor(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	pics := form.File["pictures"]
-	if len(pics) > 1 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 1."})
+	imgs := form.File["images"]
+	if len(imgs) > 1 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
-	imageURLs, err := upload.SaveImagesFromFromData(pics, c)
+	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
@@ -161,12 +195,12 @@ func ReplyFloor(c *gin.Context) {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	pics := form.File["pictures"]
-	if len(pics) > 1 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "pictures count should less than 1."})
+	imgs := form.File["images"]
+	if len(imgs) > 1 {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
-	imageURLs, err := upload.SaveImagesFromFromData(pics, c)
+	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return

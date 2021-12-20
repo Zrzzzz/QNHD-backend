@@ -31,23 +31,19 @@ func AddPostWithTag(postId uint64, tagId string) error {
 	if err := db.Where("id = ?", tagId).First(&tag).Error; err != nil {
 		return err
 	}
-	if err := db.Create(&PostTag{
+	err := db.Create(&PostTag{
 		PostId: postId,
 		TagId:  util.AsUint(tagId),
-	}).Error; err != nil {
-		return err
-	}
-	return nil
+	}).Error
+	return err
 }
 
 func DeleteTagInPost(tx *gorm.DB, postId string) error {
 	if tx == nil {
 		tx = db
 	}
-	if err := tx.Where("post_id = ?", postId).Delete(&PostTag{}).Error; err != nil {
-		return err
-	}
-	return nil
+	err := tx.Where("post_id = ?", postId).Delete(&PostTag{}).Error
+	return err
 }
 
 func (PostTag) TableName() string {

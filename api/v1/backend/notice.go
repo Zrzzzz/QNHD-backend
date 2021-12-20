@@ -18,13 +18,13 @@ import (
 // @return
 // @route /b/notice
 func GetNotices(c *gin.Context) {
-	data := make(map[string]interface{})
 	list, err := models.GetNotices()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
+	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
 

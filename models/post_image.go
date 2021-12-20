@@ -15,7 +15,7 @@ type PostImage struct {
 
 func GetImageInPost(postId string) ([]string, error) {
 	var imageUrls = []string{}
-	var ret []PostImage
+	var ret = []PostImage{}
 	if err := db.Where("post_id = ?", postId).Find(&ret).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return imageUrls, nil
@@ -31,6 +31,9 @@ func GetImageInPost(postId string) ([]string, error) {
 
 func AddImageInPost(postId uint64, imageUrls []string) error {
 	var pis = []PostImage{}
+	if len(pis) == 0 {
+		return nil
+	}
 	for _, url := range imageUrls {
 		pis = append(pis, PostImage{
 			PostId:   postId,

@@ -13,16 +13,15 @@ import (
 
 type Floor struct {
 	Model
-	Uid         uint64  `json:"uid"`
-	PostId      uint64  `json:"post_id"`
-	Content     string  `json:"content"`
-	Nickname    string  `json:"nickname"`
-	ImageURL    string  `json:"image_url"`
-	ReplyTo     uint64  `json:"reply_to" `
-	ReplyToName string  `json:"reply_to_name"`
-	LikeCount   uint64  `json:"like_count"`
-	DisCount    uint64  `json:"-"`
-	SubFloors   []Floor `json:"sub_floors" gorm:"-"`
+	Uid         uint64 `json:"uid"`
+	PostId      uint64 `json:"post_id"`
+	Content     string `json:"content"`
+	Nickname    string `json:"nickname"`
+	ImageURL    string `json:"image_url"`
+	ReplyTo     uint64 `json:"reply_to" `
+	ReplyToName string `json:"reply_to_name"`
+	LikeCount   uint64 `json:"like_count"`
+	DisCount    uint64 `json:"-"`
 }
 
 type LogFloorLike struct {
@@ -47,16 +46,8 @@ const FLOOR_NAME = "测试"
 // 缩略返回帖子内楼层，即返回5条
 func GetShortFloorsInPost(postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to IS NULL", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
 		return nil, err
-	}
-	// 处理回复
-	for idx := range floors {
-		rps, err := GetFloorShortReplys(util.AsStrU(floors[idx].Id))
-		if err != nil {
-			return floors, nil
-		}
-		floors[idx].SubFloors = rps
 	}
 	return floors, nil
 }
@@ -64,15 +55,8 @@ func GetShortFloorsInPost(postId string) ([]Floor, error) {
 // 分页返回帖子里的楼层
 func GetFloorsInPost(c *gin.Context, postId string) ([]Floor, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = NULL", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to IS NULL", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
-	}
-	for idx := range floors {
-		rps, err := GetFloorShortReplys(util.AsStrU(floors[idx].Id))
-		if err != nil {
-			return floors, nil
-		}
-		floors[idx].SubFloors = rps
 	}
 	return floors, nil
 }
@@ -247,7 +231,9 @@ func DeleteFloorsInPost(tx *gorm.DB, postId string) error {
 		return err
 	}
 	for _, f := range floors {
-		imgs = append(imgs, f.ImageURL)
+		if f.ImageURL != "" {
+			imgs = append(imgs, f.ImageURL)
+		}
 	}
 	// 删除本地文件
 	if err := upload.DeleteImageUrls(imgs); err != nil {
@@ -300,7 +286,9 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return 0, err
 	}
-
+	if _, err := UndisFloor(floorId, uid); err != nil {
+		return 0, err
+	}
 	return floor.LikeCount + 1, nil
 }
 
@@ -381,7 +369,9 @@ func DisFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount+1).Error; err != nil {
 		return 0, err
 	}
-
+	if _, err := UnlikeFloor(floorId, uid); err != nil {
+		return 0, err
+	}
 	return floor.DisCount + 1, nil
 }
 
@@ -421,6 +411,24 @@ func UndisFloor(floorId string, uid string) (uint64, error) {
 	}
 
 	return floor.DisCount - 1, nil
+}
+
+func IsLikeFloorByUid(uid, floorId string) bool {
+	var log LogFloorLike
+	if err := db.Where("uid = ? AND floor_id = ?", uid, floorId).Find(&log).Error; err != nil {
+		logging.Error(err.Error())
+		return false
+	}
+	return log.Id > 0
+}
+
+func IsDisFloorByUid(uid, floorId string) bool {
+	var log LogFloorDis
+	if err := db.Where("uid = ? AND floor_id = ?", uid, floorId).Find(&log).Error; err != nil {
+		logging.Error(err.Error())
+		return false
+	}
+	return log.Id > 0
 }
 
 func (LogFloorLike) TableName() string {

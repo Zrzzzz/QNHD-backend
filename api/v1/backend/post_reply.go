@@ -4,38 +4,37 @@ import (
 	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
-	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
 
 // @method [post]
-// @way [query]
-// @param
+// @way [formdata]
+// @param post_id, content
 // @return
-// @route
-// @method [delete]
-// @way [query]
-// @param id
-// @return
-// @route /b/post/delete
-func DeletePosts(c *gin.Context) {
-	id := c.Query("id")
-
+// @route /b/post/reply
+func AddPostReply(c *gin.Context) {
+	postId := c.PostForm("post_id")
+	content := c.PostForm("content")
 	valid := validation.Validation{}
-	valid.Required(id, "id")
-	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete post")
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	valid.Required(content, "content")
+	ok, verr := r.E(&valid, "Get post replys")
 	if !ok {
 		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-
-	_, err := models.DeletePostsAdmin(id)
+	// 添加回复
+	err := models.AddPostReply(map[string]interface{}{
+		"post_id": util.AsUint(postId),
+		"from":    1,
+		"content": content,
+	})
 	if err != nil {
-		logging.Error("Delete posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}

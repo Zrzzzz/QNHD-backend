@@ -92,6 +92,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/posts", frontend.GetPosts)
 		// 获取帖子
 		g.GET("/post", frontend.GetPost)
+		// 获取帖子回复
+		g.GET("/post/replys", frontend.GetPostReplys)
+		// 帖子回复校方回应
+		g.POST("/post/reply", AddPostReply)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePosts)
 	case Report:

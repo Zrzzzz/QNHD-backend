@@ -63,6 +63,7 @@ func GetHotTag(c *gin.Context) {
 // @Failure 400 {object} models.Response ""
 // @Router /f/tag [post]
 func AddTag(c *gin.Context) {
+	uid := r.GetUid(c)
 	name := c.PostForm("name")
 	valid := validation.Validation{}
 	valid.Required(name, "name")
@@ -80,7 +81,7 @@ func AddTag(c *gin.Context) {
 	if exist {
 		r.R(c, http.StatusOK, e.ERROR_EXIST_TAG, nil)
 	}
-	id, err := models.AddTag(name)
+	id, err := models.AddTag(name, uid)
 	if err != nil {
 		logging.Error("Add tag error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

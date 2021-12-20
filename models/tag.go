@@ -2,12 +2,14 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
 )
 
 type Tag struct {
 	Id   uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
+	Uid  uint64 `json:"-"`
 	Name string `json:"name"`
 }
 
@@ -45,15 +47,22 @@ func GetTags(name string) ([]Tag, error) {
 // 获取24小时内高赞tag
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
-	if err := db.Model(&LogTag{}).Select("tag_id", "count(*) as count", "name").Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").Group("tag_id").Limit(5).Order("count desc").Joins("LEFT JOIN tags ON tags.id = tag_id").Find(&results).Error; err != nil {
+	if err := db.Model(&LogTag{}).
+		Select("tag_id", "count(*) as count", "name").
+		Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").
+		Group("tag_id").
+		Limit(5).
+		Order("count desc").
+		Joins("LEFT JOIN tags ON tags.id = tag_id").
+		Find(&results).Error; err != nil {
 		return nil, err
 	}
 	return results, nil
 }
 
-func AddTag(name string) (uint64, error) {
-	var tag = Tag{Name: name}
-	if err := db.Select("name").Create(&tag).Error; err != nil {
+func AddTag(name, uid string) (uint64, error) {
+	var tag = Tag{Name: name, Uid: util.AsUint(uid)}
+	if err := db.Select("name", "uid").Create(&tag).Error; err != nil {
 		return 0, err
 	}
 	return tag.Id, nil

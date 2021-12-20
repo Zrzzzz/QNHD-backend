@@ -81,25 +81,25 @@ func GetImageSrc(image *multipart.FileHeader) string {
 	src := fullPath + imageName
 	return src
 }
-func SaveImagesFromFromData(pics []*multipart.FileHeader, c *gin.Context) ([]string, error) {
+func SaveImagesFromFromData(imgs []*multipart.FileHeader, c *gin.Context) ([]string, error) {
 	var imageUrls = []string{}
 	var err error
 	// 检查每张图
-	for _, pic := range pics {
-		err = CheckImage(pic)
+	for _, img := range imgs {
+		err = CheckImage(img)
 		if err != nil {
 			logging.Error("Add post error: %v", err)
 			return imageUrls, err
 		}
 	}
 	// 对每个图片进行处理
-	for _, pic := range pics {
-		src := GetImageSrc(pic)
-		if err := c.SaveUploadedFile(pic, src); err != nil {
+	for _, img := range imgs {
+		src := GetImageSrc(img)
+		if err := c.SaveUploadedFile(img, src); err != nil {
 			logging.Error("Add post error: %v", err)
 			return imageUrls, err
 		}
-		imageName := GetImageName(pic.Filename)
+		imageName := GetImageName(img.Filename)
 		imageUrls = append(imageUrls, GetImagePath()+imageName)
 	}
 	return imageUrls, nil
