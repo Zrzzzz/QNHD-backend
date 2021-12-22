@@ -70,15 +70,15 @@ type LogPostDis struct {
 
 type PostResponse struct {
 	Post
-	Tag          Tag        `json:"tag"`
-	Floors       []Floor    `json:"floors"`
-	CommentCount int        `json:"comment_count"`
-	IsLike       bool       `json:"is_like"`
-	IsDis        bool       `json:"is_dis"`
-	IsFav        bool       `json:"is_fav"`
-	IsOwner      bool       `json:"is_owner"`
-	ImageUrls    []string   `json:"image_urls"`
-	Department   Department `json:"department"`
+	Tag          Tag             `json:"tag"`
+	Floors       []FloorResponse `json:"floors"`
+	CommentCount int             `json:"comment_count"`
+	IsLike       bool            `json:"is_like"`
+	IsDis        bool            `json:"is_dis"`
+	IsFav        bool            `json:"is_fav"`
+	IsOwner      bool            `json:"is_owner"`
+	ImageUrls    []string        `json:"image_urls"`
+	Department   Department      `json:"department"`
 }
 
 func (p *Post) geneResponse(uid string) (PostResponse, error) {
@@ -87,7 +87,7 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	if err != nil {
 		return pr, err
 	}
-	floors, err := GetShortFloorsInPost(util.AsStrU(p.Id))
+	frs, err := GetShortFloorResponsesInPost(util.AsStrU(p.Id), uid)
 	if err != nil {
 		return pr, err
 	}
@@ -106,8 +106,8 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	return PostResponse{
 		Post:         *p,
 		Tag:          tag,
-		Floors:       floors,
-		CommentCount: len(floors),
+		Floors:       frs,
+		CommentCount: len(frs),
 		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
 		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
@@ -117,7 +117,7 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	}, nil
 }
 
-func transPostToResponses(posts *[]Post, uid string) ([]PostResponse, error) {
+func transPostsToResponses(posts *[]Post, uid string) ([]PostResponse, error) {
 	var prs = []PostResponse{}
 	for _, p := range *posts {
 		pr, err := p.geneResponse(uid)
@@ -174,7 +174,7 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 	if err := d.Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostToResponses(&posts, uid)
+	return transPostsToResponses(&posts, uid)
 }
 
 func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
@@ -182,15 +182,15 @@ func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostToResponses(&posts, uid)
+	return transPostsToResponses(&posts, uid)
 }
 
 func GetFavPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
+	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at IS NULL").Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostToResponses(&posts, uid)
+	return transPostsToResponses(&posts, uid)
 }
 
 func GetHistoryPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
@@ -203,7 +203,7 @@ func GetHistoryPostResponses(c *gin.Context, uid string) ([]PostResponse, error)
 	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostToResponses(&posts, uid)
+	return transPostsToResponses(&posts, uid)
 }
 
 func AddPost(maps map[string]interface{}) (uint64, error) {

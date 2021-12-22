@@ -12,29 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type floorResponse struct {
-	models.Floor
-	SubFloors []models.Floor `json:"sub_floors"`
-	IsLike    bool           `json:"is_like"`
-	IsDis     bool           `json:"is_dis"`
-}
-
-func makeFloorResponse(floor models.Floor, uid string) (floorResponse, error) {
-	var fr floorResponse
-	// 处理回复的回复
-
-	rps, err := models.GetFloorShortReplys(util.AsStrU(floor.Id))
-	if err != nil {
-		return fr, nil
-	}
-	return floorResponse{
-		Floor:     floor,
-		SubFloors: rps,
-		IsLike:    models.IsLikeFloorByUid(uid, util.AsStrU(floor.Id)),
-		IsDis:     models.IsDisFloorByUid(uid, util.AsStrU(floor.Id)),
-	}, nil
-}
-
 // @method [get]
 // @way [query]
 // @param page, page_size, post_id
@@ -52,27 +29,16 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetFloorsInPost(c, postId)
+	list, err := models.GetFloorResponsesInPost(c, postId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
-	retList := []floorResponse{}
-	for _, f := range list {
-		pr, err := makeFloorResponse(f, uid)
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		retList = append(retList, pr)
-	}
-
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 	r.Success(c, e.SUCCESS, data)
 }
 
@@ -82,8 +48,8 @@ func GetFloors(c *gin.Context) {
 // @return floorlist
 // @route /f/floor/replys
 func GetFloorReplys(c *gin.Context) {
+	uid := r.GetUid(c)
 	floorId := c.Query("floor_id")
-
 	valid := validation.Validation{}
 	valid.Required(floorId, "floor_id")
 	valid.Numeric(floorId, "floor_id")
@@ -93,7 +59,7 @@ func GetFloorReplys(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetFloorReplys(c, floorId)
+	list, err := models.GetFloorReplyResponses(c, floorId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -173,13 +139,10 @@ func AddFloor(c *gin.Context) {
 // @route /f/floor/reply
 func ReplyFloor(c *gin.Context) {
 	uid := r.GetUid(c)
-	postId := c.PostForm("post_id")
 	replyToFloor := c.PostForm("reply_to_floor")
 	content := c.PostForm("content")
 
 	valid := validation.Validation{}
-	valid.Required(postId, "postId")
-	valid.Numeric(postId, "postId")
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
@@ -205,7 +168,6 @@ func ReplyFloor(c *gin.Context) {
 		return
 	}
 
-	intpostid := util.AsUint(postId)
 	intuid := util.AsUint(uid)
 	intfloor := util.AsUint(replyToFloor)
 	imageURL := ""
@@ -214,7 +176,6 @@ func ReplyFloor(c *gin.Context) {
 	}
 	maps := map[string]interface{}{
 		"uid":          intuid,
-		"postId":       intpostid,
 		"replyToFloor": intfloor,
 		"content":      content,
 		"image_url":    imageURL,
