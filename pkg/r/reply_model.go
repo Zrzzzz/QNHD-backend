@@ -2,6 +2,7 @@ package r
 
 import (
 	"fmt"
+	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/util"
@@ -48,4 +49,8 @@ func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
 		"msg":  e.GetMsg(code),
 		"data": data,
 	})
+}
+
+func Success(c *gin.Context, code int, data map[string]interface{}) {
+	R(c, http.StatusOK, code, data)
 }

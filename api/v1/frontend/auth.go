@@ -83,11 +83,11 @@ func GetAuth(c *gin.Context) {
 	err = json.Unmarshal(body, &v)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if v.ErrorCode != 0 {
-		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
+		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
 		logging.Error("Auth er%v", v)
 		return
 	}
@@ -96,7 +96,7 @@ func GetAuth(c *gin.Context) {
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 如果不存在就创建一个用户
@@ -106,19 +106,19 @@ func GetAuth(c *gin.Context) {
 
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
 	token, err = util.GenerateToken(fmt.Sprintf("%d", uid))
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["token"] = token
 	data["uid"] = uid
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -132,14 +132,14 @@ func RefreshToken(c *gin.Context) {
 	valid.Required(token, "token")
 	ok, verr := r.E(&valid, "Refresh Token")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		r.R(c, http.StatusOK, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -153,5 +153,5 @@ func RefreshToken(c *gin.Context) {
 		data["token"] = token
 		data["uid"] = claims.Uid
 	}
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }

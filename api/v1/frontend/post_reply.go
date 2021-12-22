@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -23,18 +22,18 @@ func GetPostReplys(c *gin.Context) {
 	valid.Numeric(postId, "post_id")
 	ok, verr := r.E(&valid, "Get post replys")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	list, err := models.GetPostReplys(postId)
 	if err != nil {
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -52,13 +51,13 @@ func AddPostReply(c *gin.Context) {
 	valid.Required(content, "content")
 	ok, verr := r.E(&valid, "Get post replys")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 校验有无权限回复
 	post, err := models.GetPost(postId)
 	if util.AsStrU(post.Uid) != uid {
-		r.R(c, http.StatusOK, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 添加回复
@@ -68,8 +67,8 @@ func AddPostReply(c *gin.Context) {
 		"content": content,
 	})
 	if err != nil {
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

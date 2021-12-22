@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -22,10 +21,10 @@ func GetDepartments(c *gin.Context) {
 	list, err := models.GetDepartments(name)
 	if err != nil {
 		logging.Error("Get department error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }

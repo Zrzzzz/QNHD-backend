@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -33,7 +32,7 @@ func AddReport(c *gin.Context) {
 	}
 	ok, verr := r.E(&valid, "Add report")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -41,7 +40,7 @@ func AddReport(c *gin.Context) {
 	valid.Range(rTypeint, 1, 2, "type")
 	ok, verr = r.E(&valid, "Add report")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	var floorIdint uint64 = 0
@@ -49,7 +48,7 @@ func AddReport(c *gin.Context) {
 		floorIdint = util.AsUint(floorId)
 	}
 	if rTypeint == 2 && floorIdint == 0 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, nil)
+		r.Success(c, e.INVALID_PARAMS, nil)
 		return
 	}
 	maps := map[string]interface{}{
@@ -62,8 +61,8 @@ func AddReport(c *gin.Context) {
 	err := models.AddReport(maps)
 	if err != nil {
 		logging.Error(" error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

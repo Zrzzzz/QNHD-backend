@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -24,7 +23,7 @@ func GetBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.E(&valid, "Get blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -38,13 +37,13 @@ func GetBlocked(c *gin.Context) {
 	list, err := models.GetBlocked(maps)
 	if err != nil {
 		logging.Error("Get blocked error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -63,7 +62,7 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(last, "last")
 	ok, verr := r.E(&valid, "Add blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	reason := c.PostForm("reason")
@@ -88,7 +87,7 @@ func AddBlocked(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }
 
 // @method [delete]
@@ -103,7 +102,7 @@ func DeleteBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.E(&valid, "Delete blocked")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid := util.AsUint(uid)
@@ -123,5 +122,5 @@ func DeleteBlocked(c *gin.Context) {
 	} else {
 		code = e.ERROR_NOT_BLOCKED_USER
 	}
-	r.R(c, http.StatusOK, code, nil)
+	r.Success(c, code, nil)
 }

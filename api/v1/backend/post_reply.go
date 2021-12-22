@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -25,7 +24,7 @@ func AddPostReply(c *gin.Context) {
 	valid.Required(content, "content")
 	ok, verr := r.E(&valid, "Get post replys")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 添加回复
@@ -35,8 +34,8 @@ func AddPostReply(c *gin.Context) {
 		"content": content,
 	})
 	if err != nil {
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

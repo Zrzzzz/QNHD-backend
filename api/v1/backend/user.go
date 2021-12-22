@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -38,19 +37,19 @@ func GetUserInfo(c *gin.Context) {
 	user, err := models.GetUser(map[string]interface{}{"id": uid})
 	if err != nil {
 		logging.Error("get user info error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	depart, err := models.GetDepartmentHasUser(util.AsUint(uid))
 	if err != nil {
 		logging.Error("get user info error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := map[string]interface{}{
 		"user_info": userInfo{User: user, Department: depart},
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -64,7 +63,7 @@ func GetCommonUsers(c *gin.Context) {
 	list, err := models.GetCommonUsers(c, uid)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	retList := []userResponse{}
@@ -74,7 +73,7 @@ func GetCommonUsers(c *gin.Context) {
 		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if isBlocked {
@@ -90,7 +89,7 @@ func GetCommonUsers(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }
 
 // @method [get]
@@ -104,12 +103,12 @@ func GetAllUsers(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 需要管理员权限
 	if !ok {
-		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+		r.Success(c, e.ERROR_RIGHT, nil)
 		return
 	}
 
@@ -118,7 +117,7 @@ func GetAllUsers(c *gin.Context) {
 	list, err := models.GetAllUsers(c, uid)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	retList := []userResponse{}
@@ -128,7 +127,7 @@ func GetAllUsers(c *gin.Context) {
 		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if isBlocked {
@@ -144,7 +143,7 @@ func GetAllUsers(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }
 
 // @method [post]
@@ -163,29 +162,29 @@ func AddUser(c *gin.Context) {
 	fmt.Println(number, password, phoneNumber)
 	ok, verr := r.E(&valid, "Add backend user")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	uid, err := models.ExistUser(number)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	if uid > 0 {
-		r.R(c, http.StatusOK, e.ERROR_EXIST_USER, nil)
+		r.Success(c, e.ERROR_EXIST_USER, nil)
 		return
 	}
 
 	uid, err = models.AddUser(number, password, phoneNumber)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
 	data["uid"] = uid
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [put]
@@ -201,11 +200,11 @@ func EditUser(c *gin.Context) {
 		ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 		if err != nil {
 			logging.Error("check right error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		if !ok {
-			r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+			r.Success(c, e.ERROR_RIGHT, nil)
 			return
 		}
 	}
@@ -222,10 +221,10 @@ func EditUser(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }
 
 // @method [put]
@@ -239,12 +238,12 @@ func EditUserRight(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 需要超管才能修改
 	if !ok {
-		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+		r.Success(c, e.ERROR_RIGHT, nil)
 		return
 	}
 
@@ -258,7 +257,7 @@ func EditUserRight(c *gin.Context) {
 	valid.Numeric(stuAdmin, "stuAdmin")
 	ok, verr := r.E(&valid, "Edit user right")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -268,7 +267,7 @@ func EditUserRight(c *gin.Context) {
 	valid.Range(int(schi), 0, 1, "schAdmin")
 	ok, verr = r.E(&valid, "Edit user right")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -277,11 +276,11 @@ func EditUserRight(c *gin.Context) {
 		"stu_admin": stuAdmin,
 	}
 	if err := models.EditUser(uid, maps); err != nil {
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		logging.Error("Edit user error: %v", err)
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }
 
 // @method [put]
@@ -295,12 +294,12 @@ func EditUserDepartment(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 需要超管才能修改
 	if !ok {
-		r.R(c, http.StatusOK, e.ERROR_RIGHT, nil)
+		r.Success(c, e.ERROR_RIGHT, nil)
 		return
 	}
 
@@ -313,14 +312,14 @@ func EditUserDepartment(c *gin.Context) {
 	valid.Numeric(departmentId, "departmentId")
 	ok, verr := r.E(&valid, "Edit user right Error")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	if err := models.AddUserToDepartment(util.AsUint(uid), util.AsUint(departmentId)); err != nil {
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		logging.Error("Edit user error: %v", err)
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

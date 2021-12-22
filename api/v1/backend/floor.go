@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -23,21 +22,21 @@ func GetFloors(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorsInPost(c, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -52,15 +51,15 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeleteFloorByAdmin(floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

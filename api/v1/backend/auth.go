@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -29,7 +28,7 @@ func GetAuthNumber(c *gin.Context) {
 	valid.Required(password, "password")
 	ok, verr := r.E(&valid, "Auth")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	user, err := models.GetUser(map[string]interface{}{
@@ -53,7 +52,7 @@ func GetAuthNumber(c *gin.Context) {
 	} else {
 		code = e.ERROR_AUTH
 	}
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }
 
 // @method [get]
@@ -72,7 +71,7 @@ func GetAuthPhone(c *gin.Context) {
 	valid.Required(password, "password")
 	ok, verr := r.E(&valid, "Auth")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	user, err := models.GetUser(map[string]interface{}{
@@ -96,5 +95,5 @@ func GetAuthPhone(c *gin.Context) {
 	} else {
 		code = e.ERROR_AUTH
 	}
-	r.R(c, http.StatusOK, code, data)
+	r.Success(c, code, data)
 }

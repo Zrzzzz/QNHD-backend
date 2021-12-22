@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -54,9 +53,9 @@ func JWT(must int) gin.HandlerFunc {
 
 		if code != e.SUCCESS {
 			if err != nil {
-				r.R(c, http.StatusUnauthorized, code, map[string]interface{}{"error": err.Error()})
+				r.Success(c, code, map[string]interface{}{"error": err.Error()})
 			} else {
-				r.R(c, http.StatusUnauthorized, code, nil)
+				r.Success(c, code, nil)
 			}
 			logging.Error("Auth Fail: %v, reason: %v", code, err)
 			c.Abort()

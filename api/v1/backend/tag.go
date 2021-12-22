@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -24,12 +23,12 @@ func GetTags(c *gin.Context) {
 	list, err := models.GetTags(name)
 	if err != nil {
 		logging.Error("Get tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -42,12 +41,12 @@ func GetHotTag(c *gin.Context) {
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("Get hot tag error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -63,7 +62,7 @@ func DeleteTag(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.E(&valid, "Delete tag")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -71,8 +70,8 @@ func DeleteTag(c *gin.Context) {
 	_, err := models.DeleteTagAdmin(intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }

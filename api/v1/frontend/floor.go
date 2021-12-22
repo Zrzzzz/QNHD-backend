@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -49,14 +48,14 @@ func GetFloors(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorsInPost(c, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -65,7 +64,7 @@ func GetFloors(c *gin.Context) {
 		pr, err := makeFloorResponse(f, uid)
 		if err != nil {
 			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 			return
 		}
 		retList = append(retList, pr)
@@ -74,7 +73,7 @@ func GetFloors(c *gin.Context) {
 	data := make(map[string]interface{})
 	data["list"] = retList
 	data["total"] = len(retList)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -90,21 +89,21 @@ func GetFloorReplys(c *gin.Context) {
 	valid.Numeric(floorId, "floor_id")
 	ok, verr := r.E(&valid, "Get floorreplys")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorReplys(c, floorId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -123,23 +122,23 @@ func AddFloor(c *gin.Context) {
 	valid.Required(content, "content")
 	ok, verr := r.E(&valid, "Add floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -159,12 +158,12 @@ func AddFloor(c *gin.Context) {
 	id, err := models.AddFloor(maps)
 	if err != nil {
 		logging.Error("Add floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.R(c, http.StatusOK, e.SUCCESS, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -186,23 +185,23 @@ func ReplyFloor(c *gin.Context) {
 	valid.Required(content, "content")
 	ok, verr := r.E(&valid, "Reply floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -224,10 +223,10 @@ func ReplyFloor(c *gin.Context) {
 	_, err = models.ReplyFloor(maps)
 	if err != nil {
 		logging.Error("Reply floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }
 
 // @method [delete]
@@ -244,17 +243,17 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.E(&valid, "Get floors")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeleteFloorByUser(uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.Success(c, e.SUCCESS, nil)
 }
 
 // @method post
@@ -273,7 +272,7 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.E(&valid, "like or unlike floor")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -287,10 +286,10 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("like or unlike floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method post
@@ -309,7 +308,7 @@ func DisOrUndisFloor(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.E(&valid, "dis or undis floor")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -323,8 +322,8 @@ func DisOrUndisFloor(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("dis or undis floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
