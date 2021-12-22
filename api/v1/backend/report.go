@@ -38,7 +38,7 @@ func GetReports(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetReports(rType)
+	list, err := models.GetReports(models.ReportType(rTypeint))
 	if err != nil {
 		logging.Error("Get report error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})

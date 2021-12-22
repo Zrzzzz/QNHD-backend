@@ -1,5 +1,12 @@
 package models
 
+type ReportType int
+
+const (
+	ReportTypePost ReportType = iota
+	ReportTypeFloor
+)
+
 type Report struct {
 	Model
 	Uid     uint64 `json:"uid"`
@@ -9,7 +16,7 @@ type Report struct {
 	Reason  string `json:"reason"`
 }
 
-func GetReports(rType string) ([]Report, error) {
+func GetReports(rType ReportType) ([]Report, error) {
 	var reports []Report
 	if err := db.Where("type = ?", rType).Find(&reports).Error; err != nil {
 		return nil, err

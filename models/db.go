@@ -57,6 +57,6 @@ func Setup() {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 }
-func CloseDB() {
+func Close() {
 	sqlDB.Close()
 }

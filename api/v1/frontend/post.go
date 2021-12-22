@@ -13,53 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type postResponse struct {
-	models.Post
-	Tag          models.Tag        `json:"tag"`
-	Floors       []models.Floor    `json:"floors"`
-	CommentCount int               `json:"comment_count"`
-	IsLike       bool              `json:"is_like"`
-	IsDis        bool              `json:"is_dis"`
-	IsFav        bool              `json:"is_fav"`
-	ImageUrls    []string          `json:"image_urls"`
-	Department   models.Department `json:"department"`
-}
-
-func makePostResponse(p models.Post, uid string) (postResponse, error) {
-	var pr postResponse
-	tag, err := models.GetTagInPost(util.AsStrU(p.Id))
-	if err != nil {
-		return pr, err
-	}
-	floors, err := models.GetShortFloorsInPost(util.AsStrU(p.Id))
-	if err != nil {
-		return pr, err
-	}
-	imgs, err := models.GetImageInPost(util.AsStrU(p.Id))
-	if err != nil {
-		return pr, err
-	}
-	var depart models.Department
-	if p.DepartmentId > 0 {
-		d, err := models.GetDepartment(p.DepartmentId)
-		if err != nil {
-			return pr, err
-		}
-		depart = d
-	}
-	return postResponse{
-		Post:         p,
-		Tag:          tag,
-		Floors:       floors,
-		CommentCount: len(floors),
-		IsLike:       models.IsLikePostByUid(uid, util.AsStrU(p.Id)),
-		IsDis:        models.IsDisPostByUid(uid, util.AsStrU(p.Id)),
-		IsFav:        models.IsFavPostByUid(uid, util.AsStrU(p.Id)),
-		ImageUrls:    imgs,
-		Department:   depart,
-	}, nil
-}
-
 // @method [get]
 // @way [query]
 // @param content page page_size
@@ -97,33 +50,23 @@ func GetPosts(c *gin.Context) {
 	}
 	uid := r.GetUid(c)
 	maps := map[string]interface{}{
-		"type":    postTypeint,
+		"type":    models.PostType(postTypeint),
 		"solved":  solved,
 		"content": content,
 	}
 	if departmentId != "" {
 		maps["department_id"] = departmentId
 	}
-	list, err := models.GetPosts(c, maps)
+	list, err := models.GetPostResponses(c, uid, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []postResponse{}
-	for _, p := range list {
-		pr, err := makePostResponse(p, uid)
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		retList = append(retList, pr)
-	}
 
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
@@ -136,26 +79,16 @@ func GetPosts(c *gin.Context) {
 func GetUserPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetUserPosts(c, uid)
+	list, err := models.GetUserPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []postResponse{}
-	for _, p := range list {
-		pr, err := makePostResponse(p, uid)
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		retList = append(retList, pr)
-	}
 
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
@@ -167,26 +100,15 @@ func GetUserPosts(c *gin.Context) {
 // @route /f/posts/fav
 func GetFavPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	list, err := models.GetFavPosts(c, uid)
+	list, err := models.GetFavPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []postResponse{}
-	for _, p := range list {
-		pr, err := makePostResponse(p, uid)
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		retList = append(retList, pr)
-	}
-
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
@@ -199,26 +121,16 @@ func GetFavPosts(c *gin.Context) {
 func GetHistoryPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetHistoryPosts(c, uid)
+	list, err := models.GetHistoryPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []postResponse{}
-	for _, p := range list {
-		pr, err := makePostResponse(p, uid)
-		if err != nil {
-			logging.Error("Get posts error: %v", err)
-			r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		retList = append(retList, pr)
-	}
 
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
 	r.R(c, http.StatusOK, e.SUCCESS, data)
 }
@@ -241,15 +153,9 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	post, err := models.GetPostAndVisit(id, uid)
+	pr, err := models.GetPostResponseAndVisit(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-		return
-	}
-	pr, err := makePostResponse(post, uid)
-	if err != nil {
-		logging.Error("Get posts error: %v", err)
 		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
@@ -275,9 +181,9 @@ func AddPost(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(content, "content")
 	valid.Required(postType, "postType")
+	valid.Numeric(postType, "postType")
 	valid.Required(campus, "campus")
 	valid.Numeric(campus, "campus")
-	valid.Numeric(postType, "postType")
 	valid.Required(title, "title")
 	valid.MaxSize(title, 30, "title")
 	ok, verr := r.E(&valid, "Add posts")
@@ -295,9 +201,6 @@ func AddPost(c *gin.Context) {
 		return
 	}
 	// 需要根据类型判断返回类型
-	// 0为树洞帖子
-	// 1为校务帖子
-
 	// 判断type
 	if postTypeint == int(models.School) {
 		// 可选tag

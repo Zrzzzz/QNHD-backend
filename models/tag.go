@@ -107,7 +107,7 @@ func AddTagLog(id uint64) error {
 
 // 删除24小时之前的记录
 func FlushOldTagLog() error {
-	if err := db.Where("HOUR(TIMEDIFF(NOW(), created_at)) >= 24;").Delete(&LogTag{}).Error; err != nil {
+	if err := db.Where("created_at <= NOW() - INTERVAL 24 HOUR").Delete(&LogTag{}).Error; err != nil {
 		return err
 	}
 	return nil

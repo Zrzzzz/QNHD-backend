@@ -24,7 +24,9 @@ func Paginate(c *gin.Context) func(db *gorm.DB) *gorm.DB {
 			pageSize = 10
 		}
 
+		base, _ := strconv.Atoi(c.Query("page_base"))
+
 		offset := (page - 1) * pageSize
-		return db.Offset(offset).Limit(pageSize)
+		return db.Offset(base + offset).Limit(pageSize)
 	}
 }

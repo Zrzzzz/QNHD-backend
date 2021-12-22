@@ -29,9 +29,12 @@ func GetImageInPost(postId string) ([]string, error) {
 	return imageUrls, nil
 }
 
-func AddImageInPost(postId uint64, imageUrls []string) error {
+func AddImageInPost(tx *gorm.DB, postId uint64, imageUrls []string) error {
+	if tx == nil {
+		tx = db
+	}
 	var pis = []PostImage{}
-	if len(pis) == 0 {
+	if len(imageUrls) == 0 {
 		return nil
 	}
 	for _, url := range imageUrls {
@@ -40,7 +43,7 @@ func AddImageInPost(postId uint64, imageUrls []string) error {
 			ImageUrl: url,
 		})
 	}
-	err := db.Create(&pis).Error
+	err := tx.Create(&pis).Error
 	return err
 }
 

@@ -24,6 +24,7 @@ type PostType int
 const (
 	School PostType = iota
 	Hole
+	All
 )
 
 type Post struct {
@@ -67,37 +68,99 @@ type LogPostDis struct {
 	PostId uint64 `json:"post_id"`
 }
 
+type PostResponse struct {
+	Post
+	Tag          Tag        `json:"tag"`
+	Floors       []Floor    `json:"floors"`
+	CommentCount int        `json:"comment_count"`
+	IsLike       bool       `json:"is_like"`
+	IsDis        bool       `json:"is_dis"`
+	IsFav        bool       `json:"is_fav"`
+	IsOwner      bool       `json:"is_owner"`
+	ImageUrls    []string   `json:"image_urls"`
+	Department   Department `json:"department"`
+}
+
+func (p *Post) geneResponse(uid string) (PostResponse, error) {
+	var pr PostResponse
+	tag, err := GetTagInPost(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	floors, err := GetShortFloorsInPost(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	imgs, err := GetImageInPost(util.AsStrU(p.Id))
+	if err != nil {
+		return pr, err
+	}
+	var depart Department
+	if p.DepartmentId > 0 {
+		d, err := GetDepartment(p.DepartmentId)
+		if err != nil {
+			return pr, err
+		}
+		depart = d
+	}
+	return PostResponse{
+		Post:         *p,
+		Tag:          tag,
+		Floors:       floors,
+		CommentCount: len(floors),
+		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
+		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
+		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
+		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
+		ImageUrls:    imgs,
+		Department:   depart,
+	}, nil
+}
+
+func transPostToResponses(posts *[]Post, uid string) ([]PostResponse, error) {
+	var prs = []PostResponse{}
+	for _, p := range *posts {
+		pr, err := p.geneResponse(uid)
+		if err != nil {
+			return prs, err
+		}
+		prs = append(prs, pr)
+	}
+	return prs, nil
+}
+
 func GetPost(postId string) (Post, error) {
 	var post Post
 	err := db.Where("id = ?", postId).First(&post).Error
 	return post, err
 }
 
-func GetPostAndVisit(postId string, uid string) (Post, error) {
+func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
 	var post Post
+	var pr PostResponse
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		return post, err
+		return pr, err
 	}
 	if _, err := AddVisitHistory(uid, postId); err != nil {
-		return post, err
+		return pr, err
 	}
 	if err := AddTagLogInPost(util.AsUint(postId)); err != nil {
-		return post, err
+		return pr, err
 	}
-	return post, nil
+	return post.geneResponse(uid)
 }
 
-func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
+func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponse, error) {
 	var posts []Post
 	content := maps["content"].(string)
-	postTypeint := maps["type"].(int)
+	postType := maps["type"].(PostType)
 	departmentId, departOk := maps["department_id"].(string)
 	solved, solvedOk := maps["solved"].(string)
 
 	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	// 校区 不为全部时加上区分
-	if postTypeint != 2 {
-		d = d.Where("type = ?", postTypeint)
+	if postType != All {
+		d = d.Where("type = ?", postType)
 	}
 	// 如果有部门要加上
 	if departOk {
@@ -111,26 +174,26 @@ func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
 	if err := d.Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return posts, nil
+	return transPostToResponses(&posts, uid)
 }
 
-func GetUserPosts(c *gin.Context, uid string) ([]Post, error) {
+func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
 	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return posts, nil
+	return transPostToResponses(&posts, uid)
 }
 
-func GetFavPosts(c *gin.Context, uid string) ([]Post, error) {
+func GetFavPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
 	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at is NULL").Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return posts, nil
+	return transPostToResponses(&posts, uid)
 }
 
-func GetHistoryPosts(c *gin.Context, uid string) ([]Post, error) {
+func GetHistoryPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
 	var ids []string
 	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id").Scopes(util.Paginate(c)).Scan(&ids).Error; err != nil {
@@ -140,7 +203,7 @@ func GetHistoryPosts(c *gin.Context, uid string) ([]Post, error) {
 	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return posts, nil
+	return transPostToResponses(&posts, uid)
 }
 
 func AddPost(maps map[string]interface{}) (uint64, error) {
@@ -155,11 +218,11 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	if post.Type == School {
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "title", "content").Create(post).Error; err != nil {
+			if err := tx.Select("type", "uid", "campus", "title", "content").Create(post).Error; err != nil {
 				return err
 			}
 			if img_ok {
-				if err := AddImageInPost(post.Id, imgs); err != nil {
+				if err := AddImageInPost(tx, post.Id, imgs); err != nil {
 					return err
 				}
 			}
@@ -185,11 +248,12 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		post.DepartmentId = departId
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "title", "content", "department_id").Create(post).Error; err != nil {
+			if err := tx.Select("type", "uid", "campus", "title", "content", "department_id").Create(post).Error; err != nil {
 				return err
 			}
+
 			if img_ok {
-				if err := AddImageInPost(post.Id, imgs); err != nil {
+				if err := AddImageInPost(tx, post.Id, imgs); err != nil {
 					return err
 				}
 			}
@@ -532,6 +596,14 @@ func IsFavPostByUid(uid, postId string) bool {
 		return false
 	}
 	return log.Id > 0
+}
+
+func IsOwnPostByUid(uid, postId string) bool {
+	var post, err = GetPost(postId)
+	if err != nil {
+		return false
+	}
+	return fmt.Sprintf("%d", post.Uid) == uid
 }
 
 func (LogPostFav) TableName() string {

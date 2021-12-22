@@ -64,7 +64,7 @@ func AddPostReply(c *gin.Context) {
 	// 添加回复
 	err = models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
-		"from":    0,
+		"from":    models.PostReplyType(0),
 		"content": content,
 	})
 	if err != nil {

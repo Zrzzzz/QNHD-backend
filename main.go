@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"qnhd/api"
 	"qnhd/models"
+	"qnhd/pkg/cronic"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
-
-	cron "github.com/robfig/cron/v3"
 )
 
 // @title QNHD API
@@ -38,19 +37,9 @@ func main() {
 	setting.Setup()
 	logging.Setup()
 	models.Setup()
-
 	router := api.InitRouter()
+	cronic.Setup()
 	// tlscfg := api.InitTlsConfig()
-
-	// 定时任务
-	c := cron.New()
-	c.AddFunc("00 00 08 * * ?", func() {
-		err := models.FlushOldTagLog()
-		if err != nil {
-			logging.Error(err.Error())
-		}
-	})
-	c.Start()
 
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HTTPPort),
@@ -62,6 +51,6 @@ func main() {
 	}
 	s.ListenAndServeTLS("cert/5193613_zrzz.site.pem", "cert/5193613_zrzz.site.key")
 	// s.ListenAndServe()
-	defer models.CloseDB()
-	defer c.Stop()
+	defer models.Close()
+	defer cronic.Close()
 }

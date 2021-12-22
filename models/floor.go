@@ -43,6 +43,13 @@ const OWNER_NAME = "Owner"
 // }
 const FLOOR_NAME = "测试"
 
+// 根据id返回
+func GetFloor(floorId string) (Floor, error) {
+	var floor Floor
+	err := db.Where("id = ?", floorId).First(&floor).Error
+	return floor, err
+}
+
 // 缩略返回帖子内楼层，即返回5条
 func GetShortFloorsInPost(postId string) ([]Floor, error) {
 	var floors []Floor
@@ -431,9 +438,18 @@ func IsDisFloorByUid(uid, floorId string) bool {
 	return log.Id > 0
 }
 
+func IsOwnFloorByUid(uid, floorId string) bool {
+	var Floor, err = GetFloor(floorId)
+	if err != nil {
+		return false
+	}
+	return fmt.Sprintf("%d", Floor.Uid) == uid
+}
+
 func (LogFloorLike) TableName() string {
 	return "log_floor_like"
 }
+
 func (LogFloorDis) TableName() string {
 	return "log_floor_dis"
 }
