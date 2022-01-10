@@ -15,9 +15,8 @@ type Server struct {
 }
 
 type App struct {
-	JwtSecret                     string
-	AdminId, AdminName, AdminPass string
-	TokenExpireTime               int
+	JwtSecret       string
+	TokenExpireTime int
 
 	RuntimeRootPath string
 

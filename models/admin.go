@@ -1,30 +1,9 @@
 package models
 
-import (
-	"errors"
-	"qnhd/pkg/setting"
-
-	"gorm.io/gorm"
-)
-
 type Admin struct {
 	Id       uint64 `gorm:"primaryKey;autoIncrement;defualt:null" json:"id"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
-}
-
-func CheckAdmin(name string, password string) (uint64, error) {
-	if name == setting.AppSetting.AdminName && password == setting.AppSetting.AdminPass {
-		return 50118382875, nil
-	}
-	var admin Admin
-	if err := db.Select("id").Where(Admin{Name: name, Password: password}).First(&admin).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return admin.Id, nil
 }
 
 func GetAdmins(maps interface{}) ([]Admin, error) {
