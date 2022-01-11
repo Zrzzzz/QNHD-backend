@@ -16,6 +16,7 @@ import (
 // @return
 // @route /b/post/reply
 func AddPostReply(c *gin.Context) {
+	uid := util.AsUint(r.GetUid(c))
 	postId := c.PostForm("post_id")
 	content := c.PostForm("content")
 	valid := validation.Validation{}
@@ -28,11 +29,17 @@ func AddPostReply(c *gin.Context) {
 		return
 	}
 	// 添加回复
-	err := models.AddPostReply(map[string]interface{}{
+	id, err := models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
 		"from":    models.PostReplyType(1),
 		"content": content,
 	})
+	if err != nil {
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	// 通知回复
+	err = models.AddUnreadPostReply(uid, id)
 	if err != nil {
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return

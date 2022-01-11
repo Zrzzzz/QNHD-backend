@@ -31,10 +31,18 @@ type LogFloorLike struct {
 	FloorId uint64 `json:"floor_id"`
 }
 
+func (LogFloorLike) TableName() string {
+	return "log_floor_like"
+}
+
 type LogFloorDis struct {
 	Model
 	Uid     uint64 `json:"uid"`
 	FloorId uint64 `json:"floor_id"`
+}
+
+func (LogFloorDis) TableName() string {
+	return "log_floor_dis"
 }
 
 type FloorResponse struct {
@@ -43,6 +51,10 @@ type FloorResponse struct {
 	IsLike    bool            `json:"is_like"`
 	IsDis     bool            `json:"is_dis"`
 	IsOwner   bool            `json:"is_owner"`
+}
+
+func (Floor) TableName() string {
+	return "floors"
 }
 
 func (f *Floor) geneResponse(uid string, searchSubFloors bool) (FloorResponse, error) {
@@ -128,6 +140,7 @@ func GetFloorReplyResponses(c *gin.Context, floorId, uid string) ([]FloorRespons
 	return transFloorsToResponses(&floors, uid, false)
 }
 
+// 添加楼层评论
 func AddFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	var nickname string
@@ -172,9 +185,14 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.Select("uid", "post_id", "content", "nickname", "image_url").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
+	// 通知帖子主人
+	if err := addUnreadFloor(post.Uid, newFloor.Id); err != nil {
+		return 0, err
+	}
 	return newFloor.Id, nil
 }
 
+// 添加楼层回复
 func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	var nickname string
@@ -234,6 +252,10 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	}
 
 	if err := db.Select("uid", "post_id", "content", "nickname", "image_url", "reply_to", "reply_to_name", "sub_to").Create(&newFloor).Error; err != nil {
+		return 0, err
+	}
+	// 通知楼层主人
+	if err := addUnreadFloor(toFloor.Uid, newFloor.Id); err != nil {
 		return 0, err
 	}
 
@@ -488,16 +510,4 @@ func IsOwnFloorByUid(uid, floorId string) bool {
 		return false
 	}
 	return fmt.Sprintf("%d", Floor.Uid) == uid
-}
-
-func (LogFloorLike) TableName() string {
-	return "log_floor_like"
-}
-
-func (LogFloorDis) TableName() string {
-	return "log_floor_dis"
-}
-
-func (Floor) TableName() string {
-	return "floors"
 }

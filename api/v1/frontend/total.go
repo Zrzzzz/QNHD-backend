@@ -95,8 +95,23 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 查询部门
 		g.GET("/departments", GetDepartments)
 	case Report:
+		// 添加举报
 		g.POST("/report", AddReport)
 	case Notice:
-		g.GET("/notice", GetNotices)
+		// 获取未读楼层
+		g.GET("/message/floors", GetMessageFloors)
+		// 获取未读回复
+		g.GET("/message/replys", GetMessagePostReplys)
+		// 获取未读通知
+		g.GET("/message/notices", GetMessageNotices)
+		// 获取未读数量
+		g.GET("/message/count", GetMessageCount)
+		// 已读通知
+		g.POST("/message/notice/read", ReadNotice)
+		// 已读楼层
+		g.POST("/message/floor/read", ReadFloor)
+		// 已读回复
+		g.POST("/message/reply/read", ReadReply)
+
 	}
 }
