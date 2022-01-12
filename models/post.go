@@ -179,6 +179,8 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
+		// 添加搜索记录
+		addTagLog(util.AsUint(tagId), TAG_VISIT)
 	}
 
 	if err := d.Find(&posts).Error; err != nil {
@@ -243,9 +245,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 					return err
 				}
 				// 对帖子的tag增加记录
-				if err := addTagLog(util.AsUint(tagId), TAG_ADDPOST); err != nil {
-					return err
-				}
+				addTagLog(util.AsUint(tagId), TAG_ADDPOST)
 			}
 			return nil
 		})

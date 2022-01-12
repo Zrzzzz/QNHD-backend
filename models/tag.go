@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
@@ -106,19 +107,17 @@ func addTagLogInPost(postId uint64, point TAG_POINT) error {
 		return err
 	}
 	if pt.TagId != 0 {
-		return addTagLog(pt.TagId, point)
-	} else {
-		return nil
+		addTagLog(pt.TagId, point)
 	}
+	return nil
 }
 
 // 增加Tag访问记录
-func addTagLog(id uint64, point TAG_POINT) error {
+func addTagLog(id uint64, point TAG_POINT) {
 	var log = LogTag{TagId: id, Point: point}
 	if err := db.Select("tag_id").Create(&log).Error; err != nil {
-		return err
+		logging.Error("add tag log error: %v", log)
 	}
-	return nil
 }
 
 // 删除24小时之前的记录
