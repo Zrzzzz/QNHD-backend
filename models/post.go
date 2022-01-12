@@ -154,8 +154,9 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 	var posts []Post
 	content := maps["content"].(string)
 	postType := maps["type"].(PostType)
-	departmentId, departOk := maps["department_id"].(string)
-	solved, solvedOk := maps["solved"].(string)
+	departmentId := maps["department_id"].(string)
+	solved := maps["solved"].(string)
+	tagId := maps["tag_id"].(string)
 
 	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	// 校区 不为全部时加上区分
@@ -163,12 +164,21 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 		d = d.Where("type = ?", postType)
 	}
 	// 如果有部门要加上
-	if departOk {
+	if departmentId != "" {
 		d = d.Where("department_id = ?", departmentId)
 	}
 	// 如果要加上是否解决的字段
-	if solvedOk {
+	if solved != "" {
 		d = d.Where("solved = ?", solved)
+	}
+	// 如果需要搜索标签
+	if tagId != "" {
+		// 搜索相关帖子
+		var tagIds = []uint64{}
+		// 不需要处理错误，空的返回也行
+		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
+		// 然后加上条件
+		d = d.Where("id IN (?)", tagIds)
 	}
 
 	if err := d.Find(&posts).Error; err != nil {

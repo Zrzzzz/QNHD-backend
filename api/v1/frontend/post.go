@@ -22,6 +22,8 @@ func GetPosts(c *gin.Context) {
 	content := c.Query("content")
 	departmentId := c.Query("department_id")
 	solved := c.Query("solved")
+	tagId := c.Query("tagId")
+
 	valid := validation.Validation{}
 	valid.Required(postType, "type")
 	valid.Numeric(postType, "type")
@@ -30,6 +32,9 @@ func GetPosts(c *gin.Context) {
 	}
 	if departmentId != "" {
 		valid.Numeric(departmentId, "department_id")
+	}
+	if tagId != "" {
+		valid.Numeric(tagId, "tag_id")
 	}
 	ok, verr := r.E(&valid, "Get posts")
 	if !ok {
@@ -47,15 +52,16 @@ func GetPosts(c *gin.Context) {
 		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
+
 	uid := r.GetUid(c)
 	maps := map[string]interface{}{
-		"type":    models.PostType(postTypeint),
-		"solved":  solved,
-		"content": content,
+		"type":          models.PostType(postTypeint),
+		"content":       content,
+		"solved":        solved,
+		"department_id": departmentId,
+		"tag_id":        tagId,
 	}
-	if departmentId != "" {
-		maps["department_id"] = departmentId
-	}
+
 	list, err := models.GetPostResponses(c, uid, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
