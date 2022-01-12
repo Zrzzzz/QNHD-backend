@@ -14,17 +14,17 @@ import (
 type PostCampusType int
 
 const (
-	CampusNone PostCampusType = iota
-	CampusOld
-	CampusNew
+	CAMPUS_NONE PostCampusType = iota
+	CAMPUS_OLD
+	CAMPUS_NEW
 )
 
 type PostType int
 
 const (
-	School PostType = iota
-	Hole
-	All
+	POST_SCHOOL PostType = iota
+	POST_HOLE
+	POST_ALL
 )
 
 type Post struct {
@@ -141,10 +141,10 @@ func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		return pr, err
 	}
-	if _, err := AddVisitHistory(uid, postId); err != nil {
+	if _, err := addVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
-	if err := AddTagLogInPost(util.AsUint(postId)); err != nil {
+	if err := addTagLogInPost(util.AsUint(postId), TAG_VISIT); err != nil {
 		return pr, err
 	}
 	return post.geneResponse(uid)
@@ -159,7 +159,7 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 
 	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	// 校区 不为全部时加上区分
-	if postType != All {
+	if postType != POST_ALL {
 		d = d.Where("type = ?", postType)
 	}
 	// 如果有部门要加上
@@ -215,7 +215,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		Title:   maps["title"].(string),
 		Content: maps["content"].(string),
 	}
-	if post.Type == School {
+	if post.Type == POST_SCHOOL {
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Select("type", "uid", "campus", "title", "content").Create(post).Error; err != nil {
@@ -232,6 +232,10 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 				if err := AddPostWithTag(post.Id, tagId); err != nil {
 					return err
 				}
+				// 对帖子的tag增加记录
+				if err := addTagLog(util.AsUint(tagId), TAG_ADDPOST); err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -239,7 +243,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			upload.DeleteImageUrls(imgs)
 			return 0, err
 		}
-	} else if post.Type == Hole {
+	} else if post.Type == POST_HOLE {
 		// 先对department_id进行查找，不存在要报错
 		departId := maps["department_id"].(uint64)
 		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {

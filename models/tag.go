@@ -14,16 +14,26 @@ type Tag struct {
 }
 
 type LogTag struct {
-	Id        uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
-	TagId     uint64 `json:"tag_id"`
-	CreatedAt string `json:"create_at"`
+	Id        uint64    `gorm:"primaryKey;autoIncrement;" json:"id"`
+	TagId     uint64    `json:"tag_id"`
+	Point     TAG_POINT `json:"point"`
+	CreatedAt string    `json:"create_at"`
 }
 
 type HotTagResult struct {
 	TagId int    `json:"tag_id"`
-	Count int    `json:"count"`
+	Point int    `json:"point"`
 	Name  string `json:"name"`
 }
+
+type TAG_POINT uint64
+
+const (
+	TAG_SEARCH TAG_POINT = iota + 1
+	TAG_VISIT
+	TAG_ADDFLOOR
+	TAG_ADDPOST
+)
 
 func ExistTagByName(name string) (bool, error) {
 	var tag Tag
@@ -41,6 +51,12 @@ func GetTags(name string) ([]Tag, error) {
 	if err := db.Where("name LIKE ?", "%"+name+"%").Find(&tags).Error; err != nil {
 		return nil, err
 	}
+	// 如果有name，对搜索到的加入记录，仅匹配精确搜索
+	for _, t := range tags {
+		if t.Name == "name" {
+			addTagLog(t.Id, TAG_SEARCH)
+		}
+	}
 	return tags, nil
 }
 
@@ -48,7 +64,7 @@ func GetTags(name string) ([]Tag, error) {
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
 	if err := db.Model(&LogTag{}).
-		Select("tag_id", "count(*) as count", "name").
+		Select("tag_id", "count(*) as point", "name").
 		Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").
 		Group("tag_id").
 		Limit(5).
@@ -84,22 +100,22 @@ func DeleteTag(id uint64, uid string) (uint64, error) {
 	return tag.Id, nil
 }
 
-func AddTagLogInPost(postId uint64) error {
+func addTagLogInPost(postId uint64, point TAG_POINT) error {
 	var pt PostTag
 	if err := db.Where("post_id = ?", postId).Find(&pt).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		} else {
-			return nil
-		}
+		return err
 	}
-	return AddTagLog(pt.TagId)
+	if pt.TagId != 0 {
+		return addTagLog(pt.TagId, point)
+	} else {
+		return nil
+	}
 }
 
 // 增加Tag访问记录
-func AddTagLog(id uint64) error {
-	var tag = LogTag{TagId: id}
-	if err := db.Select("tag_id").Create(&tag).Error; err != nil {
+func addTagLog(id uint64, point TAG_POINT) error {
+	var log = LogTag{TagId: id, Point: point}
+	if err := db.Select("tag_id").Create(&log).Error; err != nil {
 		return err
 	}
 	return nil

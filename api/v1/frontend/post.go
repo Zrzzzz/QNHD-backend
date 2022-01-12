@@ -185,6 +185,7 @@ func AddPost(c *gin.Context) {
 	valid.Numeric(campus, "campus")
 	valid.Required(title, "title")
 	valid.MaxSize(title, 30, "title")
+	valid.MaxSize(content, 1000, "content")
 	ok, verr := r.E(&valid, "Add posts")
 	if !ok {
 		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -201,12 +202,12 @@ func AddPost(c *gin.Context) {
 	}
 	// 需要根据类型判断返回类型
 	// 判断type
-	if postTypeint == int(models.School) {
+	if postTypeint == int(models.POST_SCHOOL) {
 		// 可选tag
 		if tagId != "" {
 			valid.Numeric(tagId, "tag_id")
 		}
-	} else if postTypeint == int(models.Hole) {
+	} else if postTypeint == int(models.POST_HOLE) {
 		// 必须要求部门id不为0
 		valid.Required(departId, "department_id")
 		valid.Numeric(departId, "department_id")

@@ -87,6 +87,7 @@ func AddFloor(c *gin.Context) {
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
 	valid.Required(content, "content")
+	valid.MaxSize(content, 200, "content")
 	ok, verr := r.E(&valid, "Add floors")
 	if !ok {
 		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -147,6 +148,7 @@ func ReplyFloor(c *gin.Context) {
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
+	valid.MaxSize(content, 200, "content")
 	ok, verr := r.E(&valid, "Reply floors")
 	if !ok {
 		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})

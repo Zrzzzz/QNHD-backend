@@ -66,6 +66,7 @@ func AddTag(c *gin.Context) {
 	name := c.PostForm("name")
 	valid := validation.Validation{}
 	valid.Required(name, "name")
+	valid.MaxSize(name, 15, "name")
 	ok, verr := r.E(&valid, "Add tag")
 	if !ok {
 		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})

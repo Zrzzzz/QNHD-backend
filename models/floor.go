@@ -189,6 +189,13 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if err := addUnreadFloor(post.Uid, newFloor.Id); err != nil {
 		return 0, err
 	}
+	// 对帖子的tag增加记录, 当是树洞帖才会有
+	if post.Type == POST_HOLE {
+		if err := addTagLogInPost(post.Id, TAG_ADDFLOOR); err != nil {
+			return 0, err
+		}
+	}
+
 	return newFloor.Id, nil
 }
 
@@ -258,7 +265,12 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if err := addUnreadFloor(toFloor.Uid, newFloor.Id); err != nil {
 		return 0, err
 	}
-
+	// 对帖子的tag增加记录, 当是树洞帖才会有
+	if post.Type == POST_HOLE {
+		if err := addTagLogInPost(post.Id, TAG_ADDFLOOR); err != nil {
+			return 0, err
+		}
+	}
 	return newFloor.Id, nil
 }
 
