@@ -70,7 +70,7 @@ type LogPostDis struct {
 
 type PostResponse struct {
 	Post
-	Tag          Tag             `json:"tag"`
+	Tag          *Tag            `json:"tag"`
 	Floors       []FloorResponse `json:"floors"`
 	CommentCount int             `json:"comment_count"`
 	IsLike       bool            `json:"is_like"`
@@ -78,15 +78,12 @@ type PostResponse struct {
 	IsFav        bool            `json:"is_fav"`
 	IsOwner      bool            `json:"is_owner"`
 	ImageUrls    []string        `json:"image_urls"`
-	Department   Department      `json:"department"`
+	Department   *Department     `json:"department"`
 }
 
 func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	var pr PostResponse
-	tag, err := GetTagInPost(util.AsStrU(p.Id))
-	if err != nil {
-		return pr, err
-	}
+
 	frs, err := GetShortFloorResponsesInPost(util.AsStrU(p.Id), uid)
 	if err != nil {
 		return pr, err
@@ -95,17 +92,8 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	if err != nil {
 		return pr, err
 	}
-	var depart Department
-	if p.DepartmentId > 0 {
-		d, err := GetDepartment(p.DepartmentId)
-		if err != nil {
-			return pr, err
-		}
-		depart = d
-	}
-	return PostResponse{
+	pr = PostResponse{
 		Post:         *p,
-		Tag:          tag,
 		Floors:       frs,
 		CommentCount: len(frs),
 		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
@@ -113,8 +101,21 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
 		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
 		ImageUrls:    imgs,
-		Department:   depart,
-	}, nil
+	}
+
+	if p.DepartmentId > 0 {
+		d, err := GetDepartment(p.DepartmentId)
+		if err != nil {
+			return pr, err
+		}
+		pr.Department = &d
+	}
+	tag, _ := GetTagInPost(util.AsStrU(p.Id))
+	if tag != nil {
+		pr.Tag = tag
+	}
+
+	return pr, nil
 }
 
 func transPostsToResponses(posts *[]Post, uid string) ([]PostResponse, error) {

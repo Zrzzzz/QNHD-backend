@@ -42,13 +42,13 @@ func (LogUnreadPostReply) TableName() string {
 func GetMessageFloors(c *gin.Context, uid string) ([]LogUnreadFloor, error) {
 	var logs []LogUnreadFloor
 	// 未读的优先，按照时间
-	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("read, id DESC").Find(&logs).Error
+	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`read`, `id` DESC").Find(&logs).Error
 	return logs, err
 }
 
 func GetMessagePostReplys(c *gin.Context, uid string) ([]LogUnreadPostReply, error) {
 	var logs []LogUnreadPostReply
-	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("read, id DESC").Find(&logs).Error
+	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`read`, `id` DESC").Find(&logs).Error
 	return logs, err
 }
 
@@ -84,7 +84,7 @@ func addUnreadFloor(uid, floorId uint64) error {
 func ReadFloor(uid, floorId uint64) error {
 	return db.Model(&LogUnreadFloor{}).
 		Where("uid = ? AND floor_id = ?", uid, floorId).
-		Update("read", 1).Error
+		Update("`read`", 1).Error
 }
 
 // 添加回复通知
@@ -99,7 +99,7 @@ func AddUnreadPostReply(uid, replyId uint64) error {
 func ReadPostReply(uid, replyId uint64) error {
 	return db.Model(&LogUnreadPostReply{}).
 		Where("uid = ? AND reply_id = ?", uid, replyId).
-		Update("read", 1).Error
+		Update("`read`", 1).Error
 }
 
 // 是否通知已读
@@ -132,7 +132,7 @@ func IsReadPostReply(uid, replyId uint64) bool {
 
 type MessageCount struct {
 	Floor  int `json:"floor"`
-	Reply  int `json:"Reply"`
+	Reply  int `json:"reply"`
 	Notice int `json:"notice"`
 }
 
@@ -142,11 +142,11 @@ func GetMessageCount(uid string) (MessageCount, error) {
 	// 楼层未读 回复未读 通知未读
 	var fcnt, rcnt, ncnt int64
 	// 获取楼层未读数
-	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND read = 0", uid).Count(&fcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND `read` = 0", uid).Count(&fcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取回复未读数
-	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND read = 0", uid).Count(&rcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND `read` = 0", uid).Count(&rcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取通知未读数

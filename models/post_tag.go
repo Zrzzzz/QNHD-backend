@@ -13,13 +13,13 @@ type PostTag struct {
 	TagId  uint64 `json:"tag_id" `
 }
 
-func GetTagInPost(postId string) (Tag, error) {
-	var tag Tag
-	if err := db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).Find(&tag).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return tag, err
+func GetTagInPost(postId string) (*Tag, error) {
+	var tag *Tag
+	if err := db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).First(&tag).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		} else {
-			return tag, nil
+			return tag, err
 		}
 	}
 	return tag, nil

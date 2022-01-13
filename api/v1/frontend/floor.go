@@ -184,13 +184,15 @@ func ReplyFloor(c *gin.Context) {
 		"image_url":    imageURL,
 	}
 
-	_, err = models.ReplyFloor(maps)
+	id, err := models.ReplyFloor(maps)
 	if err != nil {
 		logging.Error("Reply floor error: %v", err)
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	data := make(map[string]interface{})
+	data["id"] = id
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [delete]

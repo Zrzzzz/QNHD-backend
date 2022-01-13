@@ -22,7 +22,7 @@ func GetPosts(c *gin.Context) {
 	content := c.Query("content")
 	departmentId := c.Query("department_id")
 	solved := c.Query("solved")
-	tagId := c.Query("tagId")
+	tagId := c.Query("tag_id")
 
 	valid := validation.Validation{}
 	valid.Required(postType, "type")

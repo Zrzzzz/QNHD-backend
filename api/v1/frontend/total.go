@@ -80,7 +80,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 查询楼层内回复
-		g.GET("/f/floor/replys", GetFloorReplys)
+		g.GET("/floor/replys", GetFloorReplys)
 		// 新建楼层
 		g.POST("/floor", AddFloor)
 		// 回复楼层

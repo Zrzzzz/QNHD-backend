@@ -65,11 +65,11 @@ func GetTags(name string) ([]Tag, error) {
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
 	if err := db.Model(&LogTag{}).
-		Select("tag_id", "count(*) as point", "name").
-		Where("created_at BETWEEN CONCAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY), \" 08:00:00\") AND CONCAT(CURDATE(), \" 08:00:00\")").
+		Select("tag_id", "sum(point) as point", "name").
+		Where("created_at > DATE_SUB(NOW(),INTERVAL 1 DAY)").
 		Group("tag_id").
 		Limit(5).
-		Order("count desc").
+		Order("point desc").
 		Joins("LEFT JOIN tags ON tags.id = tag_id").
 		Find(&results).Error; err != nil {
 		return nil, err
@@ -120,9 +120,9 @@ func addTagLog(id uint64, point TAG_POINT) {
 	}
 }
 
-// 删除24小时之前的记录
+// 删除记录
 func FlushOldTagLog() error {
-	if err := db.Where("created_at <= NOW() - INTERVAL 24 HOUR").Delete(&LogTag{}).Error; err != nil {
+	if err := db.Where("created_at <= NOW() - INTERVAL 48 HOUR").Delete(&LogTag{}).Error; err != nil {
 		return err
 	}
 	return nil

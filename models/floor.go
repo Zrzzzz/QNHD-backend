@@ -185,9 +185,11 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.Select("uid", "post_id", "content", "nickname", "image_url").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
-	// 通知帖子主人
-	if err := addUnreadFloor(post.Uid, newFloor.Id); err != nil {
-		return 0, err
+	// 如果不是回复自己的帖子，通知帖子主人
+	if post.Uid != uid {
+		if err := addUnreadFloor(post.Uid, newFloor.Id); err != nil {
+			return 0, err
+		}
 	}
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {
@@ -261,9 +263,13 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.Select("uid", "post_id", "content", "nickname", "image_url", "reply_to", "reply_to_name", "sub_to").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
-	// 通知楼层主人
-	if err := addUnreadFloor(toFloor.Uid, newFloor.Id); err != nil {
-		return 0, err
+	// 如果不是回复自己的楼层，通知楼层主人和回复的人
+	var subToFloor, _ = GetFloor(util.AsStrU(newFloor.SubTo))
+	if subToFloor.Uid != uid {
+		addUnreadFloor(post.Uid, newFloor.Id)
+	}
+	if toFloor.Uid != uid {
+		addUnreadFloor(post.Uid, toFloor.Id)
 	}
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {

@@ -89,7 +89,7 @@ func GetMessageFloors(c *gin.Context) {
 		var r = messageFloorResponse{Floor: f}
 		// 搜索floor
 		if f.SubTo > 0 {
-			tof, e := models.GetFloor(util.AsStrU(f.Id))
+			tof, e := models.GetFloor(util.AsStrU(f.ReplyTo))
 			if e != nil {
 				err = e
 				break

@@ -35,6 +35,10 @@ type App struct {
 	WPYDomain    string
 	WPYAppSecret string
 	WPYAppKey    string
+
+	// 发贴间隔时间
+	TimeLimit       int
+	EnableTimeLimit bool
 }
 
 type Database struct {
