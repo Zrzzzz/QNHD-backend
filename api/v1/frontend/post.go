@@ -334,7 +334,7 @@ func DeletePost(c *gin.Context) {
 // @way [formdata]
 // @param post_id, op
 // @return nil
-// @route /f/favOrUnfav
+// @route /f/post/fav
 func FavOrUnfavPost(c *gin.Context) {
 	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
@@ -369,7 +369,7 @@ func FavOrUnfavPost(c *gin.Context) {
 // @way [formdata]
 // @param post_id, op
 // @return nil
-// @route /f/likeOrUnlike
+// @route /f/post/like
 func LikeOrUnlikePost(c *gin.Context) {
 	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
@@ -404,7 +404,7 @@ func LikeOrUnlikePost(c *gin.Context) {
 // @way [formdata]
 // @param post_id, op
 // @return nil
-// @route /f/disOrUndis
+// @route /f/post/dis
 func DisOrUndisPost(c *gin.Context) {
 	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")

@@ -53,17 +53,14 @@ type Post struct {
 }
 
 type LogPostFav struct {
-	Model
 	Uid    uint64 `json:"uid"`
 	PostId uint64 `json:"post_id"`
 }
 type LogPostLike struct {
-	Model
 	Uid    uint64 `json:"uid"`
 	PostId uint64 `json:"post_id"`
 }
 type LogPostDis struct {
-	Model
 	Uid    uint64 `json:"uid"`
 	PostId uint64 `json:"post_id"`
 }
@@ -192,7 +189,7 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 
 func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
-	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return transPostsToResponses(&posts, uid)
@@ -200,7 +197,7 @@ func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 
 func GetFavPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.deleted_at IS NULL").Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
+	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id").Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return transPostsToResponses(&posts, uid)
@@ -347,32 +344,21 @@ func DeletePostsAdmin(id string) (uint64, error) {
 }
 
 func FavPost(postId string, uid string) (uint64, error) {
-	var exist = false
-	var log = LogPostFav{Uid: util.AsUint(uid), PostId: util.AsUint(postId)}
+	var log LogPostFav
 
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id > 0 {
+	if log.Uid > 0 {
 		return 0, fmt.Errorf("已收藏")
 	}
 
-	if err := db.Unscoped().Where(log).Find(&log).Error; err != nil {
+	log.Uid = util.AsUint(uid)
+	log.PostId = util.AsUint(postId)
+	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
 		return 0, err
 	}
-
-	exist = log.Id > 0
-	if exist {
-		if err := db.Unscoped().Model(&log).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
-			return 0, err
-		}
-	} else {
-		if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
-			return 0, err
-		}
-	}
-	// 更新楼的likes
+	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -382,34 +368,24 @@ func FavPost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("fav_count", post.FavCount+1).Error; err != nil {
 		return 0, err
 	}
-	return post.FavCount + 1, nil
+	return post.FavCount, nil
 }
 
 func UnfavPost(postId string, uid string) (uint64, error) {
-	uidint := util.AsUint(uid)
-	postIdint := util.AsUint(postId)
+	var log LogPostFav
 
-	var exist = false
-	var log = LogPostFav{Uid: uidint, PostId: postIdint}
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id == 0 {
+	if log.Uid == 0 {
 		return 0, fmt.Errorf("未收藏")
 	}
 
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Delete(&log).Error; err != nil {
 		return 0, err
 	}
-	exist = log.Id > 0
-	if exist {
-		if err := db.Delete(&log).Error; err != nil {
-			return 0, err
-		}
-	}
 
-	// 更新楼的likes
+	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -419,39 +395,25 @@ func UnfavPost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("fav_count", post.FavCount-1).Error; err != nil {
 		return 0, err
 	}
-	return post.FavCount - 1, nil
+	return post.FavCount, nil
 }
 
 func LikePost(postId string, uid string) (uint64, error) {
-	uidint := util.AsUint(uid)
-	postIdint := util.AsUint(postId)
+	var log LogPostLike
 
-	var exist = false
-	var log = LogPostLike{Uid: uidint, PostId: postIdint}
-
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id > 0 {
+
+	if log.Uid > 0 {
 		return 0, fmt.Errorf("已点赞")
 	}
-
-	if err := db.Unscoped().Where(log).Find(&log).Error; err != nil {
+	log.Uid = util.AsUint(uid)
+	log.PostId = util.AsUint(postId)
+	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
 		return 0, err
 	}
-
-	exist = log.Id > 0
-	if exist {
-		if err := db.Unscoped().Model(&log).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
-			return 0, err
-		}
-	} else {
-		if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
-			return 0, err
-		}
-	}
-	// 更新楼的likes
+	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -461,37 +423,26 @@ func LikePost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("like_count", post.LikeCount+1).Error; err != nil {
 		return 0, err
 	}
-	if _, err := UnDisPost(postId, uid); err != nil {
-		return 0, err
-	}
-	return post.LikeCount + 1, nil
+	UnDisPost(postId, uid)
+	return post.LikeCount, nil
 }
 
 func UnLikePost(postId string, uid string) (uint64, error) {
-	uidint := util.AsUint(uid)
-	postIdint := util.AsUint(postId)
+	var log LogPostLike
 
-	var exist = false
-	var log = LogPostLike{Uid: uidint, PostId: postIdint}
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id == 0 {
+
+	if log.Uid == 0 {
 		return 0, fmt.Errorf("未点赞")
 	}
 
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Delete(&log).Error; err != nil {
 		return 0, err
 	}
-	exist = log.Id > 0
-	if exist {
-		if err := db.Delete(&log).Error; err != nil {
-			return 0, err
-		}
-	}
 
-	// 更新楼的likes
+	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -501,39 +452,24 @@ func UnLikePost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("like_count", post.LikeCount-1).Error; err != nil {
 		return 0, err
 	}
-	return post.LikeCount - 1, nil
+	return post.LikeCount, nil
 }
 
 func DisPost(postId string, uid string) (uint64, error) {
-	uidint := util.AsUint(uid)
-	postIdint := util.AsUint(postId)
+	var log LogPostDis
 
-	var exist = false
-	var log = LogPostDis{Uid: uidint, PostId: postIdint}
-
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id > 0 {
+	if log.Uid > 0 {
 		return 0, fmt.Errorf("已点踩")
 	}
-
-	if err := db.Unscoped().Where(log).Find(&log).Error; err != nil {
+	log.Uid = util.AsUint(uid)
+	log.PostId = util.AsUint(postId)
+	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
 		return 0, err
 	}
-
-	exist = log.Id > 0
-	if exist {
-		if err := db.Unscoped().Model(&log).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
-			return 0, err
-		}
-	} else {
-		if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
-			return 0, err
-		}
-	}
-	// 更新楼的likes
+	// 更新点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -543,37 +479,25 @@ func DisPost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("dis_count", post.DisCount+1).Error; err != nil {
 		return 0, err
 	}
-	if _, err := UnLikePost(postId, uid); err != nil {
-		return 0, err
-	}
-	return post.DisCount + 1, nil
+	UnLikePost(postId, uid)
+	return post.DisCount, nil
 }
 
 func UnDisPost(postId string, uid string) (uint64, error) {
-	uidint := util.AsUint(uid)
-	postIdint := util.AsUint(postId)
+	var log LogPostDis
 
-	var exist = false
-	var log = LogPostDis{Uid: uidint, PostId: postIdint}
-	// 首先判断点没点过赞
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&log).Error; err != nil {
 		return 0, err
 	}
-	if log.Id == 0 {
+	if log.Uid == 0 {
 		return 0, fmt.Errorf("未点踩")
 	}
 
-	if err := db.Where(log).Find(&log).Error; err != nil {
+	if err := db.Where("uid = ? AND post_id = ?", uid, postId).Delete(&log).Error; err != nil {
 		return 0, err
 	}
-	exist = log.Id > 0
-	if exist {
-		if err := db.Delete(&log).Error; err != nil {
-			return 0, err
-		}
-	}
 
-	// 更新楼的likes
+	// 更新楼的点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -583,7 +507,7 @@ func UnDisPost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("dis_count", post.DisCount-1).Error; err != nil {
 		return 0, err
 	}
-	return post.DisCount - 1, nil
+	return post.DisCount, nil
 }
 
 func IsLikePostByUid(uid, postId string) bool {
@@ -592,7 +516,7 @@ func IsLikePostByUid(uid, postId string) bool {
 		logging.Error(err.Error())
 		return false
 	}
-	return log.Id > 0
+	return log.Uid > 0
 }
 
 func IsDisPostByUid(uid, postId string) bool {
@@ -601,7 +525,7 @@ func IsDisPostByUid(uid, postId string) bool {
 		logging.Error(err.Error())
 		return false
 	}
-	return log.Id > 0
+	return log.Uid > 0
 }
 
 func IsFavPostByUid(uid, postId string) bool {
@@ -610,7 +534,7 @@ func IsFavPostByUid(uid, postId string) bool {
 		logging.Error(err.Error())
 		return false
 	}
-	return log.Id > 0
+	return log.Uid > 0
 }
 
 func IsOwnPostByUid(uid, postId string) bool {
@@ -618,7 +542,7 @@ func IsOwnPostByUid(uid, postId string) bool {
 	if err != nil {
 		return false
 	}
-	return fmt.Sprintf("%d", post.Uid) == uid
+	return util.AsStrU(post.Uid) == uid
 }
 
 func (LogPostFav) TableName() string {

@@ -226,7 +226,7 @@ func DeleteFloor(c *gin.Context) {
 // @way formdata
 // @param uid, floor_id, op
 // @return nil
-// @route /f/floor/likeOrUnlike
+// @route /f/floor/like
 func LikeOrUnlikeFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	floorId := c.PostForm("floor_id")
@@ -262,7 +262,7 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 // @way formdata
 // @param uid, floor_id, op
 // @return nil
-// @route /f/floor/disOrUndis
+// @route /f/floor/dis
 func DisOrUndisFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	floorId := c.PostForm("floor_id")

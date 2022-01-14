@@ -69,10 +69,13 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 帖子回复校方回应
 		g.POST("/post/reply", AddPostReply)
 		// 收藏或者取消
+		g.POST("/post/fav", FavOrUnfavPost)
 		g.POST("/post/favOrUnfav/modify", FavOrUnfavPost)
 		// 点赞或者取消
+		g.POST("/post/like", LikeOrUnlikePost)
 		g.POST("/post/likeOrUnlike/modify", LikeOrUnlikePost)
 		// 点踩或者取消
+		g.POST("/post/dis", DisOrUndisPost)
 		g.POST("/post/disOrUndis/modify", DisOrUndisPost)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
@@ -86,8 +89,10 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 回复楼层
 		g.POST("/floor/reply", ReplyFloor)
 		//  点赞或者取消
+		g.POST("/floor/like", LikeOrUnlikeFloor)
 		g.POST("/floor/likeOrUnlike/modify", LikeOrUnlikeFloor)
 		//  点踩或者取消
+		g.POST("/floor/dis", DisOrUndisFloor)
 		g.POST("/floor/disOrUndis/modify", DisOrUndisFloor)
 		// 删除指定楼层
 		g.GET("/floor/delete", DeleteFloor)
