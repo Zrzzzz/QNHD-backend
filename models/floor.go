@@ -1,13 +1,14 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"gorm.io/gorm"
 )
 
@@ -134,7 +135,13 @@ func getFloorHighLikeShortReplyResponses(floorId, uid string) ([]FloorResponse, 
 
 func getFloorSubFloorCount(floorId string) int {
 	var ret int64
-	db.Where("sub_to = ?", floorId).Count(&ret)
+	db.Model(&Floor{}).Where("sub_to = ?", floorId).Count(&ret)
+	return int(ret)
+}
+
+func getCommentCount(postId uint64) int {
+	var ret int64
+	db.Model(&Floor{}).Where("post_id = ?", postId).Count(&ret)
 	return int(ret)
 }
 
@@ -293,12 +300,7 @@ func DeleteFloorByAdmin(id string) (uint64, error) {
 	if err := db.Where("id = ?", id).First(&floor).Error; err != nil {
 		return 0, err
 	}
-	// 删除本地文件
-	if err := upload.DeleteImageUrls([]string{floor.ImageURL}); err != nil {
-		logging.Error(err.Error())
-		return 0, err
-	}
-	if err := db.Delete(&floor).Error; err != nil {
+	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
 	return floor.Id, nil
@@ -309,18 +311,39 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	if err := db.Where("uid = ? AND id = ?", uid, floorId).First(&floor).Error; err != nil {
 		return 0, err
 	}
-	// 删除本地文件
-	if err := upload.DeleteImageUrls([]string{floor.ImageURL}); err != nil {
-		logging.Error(err.Error())
-		return 0, err
-	}
-	if err := db.Delete(&floor).Error; err != nil {
+	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
 	return floor.Id, nil
 }
 
-func DeleteFloorsInPost(tx *gorm.DB, postId string) error {
+func deleteFloor(floor *Floor) error {
+	var imgs []string
+	if floor.ImageURL != "" {
+		imgs = append(imgs, floor.ImageURL)
+	}
+	// 判断是否有子楼层
+	var floors []Floor
+	db.Where("sub_to").Find(&floors)
+	for _, f := range floors {
+		if f.ImageURL != "" {
+			imgs = append(imgs, f.ImageURL)
+		}
+	}
+
+	// 删除本地文件
+	if err := upload.DeleteImageUrls(imgs); err != nil {
+		logging.Error(err.Error())
+		return err
+	}
+
+	if err := db.Where("id = ? OR sub_to = ?", floor.Id, floor.Id).Delete(&Floor{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 	if tx == nil {
 		tx = db
 	}

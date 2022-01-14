@@ -85,14 +85,14 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	if err != nil {
 		return pr, err
 	}
-	imgs, err := GetImageInPost(util.AsStrU(p.Id))
+	imgs, err := GetImageInPost(p.Id)
 	if err != nil {
 		return pr, err
 	}
 	pr = PostResponse{
 		Post:         *p,
 		Floors:       frs,
-		CommentCount: len(frs),
+		CommentCount: getCommentCount(p.Id),
 		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
 		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
@@ -296,19 +296,7 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 		if err := tx.Where("id = ? AND uid = ?", id, uid).First(&post).Error; err != nil {
 			return err
 		}
-		if err := tx.Delete(&post).Error; err != nil {
-			return err
-		}
-		if err := DeleteTagInPost(tx, id); err != nil {
-			return err
-		}
-		if err := DeleteFloorsInPost(tx, id); err != nil {
-			return err
-		}
-		if err := DeleteImageInPost(tx, id); err != nil {
-			return err
-		}
-		return nil
+		return deletePost(tx, &post)
 	})
 	if err != nil {
 		return 0, err
@@ -322,25 +310,29 @@ func DeletePostsAdmin(id string) (uint64, error) {
 		if err := tx.Where("id = ?", id).First(&post).Error; err != nil {
 			return err
 		}
-		if err := tx.Delete(post).Error; err != nil {
-			return err
-		}
-		if err := DeleteTagInPost(tx, id); err != nil {
-			return err
-		}
-		if err := DeleteFloorsInPost(tx, id); err != nil {
-			return err
-		}
-		if err := DeleteImageInPost(tx, id); err != nil {
-			return err
-		}
-		return nil
+		return deletePost(tx, &post)
 	})
 	if err != nil {
 		return 0, err
 	}
 
 	return post.Id, nil
+}
+
+func deletePost(tx *gorm.DB, post *Post) error {
+	if err := tx.Delete(&post).Error; err != nil {
+		return err
+	}
+	if err := DeleteTagInPost(tx, post.Id); err != nil {
+		return err
+	}
+	if err := DeleteFloorsInPost(tx, post.Id); err != nil {
+		return err
+	}
+	if err := DeleteImageInPost(tx, post.Id); err != nil {
+		return err
+	}
+	return nil
 }
 
 func FavPost(postId string, uid string) (uint64, error) {

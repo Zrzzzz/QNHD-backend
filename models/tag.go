@@ -120,14 +120,6 @@ func addTagLog(id uint64, point TAG_POINT) {
 	}
 }
 
-// 删除记录
-func FlushOldTagLog() error {
-	if err := db.Where("created_at <= NOW() - INTERVAL 48 HOUR").Delete(&LogTag{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (LogTag) TableName() string {
 	return "log_tag"
 }

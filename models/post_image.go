@@ -13,7 +13,7 @@ type PostImage struct {
 	ImageUrl string `json:"image_url" `
 }
 
-func GetImageInPost(postId string) ([]string, error) {
+func GetImageInPost(postId uint64) ([]string, error) {
 	var imageUrls = []string{}
 	var ret = []PostImage{}
 	if err := db.Where("post_id = ?", postId).Find(&ret).Error; err != nil {
@@ -47,7 +47,7 @@ func AddImageInPost(tx *gorm.DB, postId uint64, imageUrls []string) error {
 	return err
 }
 
-func DeleteImageInPost(tx *gorm.DB, postId string) error {
+func DeleteImageInPost(tx *gorm.DB, postId uint64) error {
 	if tx == nil {
 		tx = db
 	}

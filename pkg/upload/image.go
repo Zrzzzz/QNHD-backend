@@ -106,6 +106,9 @@ func SaveImagesFromFromData(imgs []*multipart.FileHeader, c *gin.Context) ([]str
 }
 func DeleteImageUrls(urls []string) error {
 	for _, url := range urls {
+		if url == "" {
+			continue
+		}
 		err := os.Remove(GetRuntimePath() + url)
 		if err != nil {
 			logging.Error(err.Error())
