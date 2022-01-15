@@ -2,8 +2,10 @@ package models
 
 import (
 	"errors"
+	"math/rand"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -59,6 +61,24 @@ func GetTags(name string) ([]Tag, error) {
 		}
 	}
 	return tags, nil
+}
+
+func GetRecommendTag() (HotTagResult, error) {
+	var tag HotTagResult
+	tags, err := GetHotTags()
+	if err != nil {
+		return tag, err
+	}
+	if len(tags) == 0 {
+		var t Tag
+		db.Last(&t)
+		tag.TagId = int(t.Id)
+		tag.Point = 0
+		tag.Name = t.Name
+		return tag, nil
+	}
+	rand.Seed(time.Now().UnixNano())
+	return tags[rand.Intn(len(tags))], nil
 }
 
 // 获取24小时内高赞tag

@@ -38,7 +38,22 @@ func GetTags(c *gin.Context) {
 // @method [get]
 // @way [query]
 // @param
-// @return
+// @return hottag
+// @route /f/tag/recommend
+func GetRecommendTag(c *gin.Context) {
+	tag, err := models.GetRecommendTag()
+	if err != nil {
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	r.Success(c, e.SUCCESS, map[string]interface{}{"tag": tag})
+}
+
+// @method [get]
+// @way [query]
+// @param
+// @return hottagList
+// @route /f/tags/hot
 func GetHotTag(c *gin.Context) {
 	list, err := models.GetHotTags()
 	data := make(map[string]interface{})
@@ -52,15 +67,11 @@ func GetHotTag(c *gin.Context) {
 	r.Success(c, e.SUCCESS, data)
 }
 
-// @Tags front, tag
-// @Summary 添加标签
-// @Accept json
-// @Produce json
-// @Param name body string true "标签名称"
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response ""
-// @Router /f/tag [post]
+// @method [post]
+// @way [formdata]
+// @param name
+// @return
+// @route /f/tag
 func AddTag(c *gin.Context) {
 	uid := r.GetUid(c)
 	name := c.PostForm("name")

@@ -49,6 +49,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/tag/delete", DeleteTag)
 		// 获取热议标签
 		g.GET("/tags/hot", GetHotTag)
+		// 获取推荐标签
+		g.GET("/tag/recommend", GetRecommendTag)
 	case Post:
 		// 查询多个帖子
 		g.GET("/posts", GetPosts)
@@ -70,13 +72,10 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/post/reply", AddPostReply)
 		// 收藏或者取消
 		g.POST("/post/fav", FavOrUnfavPost)
-		g.POST("/post/favOrUnfav/modify", FavOrUnfavPost)
 		// 点赞或者取消
 		g.POST("/post/like", LikeOrUnlikePost)
-		g.POST("/post/likeOrUnlike/modify", LikeOrUnlikePost)
 		// 点踩或者取消
 		g.POST("/post/dis", DisOrUndisPost)
-		g.POST("/post/disOrUndis/modify", DisOrUndisPost)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
 	case Floor:
@@ -90,10 +89,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/floor/reply", ReplyFloor)
 		//  点赞或者取消
 		g.POST("/floor/like", LikeOrUnlikeFloor)
-		g.POST("/floor/likeOrUnlike/modify", LikeOrUnlikeFloor)
 		//  点踩或者取消
 		g.POST("/floor/dis", DisOrUndisFloor)
-		g.POST("/floor/disOrUndis/modify", DisOrUndisFloor)
 		// 删除指定楼层
 		g.GET("/floor/delete", DeleteFloor)
 	case Department:
