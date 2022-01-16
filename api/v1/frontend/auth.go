@@ -32,43 +32,19 @@ type authRes struct {
 // @way [query]
 // @param token
 // @return token
-// @route /f/auth
-func GetAuth(c *gin.Context) {
+// @route /f/auth/token
+func GetAuthToken(c *gin.Context) {
 	token := c.Query("token")
-	user := c.Query("user")
-	password := c.Query("password")
-	var pass = false
-	var req *http.Request
-	if token != "" {
-		pass = true
-		req, _ = http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
-		req.Header.Add("token", token)
-	}
-	if user != "" || password != "" {
-		pass = true
-		payload := &bytes.Buffer{}
-		writer := multipart.NewWriter(payload)
-		_ = writer.WriteField("account", user)
-		_ = writer.WriteField("password", password)
-		err := writer.Close()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		req, err = http.NewRequest("POST", "https://api.twt.edu.cn/api/auth/common", payload)
-
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-	}
-
-	if !pass {
-		r.R(c, http.StatusUnauthorized, e.INVALID_PARAMS, nil)
+	valid := validation.Validation{}
+	valid.Required(token, "token")
+	ok, verr := r.E(&valid, "get auth")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
+	var req *http.Request
+	req, _ = http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
+	req.Header.Add("token", token)
 
 	var err error
 	// 解析出用户的number
@@ -91,8 +67,72 @@ func GetAuth(c *gin.Context) {
 		logging.Error("Auth er%v", v)
 		return
 	}
+	auth(v.Result.UserNumber, c)
+}
 
-	uid, err := models.ExistUser(v.Result.UserNumber)
+// @method [get]
+// @way [query]
+// @param token
+// @return token
+// @route /f/auth/passwd
+func GetAuthPasswd(c *gin.Context) {
+	user := c.Query("user")
+	password := c.Query("password")
+	valid := validation.Validation{}
+	valid.Required(user, "user")
+	valid.Required(password, "password")
+	ok, verr := r.E(&valid, "get auth")
+	if !ok {
+		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	// 请求服务器
+	var req *http.Request
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+	writer.WriteField("account", user)
+	writer.WriteField("password", password)
+
+	err := writer.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req, err = http.NewRequest("POST", "https://api.twt.edu.cn/api/auth/common", payload)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// 解析出用户的number
+	client := &http.Client{}
+	req.Header.Add("domain", setting.AppSetting.WPYDomain)
+	ticket := b64.StdEncoding.EncodeToString([]byte(setting.AppSetting.WPYAppSecret + "." + setting.AppSetting.WPYAppKey))
+	req.Header.Add("ticket", ticket)
+	res, _ := client.Do(req)
+	body, _ := ioutil.ReadAll(res.Body)
+	// var v map[string]interface{}
+	var v authRes
+	err = json.Unmarshal(body, &v)
+	if err != nil {
+		logging.Error("Auth error: %v", err)
+		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	if v.ErrorCode != 0 {
+		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
+		logging.Error("Auth er%v", v)
+		return
+	}
+
+	auth(v.Result.UserNumber, c)
+}
+
+func auth(id string, c *gin.Context) {
+	uid, err := models.ExistUser(id)
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)
@@ -101,7 +141,7 @@ func GetAuth(c *gin.Context) {
 	}
 	// 如果不存在就创建一个用户
 	if uid == 0 {
-		uid, err = models.AddUser(v.Result.UserNumber, "", "")
+		uid, err = models.AddUser(id, "", "")
 	}
 
 	if err != nil {
@@ -110,7 +150,7 @@ func GetAuth(c *gin.Context) {
 		return
 	}
 
-	token, err = util.GenerateToken(fmt.Sprintf("%d", uid))
+	token, err := util.GenerateToken(fmt.Sprintf("%d", uid))
 	if err != nil {
 		logging.Error("auth error: %v", err)
 		r.Success(c, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
