@@ -3,6 +3,7 @@ package backend
 import (
 	"qnhd/api/v1/frontend"
 	"qnhd/middleware/jwt"
+	"qnhd/middleware/permission"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,7 +44,8 @@ func Setup(g *gin.RouterGroup) {
 	// 新建用户，不需要token
 	g.POST("/user", AddUser)
 
-	g.Use(jwt.JWT(jwt.ADMIN))
+	g.Use(jwt.JWT())
+	g.Use(permission.RightDemand(permission.ADMIN))
 	for _, t := range BackendTypes {
 		initType(g, t)
 	}
@@ -80,7 +82,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取普通用户列表
 		g.GET("/users/common", GetCommonUsers)
 		// 获取所有用户列表
-		g.GET("/users/all", GetAllUsers)
+		g.GET("/users/all", GetManagers)
 		// 修改用户密码
 		g.POST("/user/modify", EditUser)
 		// 修改用户权限

@@ -30,11 +30,11 @@ func InitRouter() (r *gin.Engine) {
 	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 解决跨域问题
 	r.Use(crossfield.CrossField())
-
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
+
 	avb := r.Group("/api/v1/b")
 	backend.Setup(avb)
-	avf := r.Group("api/v1/f")
+	avf := r.Group("/api/v1/f")
 	frontend.Setup(avf)
 
 	return r

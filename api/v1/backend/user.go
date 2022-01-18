@@ -58,9 +58,9 @@ func GetUserInfo(c *gin.Context) {
 // @return userList
 // @route /b/users/common
 func GetCommonUsers(c *gin.Context) {
-	uid := c.Query("uid")
+	name := c.Query("number")
 	code := e.SUCCESS
-	list, err := models.GetCommonUsers(c, uid)
+	list, err := models.GetCommonUsers(c, name)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
@@ -96,8 +96,8 @@ func GetCommonUsers(c *gin.Context) {
 // @way [query]
 // @param uid, page, page_size
 // @return userList
-// @route /b/users/all
-func GetAllUsers(c *gin.Context) {
+// @route /b/users/manager
+func GetManagers(c *gin.Context) {
 	uid := r.GetUid(c)
 	// 权限控制
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
@@ -111,39 +111,18 @@ func GetAllUsers(c *gin.Context) {
 		r.Success(c, e.ERROR_RIGHT, nil)
 		return
 	}
-
-	uid = c.Query("uid")
-	code := e.SUCCESS
-	list, err := models.GetAllUsers(c, uid)
+	name := c.Query("number")
+	list, err := models.GetManagers(c, name)
 	if err != nil {
-		logging.Error("Get users error: %v", err)
 		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	retList := []userResponse{}
 
-	for _, user := range list {
-		nUser := userResponse{User: user}
-		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
-		if err != nil {
-			logging.Error("Get users error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
-			return
-		}
-		if isBlocked {
-			nUser.BlockedStart = detail.Starttime
-			nUser.BlockedOver = detail.Overtime
-			nUser.BlockedRemain = detail.Remain
-		}
-		nUser.IsBlocked = isBlocked
-		nUser.IsBanned = user.Active == 0
-		retList = append(retList, nUser)
-	}
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
-	r.Success(c, code, data)
+	r.Success(c, e.SUCCESS, data)
 }
 
 // @method [post]

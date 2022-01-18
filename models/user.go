@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +17,11 @@ type User struct {
 	Super       int    `json:"super"`
 	SchAdmin    int    `json:"sch_admin"`
 	StuAdmin    int    `json:"stu_admin"`
+	IsUser      int    `json:"user"`
 	Active      int    `json:"active" gorm:"default:1"`
 	CreatedAt   string `json:"created_at" gorm:"autoCreateTime;default:null;"`
 }
+
 type UserRight struct {
 	Super    bool
 	SchAdmin bool
@@ -30,6 +33,9 @@ func AdminRightDemand(uid string, ur UserRight) (bool, error) {
 	// 检查权限
 	user, err := GetUser(map[string]interface{}{"id": uid})
 	if err != nil {
+		if errors.Is(gorm.ErrRecordNotFound, err) {
+			return false, fmt.Errorf("未注册用户")
+		}
 		return false, err
 	}
 	var b = false
@@ -42,6 +48,9 @@ func AdminRightDemand(uid string, ur UserRight) (bool, error) {
 	if ur.StuAdmin {
 		b = b || user.StuAdmin == 1
 	}
+	if !b {
+		return b, fmt.Errorf("未赋予权限")
+	}
 	return b, nil
 }
 
@@ -50,7 +59,7 @@ func UserRightDemand(uid string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return user.Super == 0 && user.StuAdmin == 0 && user.SchAdmin == 0, nil
+	return user.IsUser == 1, nil
 }
 
 func ExistUser(number string) (uint64, error) {
@@ -64,17 +73,25 @@ func ExistUser(number string) (uint64, error) {
 	return user.Uid, nil
 }
 
-func GetCommonUsers(c *gin.Context, uid string) ([]User, error) {
+func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("id like ? AND super = 0 AND sch_admin = 0 AND stu_admin = 0", "%"+uid+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND user = 1", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-func GetAllUsers(c *gin.Context, uid string) ([]User, error) {
+func GetAllUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("id like ? AND Super <> 1", "%"+uid+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND super = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func GetManagers(c *gin.Context, name string) ([]User, error) {
+	var users []User
+	if err := db.Where("number like ? AND super = 0 AND user = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -93,8 +110,9 @@ func AddUser(number, password, phoneNumber string) (uint64, error) {
 		Number:      number,
 		Password:    password,
 		PhoneNumber: phoneNumber,
+		IsUser:      0,
 	}
-	if err := db.Select("number", "password", "phone_number").Create(&user).Error; err != nil {
+	if err := db.Select("number", "password", "phone_number", "user").Create(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil

@@ -21,11 +21,14 @@ import (
 )
 
 type authRes struct {
-	ErrorCode int    `json:"error_code"`
-	Message   string `json:"message"`
-	Result    struct {
-		UserNumber string `json:"userNumber"`
-	} `json:"result"`
+	ErrorCode int        `json:"error_code"`
+	Message   string     `json:"message"`
+	Result    authResult `json:"result"`
+}
+
+type authResult struct {
+	UserNumber string `json:"userNumber"`
+	Telephone  string `json:"telephone"`
 }
 
 // @method [get]
@@ -67,7 +70,7 @@ func GetAuthToken(c *gin.Context) {
 		logging.Error("Auth er%v", v)
 		return
 	}
-	auth(v.Result.UserNumber, c)
+	auth(v.Result, c)
 }
 
 // @method [get]
@@ -128,11 +131,11 @@ func GetAuthPasswd(c *gin.Context) {
 		return
 	}
 
-	auth(v.Result.UserNumber, c)
+	auth(v.Result, c)
 }
 
-func auth(id string, c *gin.Context) {
-	uid, err := models.ExistUser(id)
+func auth(result authResult, c *gin.Context) {
+	uid, err := models.ExistUser(result.UserNumber)
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)
@@ -141,7 +144,7 @@ func auth(id string, c *gin.Context) {
 	}
 	// 如果不存在就创建一个用户
 	if uid == 0 {
-		uid, err = models.AddUser(id, "", "")
+		uid, err = models.AddUser(result.UserNumber, result.Telephone, "")
 	}
 
 	if err != nil {

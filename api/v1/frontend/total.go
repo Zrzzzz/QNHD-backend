@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"qnhd/middleware/jwt"
+	"qnhd/middleware/permission"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +34,8 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/passwd", GetAuthPasswd)
 	g.GET("/auth/token", GetAuthToken)
 	g.GET("/auth/:token", RefreshToken)
-	g.Use(jwt.JWT(jwt.USER))
+	g.Use(jwt.JWT())
+	g.Use(permission.RightDemand(permission.USER))
 	for _, t := range FrontTypes {
 		initType(g, t)
 	}
