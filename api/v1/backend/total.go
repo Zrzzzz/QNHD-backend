@@ -4,6 +4,7 @@ import (
 	"qnhd/api/v1/frontend"
 	"qnhd/middleware/jwt"
 	"qnhd/middleware/permission"
+	"qnhd/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,7 +46,7 @@ func Setup(g *gin.RouterGroup) {
 	g.POST("/user", AddUser)
 
 	g.Use(jwt.JWT())
-	g.Use(permission.RightDemand(permission.ADMIN))
+	g.Use(permission.IdentityDemand(permission.ADMIN))
 	for _, t := range BackendTypes {
 		initType(g, t)
 	}
@@ -54,12 +55,13 @@ func Setup(g *gin.RouterGroup) {
 func initType(g *gin.RouterGroup, t BackendType) {
 	switch t {
 	case Banned:
+		bannedGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取封禁用户列表
-		g.GET("/banned", GetBanned)
+		bannedGroup.GET("/banned", GetBanned)
 		// 新建封禁用户
-		g.POST("/banned", AddBanned)
+		bannedGroup.POST("/banned", AddBanned)
 		// 删除封禁用户
-		g.GET("/banned/delete", DeleteBanned)
+		bannedGroup.GET("/banned/delete", DeleteBanned)
 	case Blocked:
 		// 获取禁言用户列表
 		g.GET("/blocked", GetBlocked)
@@ -82,13 +84,15 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取普通用户列表
 		g.GET("/users/common", GetCommonUsers)
 		// 获取所有用户列表
-		g.GET("/users/all", GetManagers)
+		g.GET("/users/manager", permission.RightDemand(models.UserRight{Super: true}), GetManagers)
 		// 修改用户密码
-		g.POST("/user/modify", EditUser)
+		g.POST("/user/passwd/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
+		// 修改自己密码
+		g.POST("/user/passwd", EditUserPasswd)
 		// 修改用户权限
-		g.POST("/user/right/modify", EditUserRight)
+		g.POST("/user/right/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserRight)
 		// 修改用户部门
-		g.POST("/user/department/modify", EditUserDepartment)
+		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
 	case Post:
 		// 获取帖子列表
 		g.GET("/posts", frontend.GetPosts)
@@ -97,7 +101,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取帖子回复
 		g.GET("/post/replys", frontend.GetPostReplys)
 		// 帖子回复校方回应
-		g.POST("/post/reply", AddPostReply)
+		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePosts)
 	case Report:
@@ -118,11 +122,12 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Department:
 		// 查询部门
 		g.GET("/departments", GetDepartments)
+		departGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 添加部门
-		g.POST("/department", AddDepartment)
+		departGroup.POST("/department", AddDepartment)
 		// 修改部门资料
-		g.POST("/department/modify", EditDepartment)
+		departGroup.POST("/department/modify", EditDepartment)
 		// 删除部门
-		g.GET("/department/delete", DeleteDepartment)
+		departGroup.GET("/department/delete", DeleteDepartment)
 	}
 }

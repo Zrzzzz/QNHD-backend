@@ -40,7 +40,7 @@ func GetUserInfo(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	depart, err := models.GetDepartmentHasUser(util.AsUint(uid))
+	depart, err := models.GetDepartmentByUid(util.AsUint(uid))
 	if err != nil {
 		logging.Error("get user info error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -98,19 +98,6 @@ func GetCommonUsers(c *gin.Context) {
 // @return userList
 // @route /b/users/manager
 func GetManagers(c *gin.Context) {
-	uid := r.GetUid(c)
-	// 权限控制
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Edit user right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	// 需要管理员权限
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
 	name := c.Query("number")
 	list, err := models.GetManagers(c, name)
 	if err != nil {
@@ -170,34 +157,51 @@ func AddUser(c *gin.Context) {
 // @way [formdata]
 // @param new_password
 // @return
-// @route /b/user
-func EditUser(c *gin.Context) {
-	uid := r.GetUid(c)
+// @route /b/user/passwd/super
+func EditUserPasswdBySuper(c *gin.Context) {
 	changeid := c.PostForm("uid")
 	// 超管需要修改密码
-	if changeid != "" {
-		ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-		if err != nil {
-			logging.Error("check right error: %v", err)
-			r.Error(c, e.ERROR_DATABASE, err.Error())
-			return
-		}
-		if !ok {
-			r.OK(c, e.ERROR_RIGHT, nil)
-			return
-		}
-	}
 	newPass := c.PostForm("new_password")
-
+	valid := validation.Validation{}
+	ok, verr := r.ErrorValid(&valid, "edit user")
+	valid.Required(changeid, "uid")
+	valid.Required(newPass, "new_password")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
 	data := make(map[string]interface{})
 	data["password"] = newPass
-	var err error
-	// 看是超管更改还是自己更改
-	if changeid != "" {
-		err = models.EditUser(changeid, data)
-	} else {
-		err = models.EditUser(uid, data)
+	err := models.EditUser(changeid, data)
+	if err != nil {
+		logging.Error("Edit users error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
 	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [put]
+// @way [formdata]
+// @param new_password
+// @return
+// @route /b/user/passwd
+func EditUserPasswd(c *gin.Context) {
+	uid := r.GetUid(c)
+	// 超管需要修改密码
+	newPass := c.PostForm("new_password")
+	rawPass := c.PostForm("raw_password")
+	valid := validation.Validation{}
+	ok, verr := r.ErrorValid(&valid, "edit user")
+	valid.Required(rawPass, "raw_password")
+	valid.Required(newPass, "new_password")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	data := make(map[string]interface{})
+	data["password"] = newPass
+	err := models.EditUserPasswd(uid, rawPass, newPass)
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -212,21 +216,7 @@ func EditUser(c *gin.Context) {
 // @return
 // @route /b/user/right
 func EditUserRight(c *gin.Context) {
-	uid := r.GetUid(c)
-	// 权限控制
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Edit user right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	// 需要超管才能修改
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
-
-	uid = c.PostForm("uid")
+	uid := c.PostForm("uid")
 	schAdmin := c.PostForm("sch_admin")
 	stuAdmin := c.PostForm("stu_admin")
 	valid := validation.Validation{}
@@ -268,21 +258,7 @@ func EditUserRight(c *gin.Context) {
 // @return
 // @route /b/user/department
 func EditUserDepartment(c *gin.Context) {
-	uid := r.GetUid(c)
-	// 权限控制
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Edit user right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	// 需要超管才能修改
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
-
-	uid = c.PostForm("uid")
+	uid := c.PostForm("uid")
 	departmentId := c.PostForm("department_id")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")

@@ -8,27 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RightType int
-
-const (
-	ADMIN RightType = iota
-	USER
-)
-
-func RightDemand(must RightType) gin.HandlerFunc {
+func RightDemand(right models.UserRight) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)
-		var err error
-
-		if must == ADMIN {
-			// 管理员验证
-			_, err = models.AdminRightDemand(uid, models.UserRight{Super: true, SchAdmin: true, StuAdmin: true})
-
-		} else {
-			_, err = models.UserRightDemand(uid)
-		}
-		if err != nil {
-			r.OK(c, e.ERROR_RIGHT, nil)
+		if err := models.RequireRight(uid, right); err != nil {
+			r.Error(c, e.ERROR_RIGHT, err.Error())
 			c.Abort()
 			return
 		}

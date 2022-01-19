@@ -37,17 +37,7 @@ func GetDepartments(c *gin.Context) {
 // @route /b/department
 func AddDepartment(c *gin.Context) {
 	// 仅超管可用
-	uid := r.GetUid(c)
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Check right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
+
 	name := c.PostForm("name")
 	introduction := c.PostForm("introduction")
 	valid := validation.Validation{}
@@ -89,16 +79,7 @@ func AddDepartment(c *gin.Context) {
 func EditDepartment(c *gin.Context) {
 	uid := r.GetUid(c)
 	// 权限管理，仅学校管理
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Check right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
+
 	departmentId := c.PostForm("department_id")
 	introduction := c.PostForm("introduction")
 	valid := validation.Validation{}
@@ -134,17 +115,6 @@ func EditDepartment(c *gin.Context) {
 // @route /b/department/delete
 func DeleteDepartment(c *gin.Context) {
 	// 要求超管权限
-	uid := r.GetUid(c)
-	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
-	if err != nil {
-		logging.Error("Check right error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	if !ok {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
-	}
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -156,7 +126,7 @@ func DeleteDepartment(c *gin.Context) {
 		return
 	}
 
-	_, err = models.DeleteDepartment(id)
+	_, err := models.DeleteDepartment(id)
 	if err != nil {
 		logging.Error("Delete departments error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

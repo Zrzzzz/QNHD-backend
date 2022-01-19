@@ -16,7 +16,7 @@ import (
 // @return
 // @route /b/post/reply
 func AddPostReply(c *gin.Context) {
-	uid := util.AsUint(r.GetUid(c))
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	content := c.PostForm("content")
 	valid := validation.Validation{}
@@ -27,6 +27,18 @@ func AddPostReply(c *gin.Context) {
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
+	}
+	// 如果不是超管，看是否为部门对应管理
+	if !models.IsUserSuperAdmin(uid) {
+		depart, err := models.GetDepartmentByPostId(util.AsUint(postId))
+		if err != nil {
+			r.Error(c, e.ERROR_DATABASE, err.Error())
+			return
+		}
+		if !models.IsDepartmentHasUser(util.AsUint(uid), depart.Id) {
+			r.Error(c, e.ERROR_RIGHT, "")
+			return
+		}
 	}
 	// 添加回复
 	id, err := models.AddPostReply(map[string]interface{}{
@@ -39,7 +51,7 @@ func AddPostReply(c *gin.Context) {
 		return
 	}
 	// 通知回复
-	err = models.AddUnreadPostReply(uid, id)
+	err = models.AddUnreadPostReply(util.AsUint(uid), id)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

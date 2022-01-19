@@ -42,7 +42,6 @@ func JWT() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }

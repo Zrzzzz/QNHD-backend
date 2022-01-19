@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// 禁言
 type Blocked struct {
 	Model
 	Uid       uint64 `json:"uid"`

@@ -26,7 +26,21 @@ func GetDepartment(id uint64) (Department, error) {
 	return depart, err
 }
 
-func GetDepartmentHasUser(uid uint64) (Department, error) {
+// 获取帖子所在部门
+func GetDepartmentByPostId(id uint64) (Department, error) {
+	// 首先判断是否存在部门
+	var departId int
+	var depart Department
+	if err := db.Model(&Post{}).Select("department_id").Where("id = ?", id).Find(&departId).Error; err != nil {
+		return depart, err
+	}
+	// 使用主键查询
+	err := db.First(&depart, departId).Error
+	return depart, err
+}
+
+// 获取用户所在部门
+func GetDepartmentByUid(uid uint64) (Department, error) {
 	var depart Department
 	err := db.Joins("JOIN user_department AS ud ON ud.department_id = departments.id AND ud.uid = ?", uid).First(&depart).Error
 	return depart, err
@@ -58,6 +72,7 @@ func DeleteDepartment(id string) (uint64, error) {
 	return depart.Id, nil
 }
 
+// 是否有部门已存在此名字
 func ExistDepartmentByName(name string) (bool, error) {
 	var depart Department
 	if err := db.Where("name = ?", name).First(&depart).Error; err != nil {
@@ -67,6 +82,15 @@ func ExistDepartmentByName(name string) (bool, error) {
 		return false, err
 	}
 	return depart.Id > 0, nil
+}
+
+// 是否为部门管理员
+func IsDepartmentHasUser(uid, departmentId uint64) bool {
+	var cnt int64
+	if err := db.Model(&UserDepartment{}).Select("Count(*)").Where("uid = ? AND department_id = ?", uid, departmentId).Error; err != nil {
+		return false
+	}
+	return cnt > 0
 }
 
 func (Department) TableName() string {

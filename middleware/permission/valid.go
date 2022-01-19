@@ -4,11 +4,13 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
+
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
 )
 
+// 验证封号
 func ValidBanned() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)
@@ -22,6 +24,7 @@ func ValidBanned() gin.HandlerFunc {
 	}
 }
 
+// 验证禁言
 func ValidBlocked() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)

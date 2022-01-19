@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// 封号
 type Banned struct {
 	Model
 	Uid    uint64 `json:"uid"`

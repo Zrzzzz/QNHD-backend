@@ -14,10 +14,10 @@ type User struct {
 	Number      string `json:"number"`
 	Password    string `json:"-" gorm:"column:password;"`
 	PhoneNumber string `json:"phone_number"`
-	Super       int    `json:"super"`
-	SchAdmin    int    `json:"sch_admin"`
-	StuAdmin    int    `json:"stu_admin"`
-	IsUser      int    `json:"user"`
+	IsSuper     int    `json:"is_super"`
+	IsSchAdmin  int    `json:"is_sch_admin"`
+	IsStuAdmin  int    `json:"is_stu_admin"`
+	IsUser      int    `json:"is_user"`
 	Active      int    `json:"active" gorm:"default:1"`
 	CreatedAt   string `json:"-" gorm:"autoCreateTime;default:null;"`
 }
@@ -28,38 +28,56 @@ type UserRight struct {
 	StuAdmin bool
 }
 
-// demand uid has admin right that ur param is true
-func AdminRightDemand(uid string, ur UserRight) (bool, error) {
+func RequireRight(uid string, right UserRight) error {
+	// 检查权限
+	user, err := GetUser(map[string]interface{}{"id": uid})
+	if err != nil {
+		return err
+	}
+	var b = false
+	if right.Super {
+		b = b || user.IsSuper == 1
+	}
+	if right.SchAdmin {
+		b = b || user.IsSchAdmin == 1
+	}
+	if right.StuAdmin {
+		b = b || user.IsStuAdmin == 1
+	}
+	if !b {
+		return fmt.Errorf("未赋予权限")
+	}
+	return nil
+}
+
+func RequireAdmin(uid string) error {
 	// 检查权限
 	user, err := GetUser(map[string]interface{}{"id": uid})
 	if err != nil {
 		if errors.Is(gorm.ErrRecordNotFound, err) {
-			return false, fmt.Errorf("未注册用户")
+			return fmt.Errorf("未注册用户")
 		}
-		return false, err
+		return err
 	}
-	var b = false
-	if ur.Super {
-		b = b || user.Super == 1
+	if user.IsUser != 1 {
+		return fmt.Errorf("非管理员身份")
 	}
-	if ur.SchAdmin {
-		b = b || user.SchAdmin == 1
+	if user.IsSuper == 0 && user.IsSchAdmin == 0 && user.IsStuAdmin == 0 {
+		return fmt.Errorf("无管理员权限")
 	}
-	if ur.StuAdmin {
-		b = b || user.StuAdmin == 1
-	}
-	if !b {
-		return b, fmt.Errorf("未赋予权限")
-	}
-	return b, nil
+	return nil
 }
 
-func UserRightDemand(uid string) (bool, error) {
+func RequireUser(uid string) error {
 	user, err := GetUser(map[string]interface{}{"id": uid})
 	if err != nil {
-		return false, err
+		return err
 	}
-	return user.IsUser == 1, nil
+	fmt.Println(user)
+	if user.IsUser != 1 {
+		return fmt.Errorf("非用户身份")
+	}
+	return nil
 }
 
 func ExistUser(number string) (uint64, error) {
@@ -75,7 +93,7 @@ func ExistUser(number string) (uint64, error) {
 
 func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("number like ? AND user = 1", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND is_user = 1", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -83,7 +101,7 @@ func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 
 func GetAllUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("number like ? AND super = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND is_super = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -91,7 +109,7 @@ func GetAllUsers(c *gin.Context, name string) ([]User, error) {
 
 func GetManagers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("number like ? AND super = 0 AND user = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND is_super = 0 AND is_user = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -112,17 +130,30 @@ func AddUser(number, password, phoneNumber string) (uint64, error) {
 		PhoneNumber: phoneNumber,
 		IsUser:      0,
 	}
-	if err := db.Select("number", "password", "phone_number", "user").Create(&user).Error; err != nil {
+	if err := db.Select("number", "password", "phone_number", "is_user").Create(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil
 }
 
 func EditUser(uid string, maps map[string]interface{}) error {
-	if err := db.Model(&User{}).Where("id = ? AND id <> 1", uid).Updates(maps).Error; err != nil {
+	return db.Model(&User{}).Where("id = ?", uid).Updates(maps).Error
+}
+
+func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
+	var user User
+	if err := db.Where("id = ? AND password = ?", uid, rawPasswd).First(&user).Error; err != nil {
 		return err
 	}
-	return nil
+	return db.Model(&user).Update("password", newPasswd).Error
+}
+
+func IsUserSuperAdmin(uid string) bool {
+	var isSuper int
+	if err := db.Model(&User{}).Select("is_super").Where("id = ?").Find(&isSuper).Error; err != nil {
+		return false
+	}
+	return isSuper == 1
 }
 
 func (User) TableName() string {

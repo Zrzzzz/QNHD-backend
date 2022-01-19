@@ -35,7 +35,9 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/token", GetAuthToken)
 	g.GET("/auth/:token", RefreshToken)
 	g.Use(jwt.JWT())
-	g.Use(permission.RightDemand(permission.USER))
+	g.Use(permission.IdentityDemand(permission.USER))
+	// 封号的话不能访问
+	g.Use(permission.ValidBanned())
 	for _, t := range FrontTypes {
 		initType(g, t)
 	}
@@ -66,7 +68,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 查询单个帖子
 		g.GET("/post", GetPost)
 		// 新建帖子
-		g.POST("/post", AddPost)
+		g.POST("/post", permission.ValidBlocked(), AddPost)
 		// 解决问题
 		g.POST("/post/solve", EditPostSolved)
 		// 获取帖子回复
@@ -87,9 +89,9 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 查询楼层内回复
 		g.GET("/floor/replys", GetFloorReplys)
 		// 新建楼层
-		g.POST("/floor", AddFloor)
+		g.POST("/floor", permission.ValidBlocked(), AddFloor)
 		// 回复楼层
-		g.POST("/floor/reply", ReplyFloor)
+		g.POST("/floor/reply", permission.ValidBlocked(), ReplyFloor)
 		//  点赞或者取消
 		g.POST("/floor/like", LikeOrUnlikeFloor)
 		//  点踩或者取消
