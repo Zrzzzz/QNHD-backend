@@ -34,9 +34,9 @@ func JWT() gin.HandlerFunc {
 		if code != e.SUCCESS {
 			// 如果有错误
 			if err != nil {
-				r.Success(c, code, map[string]interface{}{"error": err.Error()})
+				r.OK(c, code, map[string]interface{}{"error": err.Error()})
 			} else {
-				r.Success(c, code, nil)
+				r.OK(c, code, nil)
 			}
 			logging.Error("Auth Fail: %v, reason: %v", code, err)
 			c.Abort()

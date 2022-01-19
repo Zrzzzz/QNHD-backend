@@ -22,12 +22,12 @@ func GetDepartments(c *gin.Context) {
 	list, err := models.GetDepartments(name)
 	if err != nil {
 		logging.Error("Get department error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -41,30 +41,30 @@ func AddDepartment(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Check right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 	name := c.PostForm("name")
 	introduction := c.PostForm("introduction")
 	valid := validation.Validation{}
 	valid.Required(name, "name")
-	ok, verr := r.E(&valid, "Add department")
+	ok, verr := r.ErrorValid(&valid, "Add department")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	exist, err := models.ExistDepartmentByName(name)
 	if err != nil {
 		logging.Error("Add department error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if exist {
-		r.Success(c, e.ERROR_EXIST_DEPARTMENT, nil)
+		r.OK(c, e.ERROR_EXIST_DEPARTMENT, nil)
 	}
 	maps := map[string]interface{}{
 		"name":         name,
@@ -73,12 +73,12 @@ func AddDepartment(c *gin.Context) {
 	id, err := models.AddDepartment(maps)
 	if err != nil {
 		logging.Error("Add department error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [put]
@@ -92,11 +92,11 @@ func EditDepartment(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Check right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 	departmentId := c.PostForm("department_id")
@@ -104,27 +104,27 @@ func EditDepartment(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(departmentId, "department_id")
 	valid.Numeric(departmentId, "department_id")
-	ok, verr := r.E(&valid, "Edit department")
+	ok, verr := r.ErrorValid(&valid, "Edit department")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	hasRight, err := models.IsUserInDepartment(uid, departmentId)
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if !hasRight {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 	err = models.EditDepartment(departmentId, introduction)
 	if err != nil {
 		logging.Error("Add department error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [delete]
@@ -138,11 +138,11 @@ func DeleteDepartment(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Check right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 	id := c.Query("id")
@@ -150,17 +150,17 @@ func DeleteDepartment(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete department")
+	ok, verr := r.ErrorValid(&valid, "Delete department")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err = models.DeleteDepartment(id)
 	if err != nil {
 		logging.Error("Delete departments error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

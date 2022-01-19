@@ -20,23 +20,23 @@ func GetFloors(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	ok, verr := r.E(&valid, "Get floors")
+	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorResponsesInPost(c, postId, "0")
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -49,17 +49,17 @@ func DeleteFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(floorId, "floorId")
 	valid.Numeric(floorId, "floorId")
-	ok, verr := r.E(&valid, "Get floors")
+	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeleteFloorByAdmin(floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

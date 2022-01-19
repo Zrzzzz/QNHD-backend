@@ -36,9 +36,9 @@ func GetPosts(c *gin.Context) {
 	if tagId != "" {
 		valid.Numeric(tagId, "tag_id")
 	}
-	ok, verr := r.E(&valid, "Get posts")
+	ok, verr := r.ErrorValid(&valid, "Get posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	postTypeint := util.AsInt(postType)
@@ -47,9 +47,9 @@ func GetPosts(c *gin.Context) {
 		solvedint := util.AsInt(solved)
 		valid.Range(solvedint, 0, 1, "solved")
 	}
-	ok, verr = r.E(&valid, "Get posts")
+	ok, verr = r.ErrorValid(&valid, "Get posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -65,7 +65,7 @@ func GetPosts(c *gin.Context) {
 	list, err := models.GetPostResponses(c, uid, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -73,7 +73,7 @@ func GetPosts(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -87,7 +87,7 @@ func GetUserPosts(c *gin.Context) {
 	list, err := models.GetUserPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -95,7 +95,7 @@ func GetUserPosts(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -108,14 +108,14 @@ func GetFavPosts(c *gin.Context) {
 	list, err := models.GetFavPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -129,7 +129,7 @@ func GetHistoryPosts(c *gin.Context) {
 	list, err := models.GetHistoryPostResponses(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -137,7 +137,7 @@ func GetHistoryPosts(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -152,22 +152,22 @@ func GetPost(c *gin.Context) {
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
 
-	ok, verr := r.E(&valid, "Get Posts")
+	ok, verr := r.ErrorValid(&valid, "Get Posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	pr, err := models.GetPostResponseAndVisit(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := map[string]interface{}{
 		"post": pr,
 	}
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -192,18 +192,18 @@ func AddPost(c *gin.Context) {
 	valid.Required(title, "title")
 	valid.MaxSize(title, 30, "title")
 	valid.MaxSize(content, 1000, "content")
-	ok, verr := r.E(&valid, "Add posts")
+	ok, verr := r.ErrorValid(&valid, "Add posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	campusint := util.AsInt(campus)
 	valid.Range(campusint, 0, 2, "campus")
 	postTypeint := util.AsInt(postType)
 	valid.Range(postTypeint, 0, 1, "postType")
-	ok, verr = r.E(&valid, "Add posts")
+	ok, verr = r.ErrorValid(&valid, "Add posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 需要根据类型判断返回类型
@@ -222,17 +222,17 @@ func AddPost(c *gin.Context) {
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 3 {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 3."})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 3."})
 		return
 	}
 	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -254,13 +254,13 @@ func AddPost(c *gin.Context) {
 	id, err := models.AddPost(maps)
 	if err != nil {
 		logging.Error("Add post error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
 	data["image_urls"] = imageUrls
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [put]
@@ -277,31 +277,31 @@ func EditPostSolved(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	valid.Required(rating, "rating")
 	valid.Numeric(rating, "rating")
-	ok, verr := r.E(&valid, "Delete posts")
+	ok, verr := r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 限制评分范围
 	valid.Range(util.AsInt(rating), 1, 10, "rating")
-	ok, verr = r.E(&valid, "Delete posts")
+	ok, verr = r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 判断是否为发帖人
 	// 校验有无权限回复
 	post, err := models.GetPost(postId)
 	if util.AsStrU(post.Uid) != uid {
-		r.Success(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	err = models.EditPostSolved(postId, rating)
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [delete]
@@ -315,19 +315,19 @@ func DeletePost(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	ok, verr := r.E(&valid, "Delete posts")
+	ok, verr := r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeletePostsUser(postId, uid)
 	if err != nil {
 		logging.Error("Delete posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [post]
@@ -344,9 +344,9 @@ func FavOrUnfavPost(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	valid.Required(op, "op")
 	valid.Numeric(op, "op")
-	ok, verr := r.E(&valid, "fav or unfav post")
+	ok, verr := r.ErrorValid(&valid, "fav or unfav post")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -359,10 +359,10 @@ func FavOrUnfavPost(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("fav or unfav post error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method [post]
@@ -379,9 +379,9 @@ func LikeOrUnlikePost(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	valid.Required(op, "op")
 	valid.Numeric(op, "op")
-	ok, verr := r.E(&valid, "like or unlike post")
+	ok, verr := r.ErrorValid(&valid, "like or unlike post")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -394,10 +394,10 @@ func LikeOrUnlikePost(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("like or unlike post error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method [post]
@@ -414,9 +414,9 @@ func DisOrUndisPost(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	valid.Required(op, "op")
 	valid.Numeric(op, "op")
-	ok, verr := r.E(&valid, "dis or undis post")
+	ok, verr := r.ErrorValid(&valid, "dis or undis post")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -429,8 +429,8 @@ func DisOrUndisPost(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("dis or undis post error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }

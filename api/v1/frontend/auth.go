@@ -40,9 +40,9 @@ func GetAuthToken(c *gin.Context) {
 	token := c.Query("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
-	ok, verr := r.E(&valid, "get auth")
+	ok, verr := r.ErrorValid(&valid, "get auth")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	var req *http.Request
@@ -62,11 +62,11 @@ func GetAuthToken(c *gin.Context) {
 	err = json.Unmarshal(body, &v)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if v.ErrorCode != 0 {
-		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
+		r.OK(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
 		logging.Error("Auth er%v", v)
 		return
 	}
@@ -84,9 +84,9 @@ func GetAuthPasswd(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(user, "user")
 	valid.Required(password, "password")
-	ok, verr := r.E(&valid, "get auth")
+	ok, verr := r.ErrorValid(&valid, "get auth")
 	if !ok {
-		r.R(c, http.StatusOK, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 请求服务器
@@ -122,11 +122,11 @@ func GetAuthPasswd(c *gin.Context) {
 	err = json.Unmarshal(body, &v)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if v.ErrorCode != 0 {
-		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
+		r.OK(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": v.Message})
 		logging.Error("Auth er%v", v)
 		return
 	}
@@ -139,7 +139,7 @@ func auth(result authResult, c *gin.Context) {
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 如果不存在就创建一个用户
@@ -149,19 +149,19 @@ func auth(result authResult, c *gin.Context) {
 
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	token, err := util.GenerateToken(fmt.Sprintf("%d", uid))
 	if err != nil {
 		logging.Error("auth error: %v", err)
-		r.Success(c, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.ERROR_AUTH, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	data["token"] = token
 	data["uid"] = uid
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -173,16 +173,16 @@ func RefreshToken(c *gin.Context) {
 	token := c.Param("token")
 	valid := validation.Validation{}
 	valid.Required(token, "token")
-	ok, verr := r.E(&valid, "Refresh Token")
+	ok, verr := r.ErrorValid(&valid, "Refresh Token")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	claims, err := util.ParseToken(token)
 	if err != nil {
 		logging.Error(err.Error())
-		r.Success(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.ERROR_AUTH_CHECK_TOKEN_FAIL, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -196,5 +196,5 @@ func RefreshToken(c *gin.Context) {
 		data["token"] = token
 		data["uid"] = claims.Uid
 	}
-	r.Success(c, code, data)
+	r.OK(c, code, data)
 }

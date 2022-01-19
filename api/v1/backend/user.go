@@ -37,19 +37,19 @@ func GetUserInfo(c *gin.Context) {
 	user, err := models.GetUser(map[string]interface{}{"id": uid})
 	if err != nil {
 		logging.Error("get user info error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	depart, err := models.GetDepartmentHasUser(util.AsUint(uid))
 	if err != nil {
 		logging.Error("get user info error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := map[string]interface{}{
 		"user_info": userInfo{User: user, Department: depart},
 	}
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -63,17 +63,17 @@ func GetCommonUsers(c *gin.Context) {
 	list, err := models.GetCommonUsers(c, name)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	retList := []userResponse{}
 
 	for _, user := range list {
 		nUser := userResponse{User: user}
-		isBlocked, detail, err := models.IfBlockedByUidDetailed(user.Uid)
+		isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Error(c, e.ERROR_DATABASE, err.Error())
 			return
 		}
 		if isBlocked {
@@ -89,7 +89,7 @@ func GetCommonUsers(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	r.Success(c, code, data)
+	r.OK(c, code, data)
 }
 
 // @method [get]
@@ -103,18 +103,18 @@ func GetManagers(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 需要管理员权限
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 	name := c.Query("number")
 	list, err := models.GetManagers(c, name)
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -122,7 +122,7 @@ func GetManagers(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -139,31 +139,31 @@ func AddUser(c *gin.Context) {
 	valid.Required(password, "password")
 	valid.Required(phoneNumber, "phoneNumber")
 	fmt.Println(number, password, phoneNumber)
-	ok, verr := r.E(&valid, "Add backend user")
+	ok, verr := r.ErrorValid(&valid, "Add backend user")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	uid, err := models.ExistUser(number)
 	if err != nil {
 		logging.Error("Add user error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if uid > 0 {
-		r.Success(c, e.ERROR_EXIST_USER, nil)
+		r.OK(c, e.ERROR_EXIST_USER, nil)
 		return
 	}
 
 	uid, err = models.AddUser(number, password, phoneNumber)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["uid"] = uid
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [put]
@@ -179,11 +179,11 @@ func EditUser(c *gin.Context) {
 		ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 		if err != nil {
 			logging.Error("check right error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Error(c, e.ERROR_DATABASE, err.Error())
 			return
 		}
 		if !ok {
-			r.Success(c, e.ERROR_RIGHT, nil)
+			r.OK(c, e.ERROR_RIGHT, nil)
 			return
 		}
 	}
@@ -200,10 +200,10 @@ func EditUser(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [put]
@@ -217,12 +217,12 @@ func EditUserRight(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 需要超管才能修改
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 
@@ -234,9 +234,9 @@ func EditUserRight(c *gin.Context) {
 	valid.Required(stuAdmin, "stuAdmin")
 	valid.Numeric(schAdmin, "schAdmin")
 	valid.Numeric(stuAdmin, "stuAdmin")
-	ok, verr := r.E(&valid, "Edit user right")
+	ok, verr := r.ErrorValid(&valid, "Edit user right")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -244,9 +244,9 @@ func EditUserRight(c *gin.Context) {
 	schi := util.AsUint(stuAdmin)
 	valid.Range(int(stui), 0, 1, "stuAdmin")
 	valid.Range(int(schi), 0, 1, "schAdmin")
-	ok, verr = r.E(&valid, "Edit user right")
+	ok, verr = r.ErrorValid(&valid, "Edit user right")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -255,11 +255,11 @@ func EditUserRight(c *gin.Context) {
 		"stu_admin": stuAdmin,
 	}
 	if err := models.EditUser(uid, maps); err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		logging.Error("Edit user error: %v", err)
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [put]
@@ -273,12 +273,12 @@ func EditUserDepartment(c *gin.Context) {
 	ok, err := models.AdminRightDemand(uid, models.UserRight{Super: true})
 	if err != nil {
 		logging.Error("Edit user right error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 需要超管才能修改
 	if !ok {
-		r.Success(c, e.ERROR_RIGHT, nil)
+		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
 
@@ -289,16 +289,16 @@ func EditUserDepartment(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	valid.Required(departmentId, "departmentId")
 	valid.Numeric(departmentId, "departmentId")
-	ok, verr := r.E(&valid, "Edit user right Error")
+	ok, verr := r.ErrorValid(&valid, "Edit user right Error")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	if err := models.AddUserToDepartment(util.AsUint(uid), util.AsUint(departmentId)); err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		logging.Error("Edit user error: %v", err)
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

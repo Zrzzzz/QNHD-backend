@@ -24,23 +24,23 @@ func GetFloors(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	ok, verr := r.E(&valid, "Get floors")
+	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorResponsesInPost(c, postId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -54,23 +54,23 @@ func GetFloorReplys(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(floorId, "floor_id")
 	valid.Numeric(floorId, "floor_id")
-	ok, verr := r.E(&valid, "Get floorreplys")
+	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetFloorReplyResponses(c, floorId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -88,25 +88,25 @@ func AddFloor(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	valid.Required(content, "content")
 	valid.MaxSize(content, 200, "content")
-	ok, verr := r.E(&valid, "Add floors")
+	ok, verr := r.ErrorValid(&valid, "Add floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -126,12 +126,12 @@ func AddFloor(c *gin.Context) {
 	id, err := models.AddFloor(maps)
 	if err != nil {
 		logging.Error("Add floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -149,25 +149,25 @@ func ReplyFloor(c *gin.Context) {
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
 	valid.MaxSize(content, 200, "content")
-	ok, verr := r.E(&valid, "Reply floors")
+	ok, verr := r.ErrorValid(&valid, "Reply floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -187,12 +187,12 @@ func ReplyFloor(c *gin.Context) {
 	id, err := models.ReplyFloor(maps)
 	if err != nil {
 		logging.Error("Reply floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -207,19 +207,19 @@ func DeleteFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(floorId, "floorId")
 	valid.Numeric(floorId, "floorId")
-	ok, verr := r.E(&valid, "Get floors")
+	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeleteFloorByUser(uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method post
@@ -236,9 +236,9 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	valid.Required(op, "op")
 	valid.Numeric(op, "op")
-	ok, verr := r.E(&valid, "like or unlike floor")
+	ok, verr := r.ErrorValid(&valid, "like or unlike floor")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -252,10 +252,10 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("like or unlike floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }
 
 // @method post
@@ -272,9 +272,9 @@ func DisOrUndisFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	valid.Required(op, "op")
 	valid.Numeric(op, "op")
-	ok, verr := r.E(&valid, "dis or undis floor")
+	ok, verr := r.ErrorValid(&valid, "dis or undis floor")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -288,8 +288,8 @@ func DisOrUndisFloor(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("dis or undis floor error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"count": cnt})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"count": cnt})
 }

@@ -25,9 +25,9 @@ func GetBanned(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	ok, verr := r.E(&valid, "Get banned")
+	ok, verr := r.ErrorValid(&valid, "Get banned")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -41,14 +41,14 @@ func GetBanned(c *gin.Context) {
 	list, err := models.GetBanned(maps)
 	if err != nil {
 		logging.Error("get banned error:%v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -62,19 +62,20 @@ func AddBanned(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok, verr := r.E(&valid, "Add banned")
+	ok, verr := r.ErrorValid(&valid, "Add banned")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	reason := c.PostForm("reason")
 	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
-	ifBanned, err := models.IfBannedByUid(intuid)
+	ifBanned := models.IsBannedByUid(intuid)
+	var err error
 	if err != nil {
 		logging.Error("Judging banned failed: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	var id uint64
@@ -82,7 +83,7 @@ func AddBanned(c *gin.Context) {
 		id, err = models.AddBannedByUid(intuid, doer, reason)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Error(c, e.ERROR_DATABASE, err.Error())
 			return
 		}
 	} else {
@@ -90,7 +91,7 @@ func AddBanned(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, code, data)
+	r.OK(c, code, data)
 }
 
 // @method [delete]
@@ -103,29 +104,30 @@ func DeleteBanned(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok, verr := r.E(&valid, "Delete banned")
+	ok, verr := r.ErrorValid(&valid, "Delete banned")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
-	ifBanned, err := models.IfBannedByUid(intuid)
+	ifBanned := models.IsBannedByUid(intuid)
+	var err error
 	if err != nil {
 		logging.Error("Judging banned failed: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if ifBanned {
 		_, err := models.DeleteBannedByUid(intuid)
 		if err != nil {
 			logging.Error("Delete banned error: %v", err)
-			r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+			r.Error(c, e.ERROR_DATABASE, err.Error())
 			return
 		}
 	} else {
 		code = e.ERROR_NOT_BANNED_USER
 	}
-	r.Success(c, code, nil)
+	r.OK(c, code, nil)
 }

@@ -52,19 +52,15 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	return blocked.Id, nil
 }
 
-func IfBlockedByUid(uid uint64) (bool, error) {
+func IsBlockedByUid(uid uint64) bool {
 	var ban Blocked
 	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
+		return !errors.Is(err, gorm.ErrRecordNotFound)
 	}
-
-	return ban.Uid > 0, nil
+	return true
 }
 
-func IfBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
+func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 	var ban Blocked
 	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

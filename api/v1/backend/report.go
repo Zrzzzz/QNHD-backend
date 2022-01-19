@@ -24,27 +24,27 @@ func GetReports(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(rType, "type")
 	valid.Numeric(rType, "type")
-	ok, verr := r.E(&valid, "Add report")
+	ok, verr := r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	rTypeint := util.AsInt(rType)
 	valid.Range(rTypeint, 1, 2, "type")
-	ok, verr = r.E(&valid, "Add report")
+	ok, verr = r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	list, err := models.GetReports(models.ReportType(rTypeint))
 	if err != nil {
 		logging.Error("Get report error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }

@@ -33,7 +33,7 @@ func H(code int, data map[string]interface{}) gin.H {
 }
 
 // 返回是否没有错误
-func E(valid *validation.Validation, errorPhase string) (bool, error) {
+func ErrorValid(valid *validation.Validation, errorPhase string) (bool, error) {
 	s := errorPhase
 	if valid.HasErrors() {
 		for _, r := range valid.Errors {
@@ -51,6 +51,10 @@ func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
 	})
 }
 
-func Success(c *gin.Context, code int, data map[string]interface{}) {
+func OK(c *gin.Context, code int, data map[string]interface{}) {
 	R(c, http.StatusOK, code, data)
+}
+
+func Error(c *gin.Context, code int, err string) {
+	R(c, http.StatusOK, code, map[string]interface{}{"error": err})
 }

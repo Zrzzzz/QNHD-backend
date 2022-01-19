@@ -26,17 +26,17 @@ func DeletePosts(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete post")
+	ok, verr := r.ErrorValid(&valid, "Delete post")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeletePostsAdmin(id)
 	if err != nil {
 		logging.Error("Delete posts error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

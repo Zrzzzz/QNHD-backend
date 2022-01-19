@@ -21,9 +21,9 @@ func GetBlocked(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Numeric(uid, "uid")
-	ok, verr := r.E(&valid, "Get blocked")
+	ok, verr := r.ErrorValid(&valid, "Get blocked")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -37,13 +37,13 @@ func GetBlocked(c *gin.Context) {
 	list, err := models.GetBlocked(maps)
 	if err != nil {
 		logging.Error("Get blocked error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -60,9 +60,9 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	valid.Required(last, "last")
 	valid.Numeric(last, "last")
-	ok, verr := r.E(&valid, "Add blocked")
+	ok, verr := r.ErrorValid(&valid, "Add blocked")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	reason := c.PostForm("reason")
@@ -70,12 +70,9 @@ func AddBlocked(c *gin.Context) {
 	intuid := util.AsUint(uid)
 	intlast := util.AsUint(last)
 	code := e.SUCCESS
-	ifBlocked, err := models.IfBlockedByUid(intuid)
-	if err != nil {
-		logging.Error("Add blocked error: %v", err)
-		code = e.ERROR_DATABASE
-	}
+	ifBlocked := models.IsBlockedByUid(intuid)
 	var id uint64
+	var err error
 	if !ifBlocked {
 		id, err = models.AddBlockedByUid(intuid, doer, reason, uint8(intlast))
 		if err != nil {
@@ -87,7 +84,7 @@ func AddBlocked(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, code, data)
+	r.OK(c, code, data)
 }
 
 // @method [delete]
@@ -100,15 +97,16 @@ func DeleteBlocked(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok, verr := r.E(&valid, "Delete blocked")
+	ok, verr := r.ErrorValid(&valid, "Delete blocked")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intuid := util.AsUint(uid)
 
 	code := e.SUCCESS
-	ifBlocked, err := models.IfBlockedByUid(intuid)
+	ifBlocked := models.IsBlockedByUid(intuid)
+	var err error
 	if err != nil {
 		logging.Error("Add blocked error: %v", err)
 		code = e.ERROR_DATABASE
@@ -122,5 +120,5 @@ func DeleteBlocked(c *gin.Context) {
 	} else {
 		code = e.ERROR_NOT_BLOCKED_USER
 	}
-	r.Success(c, code, nil)
+	r.OK(c, code, nil)
 }

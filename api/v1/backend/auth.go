@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -18,7 +17,6 @@ import (
 // @return token
 // @route /b/auth/number
 func GetAuthNumber(c *gin.Context) {
-	data := make(map[string]interface{})
 	code := e.INVALID_PARAMS
 	number := c.Query("number")
 	password := c.Query("password")
@@ -26,9 +24,9 @@ func GetAuthNumber(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(number, "number")
 	valid.Required(password, "password")
-	ok, verr := r.E(&valid, "Auth")
+	ok, verr := r.ErrorValid(&valid, "Auth")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	user, err := models.GetUser(map[string]interface{}{
@@ -39,20 +37,7 @@ func GetAuthNumber(c *gin.Context) {
 		logging.Error("check admin error:%v", err)
 		code = e.ERROR_DATABASE
 	}
-	if user.Uid > 0 {
-		// tag = 0 means ADMIN
-		token, err := util.GenerateToken(fmt.Sprintf("%d", user.Uid))
-		if err != nil {
-			code = e.ERROR_GENERATE_TOKEN
-		} else {
-			data["token"] = token
-			data["uid"] = user.Uid
-			code = e.SUCCESS
-		}
-	} else {
-		code = e.ERROR_AUTH
-	}
-	r.Success(c, code, data)
+	auth(c, user, code)
 }
 
 // @method [get]
@@ -61,7 +46,6 @@ func GetAuthNumber(c *gin.Context) {
 // @return token
 // @route /b/auth/phone
 func GetAuthPhone(c *gin.Context) {
-	data := make(map[string]interface{})
 	code := e.INVALID_PARAMS
 	phone_number := c.Query("phone_number")
 	password := c.Query("password")
@@ -69,9 +53,9 @@ func GetAuthPhone(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(phone_number, "phone_number")
 	valid.Required(password, "password")
-	ok, verr := r.E(&valid, "Auth")
+	ok, verr := r.ErrorValid(&valid, "Auth")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	user, err := models.GetUser(map[string]interface{}{
@@ -82,18 +66,23 @@ func GetAuthPhone(c *gin.Context) {
 		logging.Error("check admin error:%v", err)
 		code = e.ERROR_DATABASE
 	}
+	auth(c, user, code)
+}
+
+func auth(c *gin.Context, user models.User, code int) {
+	data := make(map[string]interface{})
 	if user.Uid > 0 {
 		// tag = 0 means ADMIN
-		token, err := util.GenerateToken(fmt.Sprintf("%d", user.Uid))
+		token, err := util.GenerateToken(util.AsStrU(user.Uid))
 		if err != nil {
 			code = e.ERROR_GENERATE_TOKEN
 		} else {
 			data["token"] = token
-			data["uid"] = user.Uid
+			data["user"] = user
 			code = e.SUCCESS
 		}
 	} else {
 		code = e.ERROR_AUTH
 	}
-	r.Success(c, code, data)
+	r.OK(c, code, data)
 }

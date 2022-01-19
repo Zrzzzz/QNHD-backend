@@ -23,12 +23,12 @@ func GetTags(c *gin.Context) {
 	list, err := models.GetTags(name)
 	if err != nil {
 		logging.Error("Get tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -41,12 +41,12 @@ func GetHotTag(c *gin.Context) {
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("Get hot tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -60,9 +60,9 @@ func DeleteTag(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete tag")
+	ok, verr := r.ErrorValid(&valid, "Delete tag")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -70,8 +70,8 @@ func DeleteTag(c *gin.Context) {
 	_, err := models.DeleteTagAdmin(intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

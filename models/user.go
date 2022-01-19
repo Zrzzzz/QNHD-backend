@@ -19,7 +19,7 @@ type User struct {
 	StuAdmin    int    `json:"stu_admin"`
 	IsUser      int    `json:"user"`
 	Active      int    `json:"active" gorm:"default:1"`
-	CreatedAt   string `json:"created_at" gorm:"autoCreateTime;default:null;"`
+	CreatedAt   string `json:"-" gorm:"autoCreateTime;default:null;"`
 }
 
 type UserRight struct {

@@ -30,12 +30,12 @@ func GetAdmins(c *gin.Context) {
 	list, err := models.GetAdmins(maps)
 	if err != nil {
 		logging.Error("Get admins error:%v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @Tags backend, admin
@@ -56,9 +56,9 @@ func AddAdmins(c *gin.Context) {
 	valid.Required(name, "name")
 	valid.Required(password, "password")
 
-	ok, verr := r.E(&valid, "Add admin")
+	ok, verr := r.ErrorValid(&valid, "Add admin")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -66,13 +66,13 @@ func AddAdmins(c *gin.Context) {
 
 	if err != nil {
 		logging.Error("Add admin error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @Tags backend, admin
@@ -93,19 +93,19 @@ func EditAdmins(c *gin.Context) {
 	valid.Required(name, "name")
 	valid.Required(password, "password")
 
-	ok, verr := r.E(&valid, "Edit admin")
+	ok, verr := r.ErrorValid(&valid, "Edit admin")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	err := models.EditAdmins(name, password)
 	if err != nil {
 		logging.Error("Edit admin error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @Tags backend, admin
@@ -123,17 +123,17 @@ func DeleteAdmins(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(name, "name")
 
-	ok, verr := r.E(&valid, "Delete admin")
+	ok, verr := r.ErrorValid(&valid, "Delete admin")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	_, err := models.DeleteAdmins(name)
 	if err != nil {
 		logging.Error("Delete admin error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

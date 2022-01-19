@@ -30,17 +30,17 @@ func AddReport(c *gin.Context) {
 	if floorId != "" {
 		valid.Numeric(floorId, "floor_id")
 	}
-	ok, verr := r.E(&valid, "Add report")
+	ok, verr := r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
 	rTypeint := util.AsInt(rType)
 	valid.Range(rTypeint, 1, 2, "type")
-	ok, verr = r.E(&valid, "Add report")
+	ok, verr = r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	var floorIdint uint64 = 0
@@ -48,7 +48,7 @@ func AddReport(c *gin.Context) {
 		floorIdint = util.AsUint(floorId)
 	}
 	if rTypeint == 2 && floorIdint == 0 {
-		r.Success(c, e.INVALID_PARAMS, nil)
+		r.OK(c, e.INVALID_PARAMS, nil)
 		return
 	}
 	maps := map[string]interface{}{
@@ -61,8 +61,8 @@ func AddReport(c *gin.Context) {
 	err := models.AddReport(maps)
 	if err != nil {
 		logging.Error(" error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

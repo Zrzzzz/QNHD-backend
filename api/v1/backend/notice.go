@@ -20,14 +20,14 @@ func GetNotices(c *gin.Context) {
 	list, err := models.GetNotices()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -40,9 +40,9 @@ func AddNotice(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(content, "content")
-	ok, verr := r.E(&valid, "Add notice")
+	ok, verr := r.ErrorValid(&valid, "Add notice")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -52,12 +52,12 @@ func AddNotice(c *gin.Context) {
 	id, err := models.AddNotice(maps)
 	if err != nil {
 		logging.Error("Add notices error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [put]
@@ -73,9 +73,9 @@ func EditNotice(c *gin.Context) {
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
 	valid.Required(content, "content")
-	ok, verr := r.E(&valid, "Edit notices")
+	ok, verr := r.ErrorValid(&valid, "Edit notices")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -85,10 +85,10 @@ func EditNotice(c *gin.Context) {
 	err := models.EditNotice(intid, data)
 	if err != nil {
 		logging.Error("Edit notices error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [delete]
@@ -102,17 +102,17 @@ func DeleteNotice(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete notices")
+	ok, verr := r.ErrorValid(&valid, "Delete notices")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	intid := util.AsUint(id)
 	_, err := models.DeleteNotice(intid)
 	if err != nil {
 		logging.Error("Delete notices error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

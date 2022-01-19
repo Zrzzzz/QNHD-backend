@@ -21,10 +21,10 @@ func GetDepartments(c *gin.Context) {
 	list, err := models.GetDepartments(name)
 	if err != nil {
 		logging.Error("Get department error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }

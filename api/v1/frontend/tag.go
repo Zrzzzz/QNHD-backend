@@ -27,12 +27,12 @@ func GetTags(c *gin.Context) {
 	list, err := models.GetTags(name)
 	if err != nil {
 		logging.Error("Get tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -43,10 +43,10 @@ func GetTags(c *gin.Context) {
 func GetRecommendTag(c *gin.Context) {
 	tag, err := models.GetRecommendTag()
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, map[string]interface{}{"tag": tag})
+	r.OK(c, e.SUCCESS, map[string]interface{}{"tag": tag})
 }
 
 // @method [get]
@@ -59,12 +59,12 @@ func GetHotTag(c *gin.Context) {
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("Get hot tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -78,29 +78,29 @@ func AddTag(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(name, "name")
 	valid.MaxSize(name, 15, "name")
-	ok, verr := r.E(&valid, "Add tag")
+	ok, verr := r.ErrorValid(&valid, "Add tag")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	exist, err := models.ExistTagByName(name)
 	if err != nil {
 		logging.Error("Add tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	if exist {
-		r.Success(c, e.ERROR_EXIST_TAG, nil)
+		r.OK(c, e.ERROR_EXIST_TAG, nil)
 	}
 	id, err := models.AddTag(name, uid)
 	if err != nil {
 		logging.Error("Add tag error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [delete]
@@ -115,9 +115,9 @@ func DeleteTag(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Delete tag")
+	ok, verr := r.ErrorValid(&valid, "Delete tag")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 
@@ -125,8 +125,8 @@ func DeleteTag(c *gin.Context) {
 	_, err := models.DeleteTag(intid, uid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

@@ -20,20 +20,20 @@ func GetPostReplys(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "post_id")
 	valid.Numeric(postId, "post_id")
-	ok, verr := r.E(&valid, "Get post replys")
+	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	list, err := models.GetPostReplys(postId)
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -49,15 +49,15 @@ func AddPostReply(c *gin.Context) {
 	valid.Required(postId, "post_id")
 	valid.Numeric(postId, "post_id")
 	valid.Required(content, "content")
-	ok, verr := r.E(&valid, "Get post replys")
+	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	// 校验有无权限回复
 	post, err := models.GetPost(postId)
 	if util.AsStrU(post.Uid) != uid {
-		r.Success(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
 		return
 	}
 	// 添加回复
@@ -67,8 +67,8 @@ func AddPostReply(c *gin.Context) {
 		"content": content,
 	})
 	if err != nil {
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.Success(c, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }

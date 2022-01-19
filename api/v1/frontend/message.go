@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -34,7 +33,7 @@ func GetMessageNotices(c *gin.Context) {
 	list, err := models.GetNotices()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
-		r.Success(c, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 对每个查询是否已读
@@ -49,7 +48,7 @@ func GetMessageNotices(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -64,7 +63,7 @@ func GetMessageFloors(c *gin.Context) {
 	logs, err := models.GetMessageFloors(c, uid)
 	if err != nil {
 		logging.Error("Get message floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	var floors = []models.Floor{}
@@ -80,7 +79,7 @@ func GetMessageFloors(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Get message floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	// 再根据楼层是否为回复帖子还是回复评论的做查询
@@ -110,7 +109,7 @@ func GetMessageFloors(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Get message floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -118,7 +117,7 @@ func GetMessageFloors(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -133,7 +132,7 @@ func GetMessagePostReplys(c *gin.Context) {
 	logs, err := models.GetMessagePostReplys(c, uid)
 	if err != nil {
 		logging.Error("Get message postReply error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	var replys = []models.PostReply{}
@@ -149,7 +148,7 @@ func GetMessagePostReplys(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Get message postReply error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 	var list = []messageReplyResponse{}
@@ -166,7 +165,7 @@ func GetMessagePostReplys(c *gin.Context) {
 	}
 	if err != nil {
 		logging.Error("Get message postReply error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
 
@@ -174,7 +173,7 @@ func GetMessagePostReplys(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 
-	r.Success(c, e.SUCCESS, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]
@@ -188,18 +187,18 @@ func ReadNotice(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Read notice")
+	ok, verr := r.ErrorValid(&valid, "Read notice")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	err := models.ReadNotice(util.AsUint(uid), util.AsUint(id))
 	if err != nil {
 		logging.Error("Read notice error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [post]
@@ -213,18 +212,18 @@ func ReadFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Read notice")
+	ok, verr := r.ErrorValid(&valid, "Read notice")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	err := models.ReadFloor(util.AsUint(uid), util.AsUint(id))
 	if err != nil {
 		logging.Error("Read floor error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [post]
@@ -238,18 +237,18 @@ func ReadReply(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.E(&valid, "Read notice")
+	ok, verr := r.ErrorValid(&valid, "Read notice")
 	if !ok {
-		r.Success(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
 	err := models.ReadPostReply(util.AsUint(uid), util.AsUint(id))
 	if err != nil {
 		logging.Error("Read reply error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, nil)
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [get]
@@ -262,10 +261,10 @@ func GetMessageCount(c *gin.Context) {
 	cnt, err := models.GetMessageCount(uid)
 	if err != nil {
 		logging.Error("Get message count error: %v", err)
-		r.R(c, http.StatusOK, e.ERROR_DATABASE, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.R(c, http.StatusOK, e.SUCCESS, map[string]interface{}{
+	r.OK(c, e.SUCCESS, map[string]interface{}{
 		"count": cnt,
 	})
 }

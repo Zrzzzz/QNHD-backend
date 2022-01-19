@@ -50,13 +50,10 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 	return ban.Id, nil
 }
 
-func IfBannedByUid(uid uint64) (bool, error) {
+func IsBannedByUid(uid uint64) bool {
 	var ban Banned
 	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
+		return !errors.Is(err, gorm.ErrRecordNotFound)
 	}
-	return true, nil
+	return true
 }
