@@ -29,13 +29,14 @@ func ValidBlocked() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)
 		// 查询是否封禁
-		ok, detail, err := models.IsBlockedByUidDetailed(util.AsUint(uid))
+		blocked, detail, err := models.IsBlockedByUidDetailed(util.AsUint(uid))
 		if err != nil {
 			r.Error(c, e.ERROR_DATABASE, err.Error())
+			c.Abort()
 			return
 		}
-		if !ok {
-			r.OK(c, e.ERROR_BANNED_USER, map[string]interface{}{
+		if blocked {
+			r.OK(c, e.ERROR_BLOCKED_USER, map[string]interface{}{
 				"detail": detail,
 			})
 			c.Abort()
