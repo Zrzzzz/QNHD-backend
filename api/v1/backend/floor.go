@@ -44,6 +44,7 @@ func GetFloors(c *gin.Context) {
 // @param floor_id
 // @return nil
 func DeleteFloor(c *gin.Context) {
+	uid := r.GetUid(c)
 	floorId := c.Query("floor_id")
 
 	valid := validation.Validation{}
@@ -55,7 +56,7 @@ func DeleteFloor(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeleteFloorByAdmin(floorId)
+	_, err := models.DeleteFloorByAdmin(uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

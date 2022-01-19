@@ -63,29 +63,31 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除封禁用户
 		bannedGroup.GET("/banned/delete", DeleteBanned)
 	case Blocked:
+		blockedGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}))
 		// 获取禁言用户列表
-		g.GET("/blocked", GetBlocked)
+		blockedGroup.GET("/blocked", GetBlocked)
 		// 新建禁言用户
-		g.POST("/blocked", AddBlocked)
+		blockedGroup.POST("/blocked", AddBlocked)
 		// 删除指定禁言用户
-		g.GET("/blocked/delete", DeleteBlocked)
+		blockedGroup.GET("/blocked/delete", DeleteBlocked)
 	case Notice:
+		noticeGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取公告列表
-		g.GET("/notice", GetNotices)
+		noticeGroup.GET("/notice", GetNotices)
 		// 新建公告
-		g.POST("/notice", AddNotice)
+		noticeGroup.POST("/notice", AddNotice)
 		// 修改公告
-		g.POST("/notice/modify", EditNotice)
+		noticeGroup.POST("/notice/modify", EditNotice)
 		// 删除指定公告
-		g.GET("/notice/delete", DeleteNotice)
+		noticeGroup.GET("/notice/delete", DeleteNotice)
 	case User:
 		// 获取请求者用户信息
 		g.GET("/user/info", GetUserInfo)
 		// 获取普通用户列表
 		g.GET("/users/common", GetCommonUsers)
-		// 获取所有用户列表
+		// 获取管理员列表
 		g.GET("/users/manager", permission.RightDemand(models.UserRight{Super: true}), GetManagers)
-		// 修改用户密码
+		// 修改管理员密码
 		g.POST("/user/passwd/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
 		// 修改自己密码
 		g.POST("/user/passwd", EditUserPasswd)
@@ -105,7 +107,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePosts)
 	case Report:
-		// 获取帖子列表
+		// 获取举报列表
 		g.GET("/reports", GetReports)
 	case Floor:
 		// 查询多个楼层
@@ -116,7 +118,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 查询标签
 		g.GET("/tags", GetTags)
 		// 删除指定标签
-		g.GET("/tag/delete", DeleteTag)
+		g.GET("/tag/delete", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), DeleteTag)
 		// 获取热议标签
 		g.GET("/tags/hot", GetHotTag)
 	case Department:

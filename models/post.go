@@ -310,13 +310,12 @@ func DeletePostsAdmin(uid, postId string) (uint64, error) {
 	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
 	// 如果不是超管
 	if RequireRight(uid, UserRight{Super: true}) != nil {
-		return 0, fmt.Errorf("right fault")
+		return 0, fmt.Errorf("无权删除")
 	}
 	// 湖底帖且是湖底管理员
 	if !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true}) == nil) {
-		return 0, fmt.Errorf("right fault")
+		return 0, fmt.Errorf("无权删除")
 	}
-
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("id = ?", uid).First(&post).Error; err != nil {
 			return err

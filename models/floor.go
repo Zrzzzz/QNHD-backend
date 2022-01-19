@@ -295,10 +295,22 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	return newFloor.Id, nil
 }
 
-func DeleteFloorByAdmin(id string) (uint64, error) {
+func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	var floor = Floor{}
-	if err := db.Where("id = ?", id).First(&floor).Error; err != nil {
+
+	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
 		return 0, err
+	}
+	// 首先判断是否有权限
+	var post, _ = GetPost(util.AsStrU(floor.PostId))
+	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
+	// 如果不是超管
+	if RequireRight(uid, UserRight{Super: true}) != nil {
+		return 0, fmt.Errorf("无权删除")
+	}
+	// 湖底帖且是湖底管理员
+	if !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true}) == nil) {
+		return 0, fmt.Errorf("无权删除")
 	}
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
