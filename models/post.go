@@ -22,8 +22,8 @@ const (
 type PostType int
 
 const (
-	POST_SCHOOL PostType = iota
-	POST_HOLE
+	POST_HOLE PostType = iota
+	POST_SCHOOL
 	POST_ALL
 )
 
@@ -225,7 +225,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		Title:   maps["title"].(string),
 		Content: maps["content"].(string),
 	}
-	if post.Type == POST_SCHOOL {
+	if post.Type == POST_HOLE {
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Select("type", "uid", "campus", "title", "content").Create(post).Error; err != nil {
@@ -251,7 +251,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			upload.DeleteImageUrls(imgs)
 			return 0, err
 		}
-	} else if post.Type == POST_HOLE {
+	} else if post.Type == POST_SCHOOL {
 		// 先对department_id进行查找，不存在要报错
 		departId := maps["department_id"].(uint64)
 		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {
@@ -304,10 +304,21 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 	return post.Id, nil
 }
 
-func DeletePostsAdmin(id string) (uint64, error) {
-	var post = Post{}
+func DeletePostsAdmin(uid, postId string) (uint64, error) {
+	// 首先判断是否有权限
+	var post, _ = GetPost(postId)
+	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
+	// 如果不是超管
+	if RequireRight(uid, UserRight{Super: true}) != nil {
+		return 0, fmt.Errorf("right fault")
+	}
+	// 湖底帖且是湖底管理员
+	if !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true}) == nil) {
+		return 0, fmt.Errorf("right fault")
+	}
+
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).First(&post).Error; err != nil {
+		if err := tx.Where("id = ?", uid).First(&post).Error; err != nil {
 			return err
 		}
 		return deletePost(tx, &post)

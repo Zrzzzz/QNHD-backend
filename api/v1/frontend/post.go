@@ -208,15 +208,20 @@ func AddPost(c *gin.Context) {
 	}
 	// 需要根据类型判断返回类型
 	// 判断type
-	if postTypeint == int(models.POST_SCHOOL) {
+	if postTypeint == int(models.POST_HOLE) {
 		// 可选tag
 		if tagId != "" {
 			valid.Numeric(tagId, "tag_id")
 		}
-	} else if postTypeint == int(models.POST_HOLE) {
+	} else if postTypeint == int(models.POST_SCHOOL) {
 		// 必须要求部门id不为0
 		valid.Required(departId, "department_id")
 		valid.Numeric(departId, "department_id")
+	}
+	ok, verr = r.ErrorValid(&valid, "Add posts")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
 	}
 
 	// 处理图片
@@ -246,9 +251,9 @@ func AddPost(c *gin.Context) {
 		"image_urls": imageUrls,
 	}
 
-	if postTypeint == 0 && tagId != "" {
+	if postTypeint == int(models.POST_HOLE) && tagId != "" {
 		maps["tag_id"] = tagId
-	} else if postTypeint == 1 {
+	} else if postTypeint == int(models.POST_SCHOOL) {
 		maps["department_id"] = util.AsUint(departId)
 	}
 	id, err := models.AddPost(maps)

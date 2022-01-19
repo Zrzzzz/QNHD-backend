@@ -148,14 +148,6 @@ func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 	return db.Model(&user).Update("password", newPasswd).Error
 }
 
-func IsUserSuperAdmin(uid string) bool {
-	var isSuper int
-	if err := db.Model(&User{}).Select("is_super").Where("id = ?").Find(&isSuper).Error; err != nil {
-		return false
-	}
-	return isSuper == 1
-}
-
 func (User) TableName() string {
 	return "users"
 }

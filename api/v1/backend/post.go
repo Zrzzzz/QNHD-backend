@@ -21,6 +21,7 @@ import (
 // @return
 // @route /b/post/delete
 func DeletePosts(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -32,7 +33,7 @@ func DeletePosts(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeletePostsAdmin(id)
+	_, err := models.DeletePostsAdmin(uid, id)
 	if err != nil {
 		logging.Error("Delete posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

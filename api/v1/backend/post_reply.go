@@ -29,7 +29,7 @@ func AddPostReply(c *gin.Context) {
 		return
 	}
 	// 如果不是超管，看是否为部门对应管理
-	if !models.IsUserSuperAdmin(uid) {
+	if models.RequireRight(uid, models.UserRight{Super: true}) != nil {
 		depart, err := models.GetDepartmentByPostId(util.AsUint(postId))
 		if err != nil {
 			r.Error(c, e.ERROR_DATABASE, err.Error())
