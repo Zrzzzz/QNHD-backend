@@ -78,6 +78,7 @@ func (f *Floor) geneResponse(uid string, searchSubFloors bool) (FloorResponse, e
 	return fr, nil
 }
 
+// 将楼层数组转为返回结果数组
 func transFloorsToResponses(floor *[]Floor, uid string, searchSubFloors bool) ([]FloorResponse, error) {
 	var frs = []FloorResponse{}
 	for _, f := range *floor {
@@ -102,6 +103,16 @@ func GetFloor(floorId string) (Floor, error) {
 	var floor Floor
 	err := db.Where("id = ?", floorId).First(&floor).Error
 	return floor, err
+}
+
+// 返回单个楼层带Response
+func GetFloorResponse(floorId, uid string) (FloorResponse, error) {
+	var ret FloorResponse
+	floor, err := GetFloor(floorId)
+	if err != nil {
+		return ret, err
+	}
+	return floor.geneResponse(uid, true)
 }
 
 // 缩略返回帖子内楼层，即返回5条

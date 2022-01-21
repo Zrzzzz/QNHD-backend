@@ -97,9 +97,9 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
 	case Post:
 		// 获取帖子列表
-		g.GET("/posts", frontend.GetPosts)
+		g.GET("/posts", GetPosts)
 		// 获取帖子
-		g.GET("/post", frontend.GetPost)
+		g.GET("/post", GetPost)
 		// 获取帖子回复
 		g.GET("/post/replys", frontend.GetPostReplys)
 		// 帖子回复校方回应

@@ -29,7 +29,7 @@ const (
 
 type Post struct {
 	Model
-	Uid uint64 `json:"-" gorm:"column:uid"`
+	Uid uint64 `json:"uid" gorm:"column:uid"`
 
 	// 帖子分类
 	Type         PostType       `json:"type"`
@@ -148,6 +148,45 @@ func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
 	return post.geneResponse(uid)
 }
 
+func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
+	var posts []Post
+	content := maps["content"].(string)
+	postType := maps["type"].(PostType)
+	departmentId := maps["department_id"].(string)
+	solved := maps["solved"].(string)
+	tagId := maps["tag_id"].(string)
+
+	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
+	// 校区 不为全部时加上区分
+	if postType != POST_ALL {
+		d = d.Where("type = ?", postType)
+	}
+	// 如果有部门要加上
+	if departmentId != "" {
+		d = d.Where("department_id = ?", departmentId)
+	}
+	// 如果要加上是否解决的字段
+	if solved != "" {
+		d = d.Where("solved = ?", solved)
+	}
+	// 如果需要搜索标签
+	if tagId != "" {
+		// 搜索相关帖子
+		var tagIds = []uint64{}
+		// 不需要处理错误，空的返回也行
+		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
+		// 然后加上条件
+		d = d.Where("id IN (?)", tagIds)
+		// 添加搜索记录
+		addTagLog(util.AsUint(tagId), TAG_VISIT)
+	}
+
+	if err := d.Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
 func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponse, error) {
 	var posts []Post
 	content := maps["content"].(string)
@@ -197,7 +236,7 @@ func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 
 func GetFavPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id").Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
+	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return transPostsToResponses(&posts, uid)
@@ -340,6 +379,9 @@ func deletePost(tx *gorm.DB, post *Post) error {
 		return err
 	}
 	if err := DeleteImageInPost(tx, post.Id); err != nil {
+		return err
+	}
+	if err := DeletePostReplysInPost(tx, post.Id); err != nil {
 		return err
 	}
 	return nil

@@ -8,7 +8,6 @@ import (
 )
 
 type PostImage struct {
-	Id       uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	PostId   uint64 `json:"post_id" `
 	ImageUrl string `json:"image_url" `
 }

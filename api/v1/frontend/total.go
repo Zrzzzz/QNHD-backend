@@ -86,6 +86,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Floor:
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
+		// 查询单个楼层
+		g.GET("/floor", GetFloor)
 		// 查询楼层内回复
 		g.GET("/floor/replys", GetFloorReplys)
 		// 新建楼层

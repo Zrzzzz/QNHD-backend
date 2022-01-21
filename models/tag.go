@@ -17,7 +17,6 @@ type Tag struct {
 }
 
 type LogTag struct {
-	Id        uint64    `gorm:"primaryKey;autoIncrement;" json:"id"`
 	TagId     uint64    `json:"tag_id"`
 	Point     TAG_POINT `json:"point"`
 	CreatedAt string    `json:"create_at"`

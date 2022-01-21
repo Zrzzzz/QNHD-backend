@@ -4,6 +4,7 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
+	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
@@ -40,11 +41,28 @@ func AddPostReply(c *gin.Context) {
 			return
 		}
 	}
+	// 处理图片
+	form, err := c.MultipartForm()
+	if err != nil {
+		r.Error(c, e.INVALID_PARAMS, err.Error())
+		return
+	}
+	imgs := form.File["images"]
+	if len(imgs) > 3 {
+		r.Error(c, e.INVALID_PARAMS, "images count should less than 3.")
+		return
+	}
+	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
+	if err != nil {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
 	// 添加回复
 	id, err := models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
-		"from":    models.PostReplyType(1),
+		"sender":  models.PostReplyFromUser,
 		"content": content,
+		"urls":    imageUrls,
 	})
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())

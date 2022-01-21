@@ -21,19 +21,6 @@ import (
 // @in header
 // @name token
 func main() {
-	// endless.DefaultReadTimeOut = setting.ReadTimeout
-	// endless.DefaultWriteTimeOut = setting.WriteTimeout
-	// endless.DefaultMaxHeaderBytes = 1 << 20
-	// endPoint := fmt.Sprintf(":%d", setting.HTTPPort)
-
-	// s := endless.NewServer(endPoint, api.InitRouter())
-	// s.BeforeBegin = func(add string) {
-	// 	logging.Info("Actual pid is %d", syscall.Getpid())
-	// }
-
-	// if err := s.ListenAndServe(); err != nil {
-	// 	logging.Error("Server err: %v", err)
-	// }
 	setting.Setup()
 	logging.Setup()
 	models.Setup()
@@ -50,7 +37,7 @@ func main() {
 		// TLSConfig:      tlscfg,
 	}
 	s.ListenAndServeTLS("cert/5193613_zrzz.site.pem", "cert/5193613_zrzz.site.key")
-	// s.ListenAndServe()
+
 	defer models.Close()
 	defer cronic.Close()
 }

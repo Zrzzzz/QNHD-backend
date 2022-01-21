@@ -227,12 +227,12 @@ func AddPost(c *gin.Context) {
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.INVALID_PARAMS, err.Error())
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 3 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 3."})
+		r.Error(c, e.INVALID_PARAMS, "images count should less than 3.")
 		return
 	}
 	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
@@ -295,7 +295,7 @@ func EditPostSolved(c *gin.Context) {
 		return
 	}
 	// 判断是否为发帖人
-	// 校验有无权限回复
+	// 校验有无权限修改
 	post, err := models.GetPost(postId)
 	if util.AsStrU(post.Uid) != uid {
 		r.OK(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})

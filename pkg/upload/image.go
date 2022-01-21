@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 func GetImageFullUrl(name string) string {
@@ -36,7 +37,7 @@ func GetImageFullPath() string {
 func CheckImageExt(fileName string) bool {
 	ext := file.GetExt(fileName)
 	for _, allowExt := range setting.AppSetting.ImageAllowExts {
-		if strings.ToUpper(allowExt) == strings.ToUpper(ext) {
+		if strings.EqualFold(allowExt, ext) {
 			return true
 		}
 	}
@@ -64,15 +65,10 @@ func CheckPath(src string) error {
 func CheckImage(image *multipart.FileHeader) error {
 	fullPath := GetImageFullPath()
 	imageName := GetImageName(image.Filename)
-	var err error
 	if !CheckImageExt(imageName) || !CheckImageSize(image) {
-		err = fmt.Errorf("Check image failed")
-		return err
+		return errors.New("Check image failed")
 	} else {
-		if err = CheckPath(fullPath); err != nil {
-			return err
-		}
-		return nil
+		return CheckPath(fullPath)
 	}
 }
 func GetImageSrc(image *multipart.FileHeader) string {
@@ -104,16 +100,17 @@ func SaveImagesFromFromData(imgs []*multipart.FileHeader, c *gin.Context) ([]str
 	}
 	return imageUrls, nil
 }
+
 func DeleteImageUrls(urls []string) error {
+	var err error
 	for _, url := range urls {
 		if url == "" {
 			continue
 		}
-		err := os.Remove(GetRuntimePath() + url)
-		if err != nil {
-			logging.Error(err.Error())
-			return err
+		e := os.Remove(GetRuntimePath() + url)
+		if e != nil {
+			err = errors.Wrap(err, e.Error())
 		}
 	}
-	return nil
+	return err
 }

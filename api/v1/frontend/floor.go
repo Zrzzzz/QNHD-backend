@@ -45,6 +45,30 @@ func GetFloors(c *gin.Context) {
 
 // @method [get]
 // @way [query]
+// @param floor_id
+// @return floor
+// @route /f/floor
+func GetFloor(c *gin.Context) {
+	uid := r.GetUid(c)
+	floorId := c.Query("floor_id")
+	valid := validation.Validation{}
+	valid.Required(floorId, "floor_id")
+	valid.Numeric(floorId, "floor_id")
+	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	floor, err := models.GetFloorResponse(floorId, uid)
+	if err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, map[string]interface{}{"floor": floor})
+}
+
+// @method [get]
+// @way [query]
 // @param page, page_size, floor_id
 // @return floorlist
 // @route /f/floor/replys
@@ -96,12 +120,12 @@ func AddFloor(c *gin.Context) {
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.INVALID_PARAMS, err.Error())
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.Error(c, e.INVALID_PARAMS, "images count should less than 1.")
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
@@ -157,12 +181,12 @@ func ReplyFloor(c *gin.Context) {
 	// 处理图片
 	form, err := c.MultipartForm()
 	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.Error(c, e.INVALID_PARAMS, err.Error())
 		return
 	}
 	imgs := form.File["images"]
 	if len(imgs) > 1 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "images count should less than 1."})
+		r.Error(c, e.INVALID_PARAMS, "images count should less than 1.")
 		return
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
