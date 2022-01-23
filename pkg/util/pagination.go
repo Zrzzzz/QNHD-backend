@@ -11,6 +11,10 @@ import (
 // return overnum, neednum
 func Paginate(c *gin.Context) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		enable := c.Query("page_disable")
+		if enable == "1" {
+			return db
+		}
 		page, _ := strconv.Atoi(c.Query("page"))
 		if page == 0 {
 			page = 1

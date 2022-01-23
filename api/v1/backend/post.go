@@ -60,16 +60,15 @@ func GetPosts(c *gin.Context) {
 		"tag_id":        tagId,
 	}
 
-	list, err := models.GetPosts(c, maps)
+	list, cnt, err := models.GetPosts(c, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-
 	data := make(map[string]interface{})
 	data["list"] = list
-	data["total"] = len(list)
+	data["total"] = cnt
 
 	r.OK(c, e.SUCCESS, data)
 }

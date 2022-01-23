@@ -37,10 +37,7 @@ var BackendTypes = [...]BackendType{
 
 func Setup(g *gin.RouterGroup) {
 	// 获取token
-	// 昵称认证
-	g.GET("/auth/number", GetAuthNumber)
-	// 电话认证
-	g.GET("/auth/phone", GetAuthPhone)
+	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", frontend.RefreshToken)
 	// 新建用户，不需要token
 	g.POST("/user", AddUser)
@@ -73,7 +70,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Notice:
 		noticeGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取公告列表
-		noticeGroup.GET("/notice", GetNotices)
+		noticeGroup.GET("/notices", GetNotices)
 		// 新建公告
 		noticeGroup.POST("/notice", AddNotice)
 		// 修改公告
@@ -85,12 +82,16 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/user/info", GetUserInfo)
 		// 获取普通用户列表
 		g.GET("/users/common", GetCommonUsers)
+		// 获取单个普通用户
+		g.GET("/user/common", GetCommonUser)
 		// 获取管理员列表
 		g.GET("/users/manager", permission.RightDemand(models.UserRight{Super: true}), GetManagers)
 		// 修改管理员密码
-		g.POST("/user/passwd/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
+		g.POST("/user/modify/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
 		// 修改自己密码
-		g.POST("/user/passwd", EditUserPasswd)
+		g.POST("/user/passwd/modify", EditUserPasswd)
+		// 修改自己手机
+		g.POST("/user/phone/modify", EditUserPhone)
 		// 修改用户权限
 		g.POST("/user/right/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserRight)
 		// 修改用户部门

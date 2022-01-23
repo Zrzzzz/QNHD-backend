@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type userResponse struct {
@@ -41,7 +43,7 @@ func GetUserInfo(c *gin.Context) {
 		return
 	}
 	depart, err := models.GetDepartmentByUid(util.AsUint(uid))
-	if err != nil {
+	if !errors.Is(gorm.ErrRecordNotFound, err) {
 		logging.Error("get user info error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
@@ -50,6 +52,50 @@ func GetUserInfo(c *gin.Context) {
 		"user_info": userInfo{User: user, Department: depart},
 	}
 	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
+// @param uid, page, page_size
+// @return userList
+// @route /b/user/common
+func GetCommonUser(c *gin.Context) {
+	uid := c.Query("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "get common user")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+
+	code := e.SUCCESS
+	user, err := models.GetUser(map[string]interface{}{"id": uid})
+	if err != nil {
+		logging.Error("Get users error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+
+	nUser := userResponse{User: user}
+	isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
+	if err != nil {
+		logging.Error("Get users error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	if isBlocked {
+		nUser.BlockedStart = detail.Starttime
+		nUser.BlockedOver = detail.Overtime
+		nUser.BlockedRemain = detail.Remain
+	}
+	nUser.IsBlocked = isBlocked
+	nUser.IsBanned = user.Active == 0
+	data := make(map[string]interface{})
+	data["user"] = nUser
+
+	r.OK(c, code, data)
 }
 
 // @method [get]
@@ -157,21 +203,27 @@ func AddUser(c *gin.Context) {
 // @way [formdata]
 // @param new_password
 // @return
-// @route /b/user/passwd/super
+// @route /b/user/modify/super
 func EditUserPasswdBySuper(c *gin.Context) {
 	changeid := c.PostForm("uid")
 	// 超管需要修改密码
 	newPass := c.PostForm("new_password")
+	newPhone := c.PostForm("new_phone")
 	valid := validation.Validation{}
 	ok, verr := r.ErrorValid(&valid, "edit user")
 	valid.Required(changeid, "uid")
-	valid.Required(newPass, "new_password")
+	valid.Numeric(changeid, "uid")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	data := make(map[string]interface{})
-	data["password"] = newPass
+	if newPass != "" {
+		data["password"] = newPass
+	}
+	if newPhone != "" {
+		data["phone_number"] = newPhone
+	}
 	err := models.EditUser(changeid, data)
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
@@ -185,10 +237,10 @@ func EditUserPasswdBySuper(c *gin.Context) {
 // @way [formdata]
 // @param new_password
 // @return
-// @route /b/user/passwd
+// @route /b/user/passwd/modify
 func EditUserPasswd(c *gin.Context) {
 	uid := r.GetUid(c)
-	// 超管需要修改密码
+	// 需要源密码
 	newPass := c.PostForm("new_password")
 	rawPass := c.PostForm("raw_password")
 	valid := validation.Validation{}
@@ -202,6 +254,26 @@ func EditUserPasswd(c *gin.Context) {
 	data := make(map[string]interface{})
 	data["password"] = newPass
 	err := models.EditUserPasswd(uid, rawPass, newPass)
+	if err != nil {
+		logging.Error("Edit users error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [put]
+// @way [formdata]
+// @param new_phone
+// @return
+// @route /b/user/phone/modify
+func EditUserPhone(c *gin.Context) {
+	uid := r.GetUid(c)
+	// 需要源密码
+	newPhone := c.PostForm("new_phone")
+	data := make(map[string]interface{})
+	data["phone_number"] = newPhone
+	err := models.EditUser(uid, data)
 	if err != nil {
 		logging.Error("Edit users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

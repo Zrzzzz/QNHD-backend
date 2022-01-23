@@ -1,7 +1,6 @@
 package models
 
 type UserDepartment struct {
-	Id           uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"id"`
 	Uid          uint64 `json:"uid"`
 	DepartmentId uint64 `json:"department_id"`
 }
@@ -12,7 +11,7 @@ func AddUserToDepartment(uid, departmentId uint64) error {
 	if err := db.Where("uid = ? AND department_id = ?", uid, departmentId).Find(&ud).Error; err != nil {
 		return err
 	}
-	if ud.Id > 0 {
+	if ud.Uid > 0 {
 		ud.DepartmentId = departmentId
 		if err := db.Model(&ud).Updates(ud).Error; err != nil {
 			return err
@@ -33,7 +32,7 @@ func IsUserInDepartment(uid, departmentId string) (bool, error) {
 	if err := db.Where("uid = ? AND department_id = ?", uid, departmentId).Find(&ret).Error; err != nil {
 		return false, err
 	}
-	return ret.Id > 0, nil
+	return ret.Uid > 0, nil
 }
 
 func (UserDepartment) TableName() string {

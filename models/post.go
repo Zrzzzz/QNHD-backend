@@ -148,15 +148,18 @@ func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
 	return post.geneResponse(uid)
 }
 
-func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
-	var posts []Post
+func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) {
+	var (
+		posts []Post
+		cnt   int64
+	)
 	content := maps["content"].(string)
 	postType := maps["type"].(PostType)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
 
-	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
+	var d = db.Model(&Post{}).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	// 校区 不为全部时加上区分
 	if postType != POST_ALL {
 		d = d.Where("type = ?", postType)
@@ -180,11 +183,11 @@ func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, error) {
 		// 添加搜索记录
 		addTagLog(util.AsUint(tagId), TAG_VISIT)
 	}
-
-	if err := d.Find(&posts).Error; err != nil {
-		return nil, err
+	if err := d.Count(&cnt).Error; err != nil {
+		return posts, int(cnt), err
 	}
-	return posts, nil
+	err := d.Scopes(util.Paginate(c)).Find(&posts).Error
+	return posts, int(cnt), err
 }
 
 func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponse, error) {

@@ -1,35 +1,17 @@
 package frontend
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/setting"
 	"qnhd/pkg/util"
-
-	b64 "encoding/base64"
-	"encoding/json"
+	"qnhd/request/twtauth"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
-
-type authRes struct {
-	ErrorCode int        `json:"error_code"`
-	Message   string     `json:"message"`
-	Result    authResult `json:"result"`
-}
-
-type authResult struct {
-	UserNumber string `json:"userNumber"`
-	Telephone  string `json:"telephone"`
-}
 
 // @method [get]
 // @way [query]
@@ -45,21 +27,8 @@ func GetAuthToken(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	var req *http.Request
-	req, _ = http.NewRequest("GET", "https://api.twt.edu.cn/api/user/single", nil)
-	req.Header.Add("token", token)
 
-	var err error
-	// 解析出用户的number
-	client := &http.Client{}
-	req.Header.Add("domain", setting.AppSetting.WPYDomain)
-	ticket := b64.StdEncoding.EncodeToString([]byte(setting.AppSetting.WPYAppSecret + "." + setting.AppSetting.WPYAppKey))
-	req.Header.Add("ticket", ticket)
-	res, _ := client.Do(req)
-	body, _ := ioutil.ReadAll(res.Body)
-	// var v map[string]interface{}
-	var v authRes
-	err = json.Unmarshal(body, &v)
+	v, err := twtauth.GetAuthByToken(token)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -89,37 +58,8 @@ func GetAuthPasswd(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	// 请求服务器
-	var req *http.Request
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-	writer.WriteField("account", user)
-	writer.WriteField("password", password)
 
-	err := writer.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	req, err = http.NewRequest("POST", "https://api.twt.edu.cn/api/auth/common", payload)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	// 解析出用户的number
-	client := &http.Client{}
-	req.Header.Add("domain", setting.AppSetting.WPYDomain)
-	ticket := b64.StdEncoding.EncodeToString([]byte(setting.AppSetting.WPYAppSecret + "." + setting.AppSetting.WPYAppKey))
-	req.Header.Add("ticket", ticket)
-	res, _ := client.Do(req)
-	body, _ := ioutil.ReadAll(res.Body)
-	// var v map[string]interface{}
-	var v authRes
-	err = json.Unmarshal(body, &v)
+	v, err := twtauth.GetAuthByPasswd(user, password)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -134,7 +74,8 @@ func GetAuthPasswd(c *gin.Context) {
 	auth(v.Result, c)
 }
 
-func auth(result authResult, c *gin.Context) {
+// 认证过程
+func auth(result twtauth.TwTAuthResult, c *gin.Context) {
 	uid, err := models.ExistUser(result.UserNumber)
 	data := make(map[string]interface{})
 	if err != nil {

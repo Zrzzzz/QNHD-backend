@@ -107,12 +107,25 @@ func GetAllUsers(c *gin.Context, name string) ([]User, error) {
 	return users, nil
 }
 
-func GetManagers(c *gin.Context, name string) ([]User, error) {
-	var users []User
-	if err := db.Where("number like ? AND is_super = 0 AND is_user = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+type Manager struct {
+	User
+	Name         string `json:"department_name"`
+	Introduction string `json:"department_introduction"`
+}
+
+func GetManagers(c *gin.Context, name string) ([]Manager, error) {
+	var list []Manager
+	users := db.Model(&User{}).Where("number like ? AND is_super = 0 AND is_user = 0", "%"+name+"%")
+	if err := db.
+		Table("(?) as a", users).
+		Select("a.*, `departments`.`name`, `departments`.`introduction`").
+		Joins("LEFT JOIN user_department ON a.id = user_department.uid").
+		Joins("LEFT JOIN departments ON user_department.department_id = departments.id").
+		Scopes(util.Paginate(c)).
+		Find(&list).Error; err != nil {
 		return nil, err
 	}
-	return users, nil
+	return list, nil
 }
 
 func GetUser(maps map[string]interface{}) (User, error) {

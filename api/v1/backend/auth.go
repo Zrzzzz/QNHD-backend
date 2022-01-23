@@ -15,10 +15,9 @@ import (
 // @way [query]
 // @param number, password
 // @return token
-// @route /b/auth/number
-func GetAuthNumber(c *gin.Context) {
-	code := e.INVALID_PARAMS
-	number := c.Query("number")
+// @route /b/auth
+func GetAuth(c *gin.Context) {
+	number := c.Query("user")
 	password := c.Query("password")
 
 	valid := validation.Validation{}
@@ -29,47 +28,38 @@ func GetAuthNumber(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	user, err := models.GetUser(map[string]interface{}{
-		"number":   number,
-		"password": password,
-	})
+	user, err := chainAuth(
+		map[string]interface{}{
+			"number":   number,
+			"password": password,
+		},
+		map[string]interface{}{
+			"phone_number": number,
+			"password":     password,
+		},
+	)
 	if err != nil {
 		logging.Error("check admin error:%v", err)
-		code = e.ERROR_DATABASE
 	}
-	auth(c, user, code)
+	auth(c, user)
 }
 
-// @method [get]
-// @way [query]
-// @param number, password
-// @return token
-// @route /b/auth/phone
-func GetAuthPhone(c *gin.Context) {
-	code := e.INVALID_PARAMS
-	phone_number := c.Query("phone_number")
-	password := c.Query("password")
-
-	valid := validation.Validation{}
-	valid.Required(phone_number, "phone_number")
-	valid.Required(password, "password")
-	ok, verr := r.ErrorValid(&valid, "Auth")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
+func chainAuth(maps ...map[string]interface{}) (models.User, error) {
+	var (
+		u models.User
+		e error
+	)
+	for _, m := range maps {
+		u, e = models.GetUser(m)
+		if e == nil {
+			return u, nil
+		}
 	}
-	user, err := models.GetUser(map[string]interface{}{
-		"phone_number": phone_number,
-		"password":     password,
-	})
-	if err != nil {
-		logging.Error("check admin error:%v", err)
-		code = e.ERROR_DATABASE
-	}
-	auth(c, user, code)
+	return u, e
 }
 
-func auth(c *gin.Context, user models.User, code int) {
+func auth(c *gin.Context, user models.User) {
+	var code int
 	data := make(map[string]interface{})
 	if user.Uid > 0 {
 		// tag = 0 means ADMIN
