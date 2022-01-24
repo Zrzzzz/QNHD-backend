@@ -2,7 +2,6 @@ package backend
 
 import (
 	"errors"
-	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -171,7 +170,6 @@ func AddUser(c *gin.Context) {
 	valid.Required(number, "number")
 	valid.Required(password, "password")
 	valid.Required(phoneNumber, "phoneNumber")
-	fmt.Println(number, password, phoneNumber)
 	ok, verr := r.ErrorValid(&valid, "Add backend user")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})

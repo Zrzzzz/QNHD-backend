@@ -28,12 +28,9 @@ type UserRight struct {
 	StuAdmin bool
 }
 
-func RequireRight(uid string, right UserRight) error {
+func RequireRight(uid string, right UserRight) bool {
 	// 检查权限
-	user, err := GetUser(map[string]interface{}{"id": uid})
-	if err != nil {
-		return err
-	}
+	user, _ := GetUser(map[string]interface{}{"id": uid})
 	var b = false
 	if right.Super {
 		b = b || user.IsSuper == 1
@@ -44,10 +41,7 @@ func RequireRight(uid string, right UserRight) error {
 	if right.StuAdmin {
 		b = b || user.IsStuAdmin == 1
 	}
-	if !b {
-		return fmt.Errorf("未赋予权限")
-	}
-	return nil
+	return b
 }
 
 func RequireAdmin(uid string) error {
@@ -73,7 +67,6 @@ func RequireUser(uid string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(user)
 	if user.IsUser != 1 {
 		return fmt.Errorf("非用户身份")
 	}

@@ -43,11 +43,11 @@ func AddNotice(c *gin.Context) {
 
 	valid := validation.Validation{}
 	valid.Required(sender, "sender")
-	valid.MaxSize(sender, 20, "sender")
+	valid.MaxSize(sender, 30, "sender")
 	valid.Required(title, "title")
-	valid.MaxSize(title, 20, "title")
+	valid.MaxSize(title, 30, "title")
 	valid.Required(content, "content")
-	valid.MaxSize(content, 200, "content")
+	valid.MaxSize(content, 1000, "content")
 	ok, verr := r.ErrorValid(&valid, "Add notice")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})

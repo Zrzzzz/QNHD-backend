@@ -25,7 +25,7 @@ func AddNotice(data map[string]interface{}) (uint64, error) {
 		Url:     data["url"].(string),
 	}
 	// 创建通知
-	if err := db.Select("Content").Create(&notice).Error; err != nil {
+	if err := db.Create(&notice).Error; err != nil {
 		return 0, err
 	}
 	// 对所有用户通知

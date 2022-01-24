@@ -3,6 +3,7 @@ package models
 import (
 	"qnhd/pkg/upload"
 
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -16,8 +17,20 @@ const (
 type PostReply struct {
 	Model
 	PostId  uint64        `json:"post_id"`
-	From    PostReplyType `json:"from"`
+	Sender  PostReplyType `json:"sender"`
 	Content string        `json:"content"`
+}
+
+type PostReplyResponse struct {
+	PostReply
+	ImageUrls []string `json:"image_urls"`
+}
+
+// 转换为response
+func (p *PostReply) geneResponse() (PostReplyResponse, error) {
+	var prr = PostReplyResponse{PostReply: *p}
+	err := db.Model(&PostReplyImage{}).Select("image_url").Where("post_reply_id = ?", prr.Id).Find(&prr.ImageUrls).Error
+	return prr, err
 }
 
 // 获取单个回复
@@ -27,6 +40,16 @@ func GetPostReply(replyId string) (PostReply, error) {
 	return pr, err
 }
 
+// 获取单个带图片回复
+func GetPostReplyResponse(replyId string) (PostReplyResponse, error) {
+	var prr PostReplyResponse
+	pr, err := GetPostReply(replyId)
+	if err != nil {
+		return prr, err
+	}
+	return pr.geneResponse()
+}
+
 // 获取帖子内的回复记录
 func GetPostReplys(postId string) ([]PostReply, error) {
 	var prs = []PostReply{}
@@ -34,21 +57,43 @@ func GetPostReplys(postId string) ([]PostReply, error) {
 	return prs, err
 }
 
+// 获取带图片回复
+func GetPostReplyResponses(postId string) ([]PostReplyResponse, error) {
+	var rets []PostReplyResponse
+	var err error
+	prs, err := GetPostReplys(postId)
+	if err != nil {
+		return rets, err
+	}
+	for _, pr := range prs {
+		ret, e := pr.geneResponse()
+		if e != nil {
+			err = errors.Wrap(err, e.Error())
+		} else {
+			rets = append(rets, ret)
+		}
+	}
+	return rets, err
+}
+
 // 添加帖子的回复
 func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	var pr = PostReply{
 		PostId:  maps["post_id"].(uint64),
-		From:    maps["sender"].(PostReplyType),
+		Sender:  maps["sender"].(PostReplyType),
 		Content: maps["content"].(string),
 	}
 	urls := maps["urls"].([]string)
 	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&pr).Error; err != nil {
+			return err
+		}
 		if len(urls) != 0 {
-			if err := AddImageInPostReply(tx, maps["post_id"].(uint64), urls); err != nil {
+			if err := AddImageInPostReply(tx, pr.Id, urls); err != nil {
 				return err
 			}
 		}
-		return tx.Create(&pr).Error
+		return nil
 	})
 	return pr.Id, err
 }

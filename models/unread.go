@@ -88,7 +88,11 @@ func ReadFloor(uid, floorId uint64) error {
 }
 
 // 添加回复通知
-func AddUnreadPostReply(uid, replyId uint64) error {
+func AddUnreadPostReply(postId, replyId uint64) error {
+	var uid uint64
+	if err := db.Model(&Post{}).Select("uid").Where("id = ?", postId).Find(&uid).Error; err != nil {
+		return err
+	}
 	return db.Select("uid", "reply_id").Create(&LogUnreadPostReply{
 		Uid:     uid,
 		ReplyId: replyId,

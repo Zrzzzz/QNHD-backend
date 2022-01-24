@@ -30,7 +30,7 @@ func AddPostReply(c *gin.Context) {
 		return
 	}
 	// 如果不是超管，看是否为部门对应管理
-	if models.RequireRight(uid, models.UserRight{Super: true}) != nil {
+	if !models.RequireRight(uid, models.UserRight{Super: true}) {
 		depart, err := models.GetDepartmentByPostId(util.AsUint(postId))
 		if err != nil {
 			r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -69,7 +69,7 @@ func AddPostReply(c *gin.Context) {
 		return
 	}
 	// 通知回复
-	err = models.AddUnreadPostReply(util.AsUint(uid), id)
+	err = models.AddUnreadPostReply(util.AsUint(postId), id)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

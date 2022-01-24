@@ -41,7 +41,7 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/:token", frontend.RefreshToken)
 	// 新建用户，不需要token
 	g.POST("/user", AddUser)
-
+	g.GET("/test", Test)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(permission.ADMIN))
 	for _, t := range BackendTypes {

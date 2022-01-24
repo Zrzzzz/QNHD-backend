@@ -11,8 +11,8 @@ import (
 func RightDemand(right models.UserRight) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)
-		if err := models.RequireRight(uid, right); err != nil {
-			r.Error(c, e.ERROR_RIGHT, err.Error())
+		if !models.RequireRight(uid, right) {
+			r.Error(c, e.ERROR_RIGHT, "")
 			c.Abort()
 			return
 		}

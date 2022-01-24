@@ -19,8 +19,8 @@ type messageFloorResponse struct {
 }
 
 type messageReplyResponse struct {
-	Post  models.Post      `json:"post"`
-	Reply models.PostReply `json:"reply"`
+	Post  models.Post              `json:"post"`
+	Reply models.PostReplyResponse `json:"reply"`
 }
 
 // @method [get]
@@ -135,16 +135,16 @@ func GetMessagePostReplys(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	var replys = []models.PostReply{}
+	var replys = []models.PostReplyResponse{}
 
 	// 根据记录查询出楼层
 	for _, log := range logs {
-		pr, e := models.GetPostReply(util.AsStrU(log.ReplyId))
+		prr, e := models.GetPostReplyResponse(util.AsStrU(log.ReplyId))
 		if e != nil {
 			err = e
 			break
 		}
-		replys = append(replys, pr)
+		replys = append(replys, prr)
 	}
 	if err != nil {
 		logging.Error("Get message postReply error: %v", err)

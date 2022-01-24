@@ -6,10 +6,19 @@ import (
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/util"
+	"qnhd/request/yunpian"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
+
+func Test(c *gin.Context) {
+	yunpian.SendTemplateMessage("4142284", "18570743258", map[string]string{
+		"nickname":       "xixix",
+		"realname":       "赵子熹",
+		"question_title": "牛子轩",
+	})
+}
 
 // @method [get]
 // @way [query]
