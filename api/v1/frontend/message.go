@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type messageFloorResponse struct {
+type messageFloorResponseUser struct {
 	Type    int          `json:"type"`
 	ToFloor models.Floor `json:"to_floor"`
 	Post    models.Post  `json:"post"`
@@ -68,14 +68,13 @@ func GetMessageFloors(c *gin.Context) {
 	}
 	var floors = []models.Floor{}
 
-	// 根据记录查询出楼层
+	// 根据记录查询出楼层 由于可能有删除的楼层 这里判断一下
 	for _, log := range logs {
 		f, e := models.GetFloor(util.AsStrU(log.FloorId))
-		if e != nil {
-			err = e
-			break
+		if f.Id > 0 {
+			floors = append(floors, f)
 		}
-		floors = append(floors, f)
+		logging.Error(e.Error())
 	}
 	if err != nil {
 		logging.Error("Get message floor error: %v", err)
@@ -83,9 +82,9 @@ func GetMessageFloors(c *gin.Context) {
 		return
 	}
 	// 再根据楼层是否为回复帖子还是回复评论的做查询
-	var list = []messageFloorResponse{}
+	var list = []messageFloorResponseUser{}
 	for _, f := range floors {
-		var r = messageFloorResponse{Floor: f}
+		var r = messageFloorResponseUser{Floor: f}
 		// 搜索floor
 		if f.SubTo > 0 {
 			tof, e := models.GetFloor(util.AsStrU(f.ReplyTo))

@@ -62,7 +62,7 @@ func GetPosts(c *gin.Context) {
 		"tag_id":        tagId,
 	}
 
-	list, err := models.GetPostResponses(c, uid, maps)
+	list, err := models.GetPostResponsesWithUid(c, uid, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -84,7 +84,7 @@ func GetPosts(c *gin.Context) {
 func GetUserPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetUserPostResponses(c, uid)
+	list, err := models.GetUserPostResponseUsers(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -105,7 +105,7 @@ func GetUserPosts(c *gin.Context) {
 // @route /f/posts/fav
 func GetFavPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	list, err := models.GetFavPostResponses(c, uid)
+	list, err := models.GetFavPostResponseUsers(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -126,7 +126,7 @@ func GetFavPosts(c *gin.Context) {
 func GetHistoryPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetHistoryPostResponses(c, uid)
+	list, err := models.GetHistoryPostResponseUsers(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -158,7 +158,7 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	pr, err := models.GetPostResponseAndVisit(id, uid)
+	pr, err := models.GetPostResponseUserAndVisit(id, uid)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

@@ -44,51 +44,99 @@ func (LogFloorDis) TableName() string {
 	return "log_floor_dis"
 }
 
+// 楼层返回数据
 type FloorResponse struct {
 	Floor
 	SubFloors   []FloorResponse `json:"sub_floors"`
 	SubFloorCnt int             `json:"sub_floor_cnt"`
-	IsLike      bool            `json:"is_like"`
-	IsDis       bool            `json:"is_dis"`
-	IsOwner     bool            `json:"is_owner"`
+	// 处理链式错误
+	Error error `json:"-"`
+}
+
+// 客户端返回楼层
+type FloorResponseUser struct {
+	Floor
+	SubFloors   []FloorResponseUser `json:"sub_floors"`
+	SubFloorCnt int                 `json:"sub_floor_cnt"`
+	IsLike      bool                `json:"is_like"`
+	IsDis       bool                `json:"is_dis"`
+	IsOwner     bool                `json:"is_owner"`
+	// 处理链式错误
+	Error error `json:"-"`
 }
 
 func (Floor) TableName() string {
 	return "floors"
 }
 
-func (f *Floor) geneResponse(uid string, searchSubFloors bool) (FloorResponse, error) {
+func (f *Floor) geneResponse(searchSubFloors bool) FloorResponse {
 	var fr = FloorResponse{
 		Floor:     *f,
-		IsLike:    IsLikeFloorByUid(uid, util.AsStrU(f.Id)),
-		IsDis:     IsDisFloorByUid(uid, util.AsStrU(f.Id)),
-		IsOwner:   IsOwnFloorByUid(uid, util.AsStrU(f.Id)),
 		SubFloors: []FloorResponse{},
 	}
 	if searchSubFloors {
 		// 处理回复本条楼层的楼层
-		rps, err := getFloorHighLikeShortReplyResponses(util.AsStrU(f.Id), uid)
+		rps, err := getHighlikeSubfloors(util.AsStrU(f.Id))
 		if err != nil {
-			return fr, nil
+			fr.Error = err
+			return fr
 		}
 		fr.SubFloors = rps
 		// 获取子楼层总数
 		fr.SubFloorCnt = getFloorSubFloorCount(util.AsStrU(f.Id))
 	}
-	return fr, nil
+	return fr
+}
+
+func (f FloorResponse) searchWithUid(uid string, searchSubFloors bool) FloorResponseUser {
+	var fr = FloorResponseUser{
+		Floor:       f.Floor,
+		IsLike:      IsLikeFloorByUid(uid, util.AsStrU(f.Id)),
+		IsDis:       IsDisFloorByUid(uid, util.AsStrU(f.Id)),
+		IsOwner:     IsOwnFloorByUid(uid, util.AsStrU(f.Id)),
+		SubFloors:   []FloorResponseUser{},
+		SubFloorCnt: f.SubFloorCnt,
+	}
+	if searchSubFloors {
+		// 处理回复本条楼层的楼层
+		rps, err := getHighlikeSubfloorsWithUid(util.AsStrU(f.Id), uid)
+		if err != nil {
+			fr.Error = err
+			return fr
+		}
+		fr.SubFloors = rps
+	}
+	return fr
 }
 
 // 将楼层数组转为返回结果数组
-func transFloorsToResponses(floor *[]Floor, uid string, searchSubFloors bool) ([]FloorResponse, error) {
+func transFloorsToResponses(floor *[]Floor, searchSubFloors bool) ([]FloorResponse, error) {
 	var frs = []FloorResponse{}
+	var err error
 	for _, f := range *floor {
-		fr, err := f.geneResponse(uid, searchSubFloors)
-		if err != nil {
-			return frs, err
+		fr := f.geneResponse(searchSubFloors)
+		if fr.Error != nil {
+			err = errors.Wrap(err, fr.Error.Error())
+		} else {
+			frs = append(frs, fr)
 		}
-		frs = append(frs, fr)
 	}
-	return frs, nil
+	return frs, err
+}
+
+// 将楼层数组转为返回结果数组(有uid)
+func transFloorsToResponsesWithUid(floor *[]Floor, uid string, searchSubFloors bool) ([]FloorResponseUser, error) {
+	var frs = []FloorResponseUser{}
+	var err error
+	for _, f := range *floor {
+		fr := f.geneResponse(searchSubFloors).searchWithUid(uid, searchSubFloors)
+		if fr.Error != nil {
+			err = errors.Wrap(err, fr.Error.Error())
+		} else {
+			frs = append(frs, fr)
+		}
+	}
+	return frs, err
 }
 
 const OWNER_NAME = "Owner"
@@ -106,42 +154,63 @@ func GetFloor(floorId string) (Floor, error) {
 }
 
 // 返回单个楼层带Response
-func GetFloorResponse(floorId, uid string) (FloorResponse, error) {
-	var ret FloorResponse
+func GetFloorResponseUser(floorId, uid string) (FloorResponseUser, error) {
+	var ret FloorResponseUser
 	floor, err := GetFloor(floorId)
 	if err != nil {
 		return ret, err
 	}
-	return floor.geneResponse(uid, true)
+	fr := floor.geneResponse(true).searchWithUid(uid, true)
+	return fr, fr.Error
 }
 
 // 缩略返回帖子内楼层，即返回5条
-func GetShortFloorResponsesInPost(postId, uid string) ([]FloorResponse, error) {
+func getShortFloorResponsesInPost(postId string) ([]FloorResponse, error) {
 	var floors []Floor
 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
 		return nil, err
 	}
-	return transFloorsToResponses(&floors, uid, true)
+	return transFloorsToResponses(&floors, true)
+}
+
+// 缩略返回帖子内楼层，即返回5条 含用户id
+func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUser, error) {
+	var floors []Floor
+	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return transFloorsToResponsesWithUid(&floors, uid, true)
 }
 
 // 分页返回帖子里的楼层
-func GetFloorResponsesInPost(c *gin.Context, postId, uid string) ([]FloorResponse, error) {
+func GetFloorResponseUsersInPost(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
-	return transFloorsToResponses(&floors, uid, true)
+	return transFloorsToResponsesWithUid(&floors, uid, true)
 }
 
 // 返回楼层内最高赞的5条楼层
-func getFloorHighLikeShortReplyResponses(floorId, uid string) ([]FloorResponse, error) {
+func getHighlikeSubfloors(floorId string) ([]FloorResponse, error) {
 	var floors []Floor
 	// 按照点赞降序，创建时间降序
 	err := db.Where("sub_to = ?", floorId).Order("like_count DESC, created_at DESC").Limit(5).Find(&floors).Error
 	if err != nil {
 		return []FloorResponse{}, err
 	}
-	return transFloorsToResponses(&floors, uid, false)
+	return transFloorsToResponses(&floors, false)
+}
+
+// 返回楼层内最高赞的5条楼层，携带用户id
+func getHighlikeSubfloorsWithUid(floorId, uid string) ([]FloorResponseUser, error) {
+	var floors []Floor
+	// 按照点赞降序，创建时间降序
+	err := db.Where("sub_to = ?", floorId).Order("like_count DESC, created_at DESC").Limit(5).Find(&floors).Error
+	if err != nil {
+		return []FloorResponseUser{}, err
+	}
+	return transFloorsToResponsesWithUid(&floors, uid, false)
 }
 
 func getFloorSubFloorCount(floorId string) int {
@@ -157,13 +226,13 @@ func getCommentCount(postId uint64) int {
 }
 
 // 分页返回楼层内的回复
-func GetFloorReplyResponses(c *gin.Context, floorId, uid string) ([]FloorResponse, error) {
+func GetFloorReplyResponses(c *gin.Context, floorId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
 	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
-		return []FloorResponse{}, err
+		return []FloorResponseUser{}, err
 	}
-	return transFloorsToResponses(&floors, uid, false)
+	return transFloorsToResponsesWithUid(&floors, uid, false)
 }
 
 // 添加楼层评论

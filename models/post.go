@@ -8,6 +8,7 @@ import (
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	giterrors "github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -65,45 +66,60 @@ type LogPostDis struct {
 	PostId uint64 `json:"post_id"`
 }
 
+// 帖子返回数据
 type PostResponse struct {
 	Post
 	Tag          *Tag            `json:"tag"`
 	Floors       []FloorResponse `json:"floors"`
 	CommentCount int             `json:"comment_count"`
-	IsLike       bool            `json:"is_like"`
-	IsDis        bool            `json:"is_dis"`
-	IsFav        bool            `json:"is_fav"`
-	IsOwner      bool            `json:"is_owner"`
 	ImageUrls    []string        `json:"image_urls"`
 	Department   *Department     `json:"department"`
+	// 用于处理链式数据
+	Error error `json:"-"`
 }
 
-func (p *Post) geneResponse(uid string) (PostResponse, error) {
+// 客户端帖子返回数据
+type PostResponseUser struct {
+	Post
+	Tag          *Tag                `json:"tag"`
+	Floors       []FloorResponseUser `json:"floors"`
+	CommentCount int                 `json:"comment_count"`
+	ImageUrls    []string            `json:"image_urls"`
+	Department   *Department         `json:"department"`
+
+	IsLike  bool `json:"is_like"`
+	IsDis   bool `json:"is_dis"`
+	IsFav   bool `json:"is_fav"`
+	IsOwner bool `json:"is_owner"`
+	// 用于处理链式数据
+	Error error `json:"-"`
+}
+
+func (p *Post) geneResponse() PostResponse {
 	var pr PostResponse
 
-	frs, err := GetShortFloorResponsesInPost(util.AsStrU(p.Id), uid)
+	frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
 	if err != nil {
-		return pr, err
+		pr.Error = err
+		return pr
 	}
 	imgs, err := GetImageInPost(p.Id)
 	if err != nil {
-		return pr, err
+		pr.Error = err
+		return pr
 	}
 	pr = PostResponse{
 		Post:         *p,
 		Floors:       frs,
 		CommentCount: getCommentCount(p.Id),
-		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
-		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
-		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
-		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
 		ImageUrls:    imgs,
 	}
 
 	if p.DepartmentId > 0 {
 		d, err := GetDepartment(p.DepartmentId)
 		if err != nil {
-			return pr, err
+			pr.Error = err
+			return pr
 		}
 		pr.Department = &d
 	}
@@ -111,20 +127,60 @@ func (p *Post) geneResponse(uid string) (PostResponse, error) {
 	if tag != nil {
 		pr.Tag = tag
 	}
-
-	return pr, nil
+	pr.Error = err
+	return pr
 }
 
-func transPostsToResponses(posts *[]Post, uid string) ([]PostResponse, error) {
-	var prs = []PostResponse{}
-	for _, p := range *posts {
-		pr, err := p.geneResponse(uid)
-		if err != nil {
-			return prs, err
-		}
-		prs = append(prs, pr)
+func (p PostResponse) searchByUid(uid string) PostResponseUser {
+	pr := PostResponseUser{
+		Post:         p.Post,
+		Tag:          p.Tag,
+		CommentCount: p.CommentCount,
+		ImageUrls:    p.ImageUrls,
+		Department:   p.Department,
+		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
+		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
+		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
+		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
 	}
-	return prs, nil
+
+	frs, err := getShortFloorResponsesInPostWithUid(util.AsStrU(p.Id), uid)
+	if err != nil {
+		pr.Error = err
+		return pr
+	}
+	pr.Floors = frs
+	return pr
+}
+
+// 将post数组转化为返回结果
+func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
+	var prs = []PostResponse{}
+	var err error
+	for _, p := range *posts {
+		pr := p.geneResponse()
+		if pr.Error != nil {
+			err = giterrors.Wrap(err, pr.Error.Error())
+		} else {
+			prs = append(prs, pr)
+		}
+	}
+	return prs, err
+}
+
+// 将post数组转化为用户返回结果
+func transPostsToResponsesWithUid(posts *[]Post, uid string) ([]PostResponseUser, error) {
+	var prs = []PostResponseUser{}
+	var err error
+	for _, p := range *posts {
+		pr := p.geneResponse().searchByUid(uid)
+		if pr.Error != nil {
+			err = giterrors.Wrap(err, pr.Error.Error())
+		} else {
+			prs = append(prs, pr)
+		}
+	}
+	return prs, err
 }
 
 func GetPost(postId string) (Post, error) {
@@ -133,9 +189,19 @@ func GetPost(postId string) (Post, error) {
 	return post, err
 }
 
-func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
-	var post Post
+func GetPostResponse(postId string) (PostResponse, error) {
 	var pr PostResponse
+	p, err := GetPost(postId)
+	if err != nil {
+		return pr, err
+	}
+	pr = p.geneResponse()
+	return pr, pr.Error
+}
+
+func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, error) {
+	var post Post
+	var pr PostResponseUser
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		return pr, err
 	}
@@ -145,7 +211,8 @@ func GetPostResponseAndVisit(postId string, uid string) (PostResponse, error) {
 	if err := addTagLogInPost(util.AsUint(postId), TAG_VISIT); err != nil {
 		return pr, err
 	}
-	return post.geneResponse(uid)
+	ret := post.geneResponse().searchByUid(uid)
+	return ret, ret.Error
 }
 
 func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) {
@@ -190,15 +257,18 @@ func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	return posts, int(cnt), err
 }
 
-func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponse, error) {
-	var posts []Post
+func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post, int, error) {
+	var (
+		posts []Post
+		cnt   int64
+	)
 	content := maps["content"].(string)
 	postType := maps["type"].(PostType)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
 
-	var d = db.Scopes(util.Paginate(c)).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
+	var d = db.Model(&Post{}).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
 	// 校区 不为全部时加上区分
 	if postType != POST_ALL {
 		d = d.Where("type = ?", postType)
@@ -219,33 +289,54 @@ func GetPostResponses(c *gin.Context, uid string, maps map[string]interface{}) (
 		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
-		// 添加搜索记录
-		addTagLog(util.AsUint(tagId), TAG_VISIT)
+		if taglog {
+			// 添加搜索记录
+			addTagLog(util.AsUint(tagId), TAG_VISIT)
+		}
 	}
-
-	if err := d.Find(&posts).Error; err != nil {
-		return nil, err
+	if err := d.Count(&cnt).Error; err != nil {
+		return posts, int(cnt), err
 	}
-	return transPostsToResponses(&posts, uid)
+	err := d.Scopes(util.Paginate(c)).Find(&posts).Error
+	return posts, int(cnt), err
 }
 
-func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
+// 获取帖子返回数据
+func GetPostResponses(c *gin.Context, maps map[string]interface{}) ([]PostResponse, int, error) {
+	posts, cnt, err := getPosts(c, false, maps)
+	if err != nil {
+		return nil, 0, err
+	}
+	ret, err := transPostsToResponses(&posts)
+	return ret, cnt, err
+}
+
+// 获取帖子返回数据带uid
+func GetPostResponsesWithUid(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponseUser, error) {
+	posts, _, err := getPosts(c, true, maps)
+	if err != nil {
+		return nil, err
+	}
+	return transPostsToResponsesWithUid(&posts, uid)
+}
+
+func GetUserPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostsToResponses(&posts, uid)
+	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetFavPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
+func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostsToResponses(&posts, uid)
+	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetHistoryPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
+func GetHistoryPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	var ids []string
 	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id").Scopes(util.Paginate(c)).Scan(&ids).Error; err != nil {
@@ -255,7 +346,7 @@ func GetHistoryPostResponses(c *gin.Context, uid string) ([]PostResponse, error)
 	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	return transPostsToResponses(&posts, uid)
+	return transPostsToResponsesWithUid(&posts, uid)
 }
 
 func AddPost(maps map[string]interface{}) (uint64, error) {

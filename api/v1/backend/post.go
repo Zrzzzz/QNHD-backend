@@ -90,7 +90,7 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	pr, err := models.GetPost(id)
+	pr, err := models.GetPostResponse(id)
 	if err != nil {
 		logging.Error("Get post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

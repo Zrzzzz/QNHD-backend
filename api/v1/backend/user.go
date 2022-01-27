@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"errors"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type userResponse struct {
@@ -42,11 +40,6 @@ func GetUserInfo(c *gin.Context) {
 		return
 	}
 	depart, err := models.GetDepartmentByUid(util.AsUint(uid))
-	if !errors.Is(gorm.ErrRecordNotFound, err) {
-		logging.Error("get user info error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
 	data := map[string]interface{}{
 		"user_info": userInfo{User: user, Department: depart},
 	}
@@ -311,8 +304,8 @@ func EditUserRight(c *gin.Context) {
 	}
 
 	maps := map[string]interface{}{
-		"sch_admin": schAdmin,
-		"stu_admin": stuAdmin,
+		"is_sch_admin": schAdmin,
+		"is_stu_admin": stuAdmin,
 	}
 	if err := models.EditUser(uid, maps); err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())

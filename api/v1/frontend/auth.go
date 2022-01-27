@@ -85,7 +85,7 @@ func auth(result twtauth.TwTAuthResult, c *gin.Context) {
 	}
 	// 如果不存在就创建一个用户
 	if uid == 0 {
-		uid, err = models.AddUser(result.UserNumber, result.Telephone, "")
+		uid, err = models.AddUser(result.UserNumber, "", result.Telephone)
 	}
 
 	if err != nil {
