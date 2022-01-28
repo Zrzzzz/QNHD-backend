@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ func (LogUnreadNotice) TableName() string {
 type LogUnreadPostReply struct {
 	Id      uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	Uid     uint64 `json:"uid"`
-	ReplyId uint64 `json:"floor_id"`
+	ReplyId uint64 `json:"reply_id"`
 	IsRead  int    `json:"is_read"`
 }
 
@@ -39,17 +40,99 @@ func (LogUnreadPostReply) TableName() string {
 	return "log_unread_post_reply"
 }
 
-func GetMessageFloors(c *gin.Context, uid string) ([]LogUnreadFloor, error) {
-	var logs []LogUnreadFloor
-	// 未读的优先，按照时间
-	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC").Find(&logs).Error
-	return logs, err
+type UnreadFloorResponse struct {
+	Type    int    `json:"type"`
+	ToFloor *Floor `json:"to_floor"`
+	Post    Post   `json:"post"`
+	Floor   Floor  `json:"floor"`
 }
 
-func GetMessagePostReplys(c *gin.Context, uid string) ([]LogUnreadPostReply, error) {
-	var logs []LogUnreadPostReply
-	err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC").Find(&logs).Error
-	return logs, err
+type UnreadReplyResponse struct {
+	Post  Post              `json:"post"`
+	Reply PostReplyResponse `json:"reply"`
+}
+
+func GetMessageFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) {
+	var (
+		ret    = []UnreadFloorResponse{}
+		floors []Floor
+		err    error
+	)
+
+	// 先筛选出未读记录
+	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC")
+	// 找到楼层
+	if err = db.Table("(?) as a", logs).
+		Unscoped().
+		Select("floors.*").
+		Joins("JOIN floors ON a.floor_id = floors.id").
+		Find(&floors).
+		Where("floors.deleted_at IS NULL").
+		Error; err != nil {
+		return ret, err
+	}
+	// 对每个楼层分析
+	for _, f := range floors {
+		var r = UnreadFloorResponse{Floor: f}
+		// 搜索floor
+		if f.SubTo > 0 {
+			tof, e := GetFloor(util.AsStrU(f.ReplyTo))
+			if e != nil {
+				err = e
+				break
+			}
+			r.Type = 1
+			r.ToFloor = &tof
+		} else {
+			r.Type = 0
+		}
+		// 搜索帖子
+		p, e := GetPost(util.AsStrU(f.PostId))
+		if e != nil {
+			err = e
+			break
+		}
+		r.Post = p
+		ret = append(ret, r)
+	}
+	return ret, err
+}
+
+func GetMessagePostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, error) {
+	var (
+		err    error
+		replys []PostReply
+		ret    = []UnreadReplyResponse{}
+	)
+	// 先筛选出未读记录
+	logs := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC")
+	// 找到回复
+	if err = db.Table("(?) as a", logs).
+		Unscoped().
+		Select("post_reply.*").
+		Joins("JOIN post_reply ON a.reply_id = post_reply.id").
+		Find(&replys).
+		Where("replys.deleted_at IS NULL").
+		Error; err != nil {
+		return ret, err
+	}
+	// 再生成返回数据
+	for _, r := range replys {
+		rp, e := r.geneResponse()
+		if e != nil {
+			logging.Error(e.Error())
+		}
+		var u = UnreadReplyResponse{Reply: rp}
+		// 搜索帖子
+		p, e := GetPost(util.AsStrU(rp.PostId))
+		if e != nil {
+			err = e
+			break
+		}
+		u.Post = p
+		ret = append(ret, u)
+	}
+	return ret, err
 }
 
 // 通知所有用户

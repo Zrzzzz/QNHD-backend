@@ -21,6 +21,10 @@ type PostReply struct {
 	Content string        `json:"content"`
 }
 
+func (PostReply) TableName() string {
+	return "post_reply"
+}
+
 type PostReplyResponse struct {
 	PostReply
 	ImageUrls []string `json:"image_urls"`
@@ -135,8 +139,4 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 	})
 
 	return err
-}
-
-func (PostReply) TableName() string {
-	return "post_reply"
 }

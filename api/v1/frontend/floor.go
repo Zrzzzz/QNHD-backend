@@ -30,7 +30,7 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetFloorResponseUsersInPost(c, postId, uid)
+	list, err := models.GetFloorResponsesWithUid(c, postId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -59,7 +59,7 @@ func GetFloor(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	floor, err := models.GetFloorResponseUser(floorId, uid)
+	floor, err := models.GetFloorResponseWithUid(floorId, uid)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

@@ -154,7 +154,18 @@ func GetFloor(floorId string) (Floor, error) {
 }
 
 // 返回单个楼层带Response
-func GetFloorResponseUser(floorId, uid string) (FloorResponseUser, error) {
+func GetFloorResponse(floorId string) (FloorResponse, error) {
+	var ret FloorResponse
+	floor, err := GetFloor(floorId)
+	if err != nil {
+		return ret, err
+	}
+	fr := floor.geneResponse(true)
+	return fr, fr.Error
+}
+
+// 返回单个楼层带Response,有uid
+func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 	var ret FloorResponseUser
 	floor, err := GetFloor(floorId)
 	if err != nil {
@@ -183,7 +194,16 @@ func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUse
 }
 
 // 分页返回帖子里的楼层
-func GetFloorResponseUsersInPost(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
+func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
+	var floors []Floor
+	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return transFloorsToResponses(&floors, true)
+}
+
+// 分页返回帖子里的楼层，带uid
+func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
@@ -358,14 +378,17 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.Select("uid", "post_id", "content", "nickname", "image_url", "reply_to", "reply_to_name", "sub_to").Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
-	// 如果不是回复自己的楼层，通知楼层主人和回复的人
+	// 如果不是回复自己的楼层，通知楼层归属楼层主人和回复的人，如果都有要避免重复
 	var subToFloor, _ = GetFloor(util.AsStrU(newFloor.SubTo))
-	if subToFloor.Uid != uid {
-		addUnreadFloor(post.Uid, newFloor.Id)
-	}
+	// 回复的人
 	if toFloor.Uid != uid {
-		addUnreadFloor(post.Uid, toFloor.Id)
+		addUnreadFloor(toFloor.Uid, newFloor.Id)
 	}
+	// 楼层归属楼层主人，同时避免重复
+	if subToFloor.Uid != uid && subToFloor.Uid != toFloor.Uid {
+		addUnreadFloor(subToFloor.Uid, newFloor.Id)
+	}
+
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {
 		if err := addTagLogInPost(post.Id, TAG_ADDFLOOR); err != nil {

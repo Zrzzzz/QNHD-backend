@@ -39,8 +39,6 @@ func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", frontend.RefreshToken)
-	// 新建用户，不需要token
-	g.POST("/user", AddUser)
 	g.GET("/test", Test)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(permission.ADMIN))
@@ -78,6 +76,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除指定公告
 		noticeGroup.GET("/notice/delete", DeleteNotice)
 	case User:
+		// 新建单个用户
+		g.POST("/user", permission.RightDemand(models.UserRight{Super: true}), AddUser)
+		// 新建多个用户
+		g.POST("/users", permission.RightDemand(models.UserRight{Super: true}), AddUsers)
 		// 获取请求者用户信息
 		g.GET("/user/info", GetUserInfo)
 		// 获取普通用户列表

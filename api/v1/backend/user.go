@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -188,6 +189,26 @@ func AddUser(c *gin.Context) {
 	data := make(map[string]interface{})
 	data["uid"] = uid
 	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [post]
+// @way [formdata]
+// @param json
+// @return
+// @route /b/user
+func AddUsers(c *gin.Context) {
+	var users []models.NewUserData
+	content := c.PostForm("content")
+
+	if err := json.Unmarshal([]byte(content), &users); err != nil {
+		r.Error(c, e.INVALID_PARAMS, err.Error())
+		return
+	}
+	if err := models.AddUsers(users); err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
 }
 
 // @method [put]

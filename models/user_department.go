@@ -27,14 +27,6 @@ func AddUserToDepartment(uid, departmentId uint64) error {
 	return nil
 }
 
-func IsUserInDepartment(uid, departmentId string) (bool, error) {
-	var ret UserDepartment
-	if err := db.Where("uid = ? AND department_id = ?", uid, departmentId).Find(&ret).Error; err != nil {
-		return false, err
-	}
-	return ret.Uid > 0, nil
-}
-
 func (UserDepartment) TableName() string {
 	return "user_department"
 }

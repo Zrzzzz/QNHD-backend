@@ -26,7 +26,7 @@ func GetFloors(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetFloorResponseUsersInPost(c, postId, "0")
+	list, err := models.GetFloorResponses(c, postId)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

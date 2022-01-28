@@ -26,7 +26,7 @@ func GetPostReplys(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	list, err := models.GetPostReplys(postId)
+	list, err := models.GetPostReplyResponses(postId)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

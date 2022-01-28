@@ -11,13 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type messageFloorResponseUser struct {
-	Type    int          `json:"type"`
-	ToFloor models.Floor `json:"to_floor"`
-	Post    models.Post  `json:"post"`
-	Floor   models.Floor `json:"floor"`
-}
-
 type messageReplyResponse struct {
 	Post  models.Post              `json:"post"`
 	Reply models.PostReplyResponse `json:"reply"`
@@ -58,54 +51,7 @@ func GetMessageNotices(c *gin.Context) {
 // @route /f/message/floors
 func GetMessageFloors(c *gin.Context) {
 	uid := r.GetUid(c)
-	var err error
-	// 先获取记录
-	logs, err := models.GetMessageFloors(c, uid)
-	if err != nil {
-		logging.Error("Get message floor error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	var floors = []models.Floor{}
-
-	// 根据记录查询出楼层 由于可能有删除的楼层 这里判断一下
-	for _, log := range logs {
-		f, e := models.GetFloor(util.AsStrU(log.FloorId))
-		if f.Id > 0 {
-			floors = append(floors, f)
-		}
-		logging.Error(e.Error())
-	}
-	if err != nil {
-		logging.Error("Get message floor error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	// 再根据楼层是否为回复帖子还是回复评论的做查询
-	var list = []messageFloorResponseUser{}
-	for _, f := range floors {
-		var r = messageFloorResponseUser{Floor: f}
-		// 搜索floor
-		if f.SubTo > 0 {
-			tof, e := models.GetFloor(util.AsStrU(f.ReplyTo))
-			if e != nil {
-				err = e
-				break
-			}
-			r.Type = 1
-			r.ToFloor = tof
-		} else {
-			r.Type = 0
-		}
-		// 搜索帖子
-		p, e := models.GetPost(util.AsStrU(f.PostId))
-		if e != nil {
-			err = e
-			break
-		}
-		r.Post = p
-		list = append(list, r)
-	}
+	list, err := models.GetMessageFloors(c, uid)
 	if err != nil {
 		logging.Error("Get message floor error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -128,40 +74,7 @@ func GetMessagePostReplys(c *gin.Context) {
 	uid := r.GetUid(c)
 	var err error
 	// 先获取记录
-	logs, err := models.GetMessagePostReplys(c, uid)
-	if err != nil {
-		logging.Error("Get message postReply error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	var replys = []models.PostReplyResponse{}
-
-	// 根据记录查询出楼层
-	for _, log := range logs {
-		prr, e := models.GetPostReplyResponse(util.AsStrU(log.ReplyId))
-		if e != nil {
-			err = e
-			break
-		}
-		replys = append(replys, prr)
-	}
-	if err != nil {
-		logging.Error("Get message postReply error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	var list = []messageReplyResponse{}
-	for _, pr := range replys {
-		var r = messageReplyResponse{Reply: pr}
-		// 搜索帖子
-		p, e := models.GetPost(util.AsStrU(pr.PostId))
-		if e != nil {
-			err = e
-			break
-		}
-		r.Post = p
-		list = append(list, r)
-	}
+	list, err := models.GetMessagePostReplys(c, uid)
 	if err != nil {
 		logging.Error("Get message postReply error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

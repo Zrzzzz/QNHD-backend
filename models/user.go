@@ -6,6 +6,7 @@ import (
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	giterrors "github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -20,6 +21,16 @@ type User struct {
 	IsUser      int    `json:"is_user"`
 	Active      int    `json:"active" gorm:"default:1"`
 	CreatedAt   string `json:"-" gorm:"autoCreateTime;default:null;"`
+}
+
+type NewUserData struct {
+	Number       string `json:"number"`
+	Password     string `json:"password" gorm:"column:password;"`
+	PhoneNumber  string `json:"phone_number"`
+	IsSuper      int    `json:"is_super"`
+	IsSchAdmin   int    `json:"is_sch_admin"`
+	IsStuAdmin   int    `json:"is_stu_admin"`
+	DepartmentId int    `json:"department_id"`
 }
 
 type UserRight struct {
@@ -140,6 +151,44 @@ func AddUser(number, password, phoneNumber string) (uint64, error) {
 		return 0, err
 	}
 	return user.Uid, nil
+}
+
+func AddUsers(users []NewUserData) error {
+	// 先检查是否合理
+	var err error
+	for i, u := range users {
+		if u.IsSchAdmin+u.IsStuAdmin+u.IsSuper > 1 {
+			err = giterrors.Wrap(err, fmt.Sprintf("line %v: 权限分配不正确", i))
+		}
+	}
+	if err != nil {
+		return err
+	}
+	var newUsers []User
+	for _, u := range users {
+		new := User{
+			Number:      u.Number,
+			Password:    u.Password,
+			PhoneNumber: u.PhoneNumber,
+			IsSuper:     u.IsSuper,
+			IsSchAdmin:  u.IsSchAdmin,
+			IsStuAdmin:  u.IsSchAdmin,
+			IsUser:      0,
+		}
+		newUsers = append(newUsers, new)
+	}
+	if err = db.Create(&newUsers).Error; err != nil {
+		return err
+	}
+	// 看是否需要创建部门
+	for i, new := range newUsers {
+		if users[i].DepartmentId > 0 {
+			if e := AddUserToDepartment(new.Uid, uint64(users[i].DepartmentId)); e != nil {
+				err = giterrors.Wrap(err, e.Error())
+			}
+		}
+	}
+	return err
 }
 
 func EditUser(uid string, maps map[string]interface{}) error {

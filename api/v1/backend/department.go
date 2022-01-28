@@ -5,6 +5,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -90,16 +91,12 @@ func EditDepartment(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	hasRight, err := models.IsUserInDepartment(uid, departmentId)
-	if err != nil {
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
+	hasRight := models.IsDepartmentHasUser(util.AsUint(uid), util.AsUint(departmentId))
 	if !hasRight {
 		r.OK(c, e.ERROR_RIGHT, nil)
 		return
 	}
-	err = models.EditDepartment(departmentId, introduction)
+	err := models.EditDepartment(departmentId, introduction)
 	if err != nil {
 		logging.Error("Add department error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
