@@ -115,6 +115,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取举报列表
 		g.GET("/reports", GetReports)
 	case Floor:
+		// 查询单个楼层
+		g.GET("/floor", GetFloor)
+		// 查询楼层内回复
+		g.GET("/floor/replys", GetFloorReplys)
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层

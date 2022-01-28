@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 type ReportType int
 
 const (
@@ -34,6 +36,14 @@ func AddReport(maps map[string]interface{}) error {
 	}
 	err := db.Create(report).Error
 	return err
+}
+
+// 删除举报
+func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
+	if tx == nil {
+		tx = db
+	}
+	return tx.Where(maps).Delete(&Report{}).Error
 }
 
 func (Report) TableName() string {

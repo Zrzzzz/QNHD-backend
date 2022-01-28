@@ -246,7 +246,17 @@ func getCommentCount(postId uint64) int {
 }
 
 // 分页返回楼层内的回复
-func GetFloorReplyResponses(c *gin.Context, floorId, uid string) ([]FloorResponseUser, error) {
+func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, error) {
+	var floors []Floor
+	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	if err != nil {
+		return []FloorResponse{}, err
+	}
+	return transFloorsToResponses(&floors, false)
+}
+
+// 分页返回楼层内的回复带uid
+func GetFloorReplyResponsesWithUid(c *gin.Context, floorId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
 	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {

@@ -38,7 +38,7 @@ func AddPostWithTag(postId uint64, tagId string) error {
 	return err
 }
 
-func DeleteTagInPost(tx *gorm.DB, postId uint64) error {
+func deleteTagInPost(tx *gorm.DB, postId uint64) error {
 	if tx == nil {
 		tx = db
 	}

@@ -136,7 +136,7 @@ func RefreshToken(c *gin.Context) {
 		code = e.ERROR_GENERATE_TOKEN
 	} else {
 		data["token"] = token
-		data["uid"] = claims.Uid
+		data["uid"] = util.AsUint(claims.Uid)
 	}
 	r.OK(c, code, data)
 }

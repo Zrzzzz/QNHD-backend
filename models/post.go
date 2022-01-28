@@ -436,16 +436,11 @@ func EditPostDepartment(postId string, departmentId string) error {
 
 func DeletePostsUser(id, uid string) (uint64, error) {
 	var post = Post{}
-	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ? AND uid = ?", id, uid).First(&post).Error; err != nil {
-			return err
-		}
-		return deletePost(tx, &post)
-	})
-	if err != nil {
+	if err := db.Where("id = ? AND uid = ?", id, uid).First(&post).Error; err != nil {
 		return 0, err
 	}
-	return post.Id, nil
+	err := deletePost(&post)
+	return post.Id, err
 }
 
 func DeletePostsAdmin(uid, postId string) (uint64, error) {
@@ -460,36 +455,60 @@ func DeletePostsAdmin(uid, postId string) (uint64, error) {
 	if !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true})) {
 		return 0, fmt.Errorf("无权删除")
 	}
-	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", uid).First(&post).Error; err != nil {
-			return err
-		}
-		return deletePost(tx, &post)
-	})
-	if err != nil {
+	if err := db.Where("id = ?", uid).First(&post).Error; err != nil {
 		return 0, err
 	}
-
-	return post.Id, nil
+	err := deletePost(&post)
+	return post.Id, err
 }
 
-func deletePost(tx *gorm.DB, post *Post) error {
-	if err := tx.Delete(&post).Error; err != nil {
-		return err
-	}
-	if err := DeleteTagInPost(tx, post.Id); err != nil {
-		return err
-	}
-	if err := DeleteFloorsInPost(tx, post.Id); err != nil {
-		return err
-	}
-	if err := DeleteImageInPost(tx, post.Id); err != nil {
-		return err
-	}
-	if err := DeletePostReplysInPost(tx, post.Id); err != nil {
-		return err
-	}
-	return nil
+// 删除帖子记录
+func deletePost(post *Post) error {
+	/*
+		需要删除的内容
+		post_tag
+		reports
+		log_post_dis, log_post_fav, log_post_like
+		log_visit_history
+		这两个放后面因为涉及到图片
+		post_image
+		floors
+	*/
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := deleteTagInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := deleteReports(tx, map[string]interface{}{"post_id": post.Id}); err != nil {
+			return err
+		}
+		// 删除log
+		if err := tx.Where("post_id = ?", post.Id).Delete(&LogPostLike{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("post_id = ?", post.Id).Delete(&LogPostDis{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("post_id = ?", post.Id).Delete(&LogPostFav{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("post_id = ?", post.Id).Delete(&LogVisitHistory{}).Error; err != nil {
+			return err
+		}
+		if err := DeleteFloorsInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := DeleteImageInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := DeletePostReplysInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := tx.Delete(&post).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
 }
 
 func FavPost(postId string, uid string) (uint64, error) {

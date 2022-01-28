@@ -61,7 +61,7 @@ func GetPosts(c *gin.Context) {
 		"tag_id":        tagId,
 	}
 
-	list, cnt, err := models.GetPosts(c, maps)
+	list, cnt, err := models.GetPostResponses(c, maps)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

@@ -84,7 +84,7 @@ func GetFloorReplys(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetFloorReplyResponses(c, floorId, uid)
+	list, err := models.GetFloorReplyResponsesWithUid(c, floorId, uid)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
