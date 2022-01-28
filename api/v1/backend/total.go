@@ -107,6 +107,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post/replys", frontend.GetPostReplys)
 		// 帖子回复校方回应
 		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
+		// 帖子转移部门
+		g.POST("/post/transfer", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPost)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePosts)
 	case Report:

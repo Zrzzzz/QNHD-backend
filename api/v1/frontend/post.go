@@ -7,6 +7,7 @@ import (
 	"qnhd/pkg/r"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
+	"qnhd/request/yunpian"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -261,6 +262,13 @@ func AddPost(c *gin.Context) {
 		logging.Error("Add post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
+	}
+	// 如果是校务贴，需要对部门发出通知
+	if postTypeint == int(models.POST_SCHOOL) {
+		err = yunpian.NotifyNewPost(util.AsUint(departId), title)
+		if err != nil {
+			logging.Error(err.Error())
+		}
 	}
 	data := make(map[string]interface{})
 	data["id"] = id

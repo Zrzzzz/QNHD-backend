@@ -416,11 +416,22 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 }
 
 func EditPostSolved(postId string, rating string) error {
-	err := db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
+	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
 		"solved": 1,
 		"rating": rating,
 	}).Error
-	return err
+
+}
+
+func EditPostDepartment(postId string, departmentId string) error {
+	// 判断是否存在部门
+	var depart Department
+	if err := db.First(&depart, departmentId).Error; err != nil {
+		return err
+	}
+	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
+		"department_id": departmentId,
+	}).Error
 }
 
 func DeletePostsUser(id, uid string) (uint64, error) {

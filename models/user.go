@@ -132,6 +132,17 @@ func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	return list, nil
 }
 
+func GetUsersInDepartment(departmentId uint64) ([]User, error) {
+	var users []User
+	ud := db.Model(&UserDepartment{}).Where("department_id = ?", departmentId)
+	err := db.Table("(?) as a", ud).
+		Select("users.*").
+		Joins("JOIN users ON a.uid = users.id").
+		Find(&users).
+		Error
+	return users, err
+}
+
 func GetUser(maps map[string]interface{}) (User, error) {
 	var u User
 	if err := db.Where(maps).First(&u).Error; err != nil {
