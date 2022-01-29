@@ -111,7 +111,7 @@ func (p *Post) geneResponse() PostResponse {
 	pr = PostResponse{
 		Post:         *p,
 		Floors:       frs,
-		CommentCount: getCommentCount(p.Id),
+		CommentCount: GetCommentCount(p.Id, true),
 		ImageUrls:    imgs,
 	}
 
@@ -470,7 +470,8 @@ func deletePost(post *Post) error {
 		reports
 		log_post_dis, log_post_fav, log_post_like
 		log_visit_history
-		这两个放后面因为涉及到图片
+		放后面因为涉及到图片
+		post_reply
 		post_image
 		floors
 	*/
@@ -494,13 +495,13 @@ func deletePost(post *Post) error {
 		if err := tx.Where("post_id = ?", post.Id).Delete(&LogVisitHistory{}).Error; err != nil {
 			return err
 		}
-		if err := DeleteFloorsInPost(tx, post.Id); err != nil {
+		if err := DeletePostReplysInPost(tx, post.Id); err != nil {
 			return err
 		}
 		if err := DeleteImageInPost(tx, post.Id); err != nil {
 			return err
 		}
-		if err := DeletePostReplysInPost(tx, post.Id); err != nil {
+		if err := DeleteFloorsInPost(tx, post.Id); err != nil {
 			return err
 		}
 		if err := tx.Delete(&post).Error; err != nil {

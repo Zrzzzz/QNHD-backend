@@ -5,6 +5,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -59,7 +60,7 @@ func GetFloors(c *gin.Context) {
 
 	data := make(map[string]interface{})
 	data["list"] = list
-	data["total"] = len(list)
+	data["total"] = models.GetCommentCount(util.AsUint(postId), false)
 	r.OK(c, e.SUCCESS, data)
 }
 

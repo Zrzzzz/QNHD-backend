@@ -60,7 +60,7 @@ func AddPostReply(c *gin.Context) {
 	// 添加回复
 	id, err := models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
-		"sender":  models.PostReplyFromUser,
+		"sender":  models.PostReplyFromSchool,
 		"content": content,
 		"urls":    imageUrls,
 	})

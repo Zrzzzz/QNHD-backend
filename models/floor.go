@@ -239,9 +239,13 @@ func getFloorSubFloorCount(floorId string) int {
 	return int(ret)
 }
 
-func getCommentCount(postId uint64) int {
+func GetCommentCount(postId uint64, withSubfloors bool) int {
 	var ret int64
-	db.Model(&Floor{}).Where("post_id = ?", postId).Count(&ret)
+	a := db.Model(&Floor{}).Where("post_id = ?", postId)
+	if !withSubfloors {
+		a = a.Where("sub_to = 0")
+	}
+	a.Count(&ret)
 	return int(ret)
 }
 
@@ -443,29 +447,53 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 }
 
 func deleteFloor(floor *Floor) error {
-	var imgs []string
-	if floor.ImageURL != "" {
-		imgs = append(imgs, floor.ImageURL)
-	}
-	// 判断是否有子楼层
-	var floors []Floor
-	db.Where("sub_to").Find(&floors)
-	for _, f := range floors {
-		if f.ImageURL != "" {
-			imgs = append(imgs, f.ImageURL)
+	/*
+		删除楼层逻辑
+		log_floor_dis, log_floor_like, log_unread_floor
+		subto的帖子, reply_to的帖子
+		report
+	*/
+	return db.Transaction(func(tx *gorm.DB) error {
+
+		// 先找到所有楼层
+		var (
+			floors        = map[uint64]bool{}
+			ids           []uint64
+			subToFloors   []Floor
+			replyToFloors []Floor
+		)
+		if err := db.Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
+			return err
 		}
-	}
+		if err := db.Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
+			return err
+		}
+		// 这里需要避免重复, 合并到floors里
+		for _, f := range subToFloors {
+			_, ok := floors[f.Id]
+			if !ok {
+				floors[f.Id] = true
+			}
+		}
+		for _, f := range replyToFloors {
+			_, ok := floors[f.Id]
+			if !ok {
+				floors[f.Id] = true
+			}
+		}
+		for k := range floors {
+			ids = append(ids, k)
+		}
+		// 删除log
+		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorLike{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorDis{}).Error; err != nil {
+			return err
+		}
+		return db.Delete(&Floor{}, ids).Error
+	})
 
-	// 删除本地文件
-	if err := upload.DeleteImageUrls(imgs); err != nil {
-		logging.Error(err.Error())
-		return err
-	}
-
-	if err := db.Where("id = ? OR sub_to = ?", floor.Id, floor.Id).Delete(&Floor{}).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {

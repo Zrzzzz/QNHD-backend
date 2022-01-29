@@ -107,32 +107,32 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 		ttx = db
 	}
 	var (
-		replys   []PostReply
-		replyIds []uint64
-		urls     []string
+		images []PostReplyImage
+		urls   []string
 	)
 	err := ttx.Transaction(func(tx *gorm.DB) error {
-		// TODO: 做连表
-		// 获取所有reply
-		if err := tx.Where("post_id = ?", postId).Find(&replys).Error; err != nil {
+		// 获取所有image
+		logs := tx.Model(&PostReply{}).Where("post_id = ?", postId)
+		if err := tx.Table("(?) as a", logs).
+			Select("b.*").
+			Joins("JOIN post_reply_image as b ON a.id = b.post_reply_id").
+			Find(&images).
+			Error; err != nil {
 			return err
 		}
-		if len(replyIds) == 0 {
+		if len(images) == 0 {
 			return nil
 		}
-		for _, r := range replys {
-			replyIds = append(replyIds, r.Id)
-		}
-		// 获取所有图片
-		if err := tx.Model(&PostReplyImage{}).Select("image_url").Where("post_reply_id IN (?)", urls).Find(&urls).Error; err != nil {
-			return err
+
+		for _, r := range images {
+			urls = append(urls, r.ImageUrl)
 		}
 		// 删除本地图片
 		if err := upload.DeleteImageUrls(urls); err != nil {
 			return err
 		}
 		// 删除reply
-		if err := tx.Where("post_id = ?", postId).Delete(&replys).Error; err != nil {
+		if err := tx.Where("post_id = ?", postId).Delete(&PostReply{}).Error; err != nil {
 			return err
 		}
 		return nil
