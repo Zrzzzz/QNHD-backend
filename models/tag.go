@@ -83,13 +83,13 @@ func GetRecommendTag() (HotTagResult, error) {
 // 获取24小时内高赞tag
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
-	if err := db.Model(&LogTag{}).
+	logs := db.Model(&LogTag{}).Where("created_at > DATE_SUB(NOW(),INTERVAL 1 DAY)")
+	if err := db.Table("(?) as a", logs).
+		Joins("JOIN tags ON tags.id = tag_id").
 		Select("tag_id", "sum(point) as point", "name").
-		Where("created_at > DATE_SUB(NOW(),INTERVAL 1 DAY)").
 		Group("tag_id").
 		Limit(5).
 		Order("point desc").
-		Joins("LEFT JOIN tags ON tags.id = tag_id").
 		Find(&results).Error; err != nil {
 		return nil, err
 	}

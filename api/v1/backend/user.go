@@ -180,7 +180,7 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	uid, err = models.AddUser(number, password, phoneNumber)
+	uid, err = models.AddUser(number, password, phoneNumber, false)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

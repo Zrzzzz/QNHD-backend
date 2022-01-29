@@ -151,12 +151,16 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	return u, nil
 }
 
-func AddUser(number, password, phoneNumber string) (uint64, error) {
+func AddUser(number, password, phoneNumber string, isUser bool) (uint64, error) {
 	var user = User{
 		Number:      number,
 		Password:    password,
 		PhoneNumber: phoneNumber,
-		IsUser:      0,
+	}
+	if isUser {
+		user.IsUser = 1
+	} else {
+		user.IsUser = 0
 	}
 	if err := db.Select("number", "password", "phone_number", "is_user").Create(&user).Error; err != nil {
 		return 0, err
