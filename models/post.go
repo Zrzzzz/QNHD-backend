@@ -447,16 +447,8 @@ func DeletePostsAdmin(uid, postId string) (uint64, error) {
 	// 首先判断是否有权限
 	var post, _ = GetPost(postId)
 	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
-	// 如果不是超管
-	if !RequireRight(uid, UserRight{Super: true}) {
+	if !RequireRight(uid, UserRight{Super: true}) && !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true})) {
 		return 0, fmt.Errorf("无权删除")
-	}
-	// 湖底帖且是湖底管理员
-	if !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true})) {
-		return 0, fmt.Errorf("无权删除")
-	}
-	if err := db.Where("id = ?", uid).First(&post).Error; err != nil {
-		return 0, err
 	}
 	err := deletePost(&post)
 	return post.Id, err
@@ -504,7 +496,7 @@ func deletePost(post *Post) error {
 		if err := DeleteFloorsInPost(tx, post.Id); err != nil {
 			return err
 		}
-		if err := tx.Delete(&post).Error; err != nil {
+		if err := tx.Delete(&post, post.Id).Error; err != nil {
 			return err
 		}
 		return nil

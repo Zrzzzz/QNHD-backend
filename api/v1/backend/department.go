@@ -80,7 +80,6 @@ func AddDepartment(c *gin.Context) {
 func EditDepartment(c *gin.Context) {
 	uid := r.GetUid(c)
 	// 权限管理，仅学校管理
-
 	departmentId := c.PostForm("department_id")
 	introduction := c.PostForm("introduction")
 	valid := validation.Validation{}
@@ -91,10 +90,13 @@ func EditDepartment(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	hasRight := models.IsDepartmentHasUser(util.AsUint(uid), util.AsUint(departmentId))
-	if !hasRight {
-		r.OK(c, e.ERROR_RIGHT, nil)
-		return
+	// 校管或者超管
+	if !models.RequireRight(uid, models.UserRight{Super: true}) {
+		hasRight := models.IsDepartmentHasUser(util.AsUint(uid), util.AsUint(departmentId))
+		if !hasRight {
+			r.OK(c, e.ERROR_RIGHT, nil)
+			return
+		}
 	}
 	err := models.EditDepartment(departmentId, introduction)
 	if err != nil {

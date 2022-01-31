@@ -56,7 +56,7 @@ func AddDepartment(maps map[string]interface{}) (uint64, error) {
 }
 
 func EditDepartment(id, introduction string) error {
-	if err := db.Where("id = ?", id).Updates(map[string]interface{}{
+	if err := db.Model(&Department{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"introduction": introduction,
 	}).Error; err != nil {
 		return err

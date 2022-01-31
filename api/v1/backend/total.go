@@ -21,6 +21,7 @@ const (
 	Floor
 	Tag
 	Department
+	Game
 )
 
 var BackendTypes = [...]BackendType{
@@ -33,6 +34,7 @@ var BackendTypes = [...]BackendType{
 	Floor,
 	Tag,
 	Department,
+	Game,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -140,5 +142,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		departGroup.POST("/department/modify", EditDepartment)
 		// 删除部门
 		departGroup.GET("/department/delete", DeleteDepartment)
+	case Game:
+		// 获取游戏列表
+		g.GET("/game", GetNewestGame)
+		// 更新列表
+		g.POST("/game", permission.RightDemand(models.UserRight{Super: true}), AddNewGame)
 	}
 }

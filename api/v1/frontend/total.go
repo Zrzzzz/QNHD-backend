@@ -17,6 +17,7 @@ const (
 	Department
 	Report
 	Notice
+	Game
 )
 
 var FrontTypes = [...]FrontType{
@@ -27,6 +28,7 @@ var FrontTypes = [...]FrontType{
 	Department,
 	Report,
 	Notice,
+	Game,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -121,6 +123,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/message/floor/read", ReadFloor)
 		// 已读回复
 		g.POST("/message/reply/read", ReadReply)
-
+	case Game:
+		// 获取游戏列表
+		g.GET("/game", GetNewestGame)
 	}
 }
