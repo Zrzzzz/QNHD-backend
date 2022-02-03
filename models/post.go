@@ -36,16 +36,16 @@ type Post struct {
 	Type         PostType       `json:"type"`
 	DepartmentId uint64         `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType `json:"campus"`
-	Solved       bool           `json:"solved" gorm:"defalut:0"`
+	Solved       bool           `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
 	Title   string `json:"title"`
 	Content string `json:"content"`
 
 	// 各种数量
-	FavCount  uint64 `json:"fav_count" gorm:"defalut:0"`
-	LikeCount uint64 `json:"like_count" gorm:"defalut:0"`
-	DisCount  uint64 `json:"-" gorm:"defalut:0"`
+	FavCount  uint64 `json:"fav_count" gorm:"default:0"`
+	LikeCount uint64 `json:"like_count" gorm:"default:0"`
+	DisCount  uint64 `json:"-" gorm:"default:0"`
 
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
@@ -321,7 +321,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	if post.Type == POST_HOLE {
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "campus", "title", "content").Create(post).Error; err != nil {
+			if err := tx.Create(post).Error; err != nil {
 				return err
 			}
 			if img_ok {
@@ -353,7 +353,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		post.DepartmentId = departId
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Select("type", "uid", "campus", "title", "content", "department_id").Create(post).Error; err != nil {
+			if err := tx.Create(post).Error; err != nil {
 				return err
 			}
 
@@ -476,7 +476,7 @@ func FavPost(postId string, uid string) (uint64, error) {
 
 	log.Uid = util.AsUint(uid)
 	log.PostId = util.AsUint(postId)
-	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
+	if err := db.Create(&log).Error; err != nil {
 		return 0, err
 	}
 	// 更新收藏数
@@ -531,7 +531,7 @@ func LikePost(postId string, uid string) (uint64, error) {
 	}
 	log.Uid = util.AsUint(uid)
 	log.PostId = util.AsUint(postId)
-	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
+	if err := db.Create(&log).Error; err != nil {
 		return 0, err
 	}
 	// 更新点赞数
@@ -587,7 +587,7 @@ func DisPost(postId string, uid string) (uint64, error) {
 	}
 	log.Uid = util.AsUint(uid)
 	log.PostId = util.AsUint(postId)
-	if err := db.Select("uid", "post_id").Create(&log).Error; err != nil {
+	if err := db.Create(&log).Error; err != nil {
 		return 0, err
 	}
 	// 更新点踩数

@@ -16,13 +16,13 @@ type Floor struct {
 	Uid         uint64 `json:"uid"`
 	PostId      uint64 `json:"post_id"`
 	Content     string `json:"content"`
-	Nickname    string `json:"nickname"`
-	ImageURL    string `json:"image_url"`
-	ReplyTo     uint64 `json:"reply_to" `
-	ReplyToName string `json:"reply_to_name"`
+	Nickname    string `json:"nickname" `
+	ImageURL    string `json:"image_url" gorm:"default:''"`
+	ReplyTo     uint64 `json:"reply_to" gorm:"default:0"`
+	ReplyToName string `json:"reply_to_name" gorm:"default:''"`
 	SubTo       uint64 `json:"sub_to" gorm:"default:0"`
-	LikeCount   uint64 `json:"like_count"`
-	DisCount    uint64 `json:"-"`
+	LikeCount   uint64 `json:"like_count" gorm:"default:0"`
+	DisCount    uint64 `json:"-" gorm:"default:0"`
 }
 
 type LogFloorLike struct {
@@ -284,7 +284,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		} else {
 			var cnt int64
 			// 除去owner
-			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
+			if err := db.Model(&Floor{}).Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
 			// nickname = FLOOR_NAME[cnt]
@@ -298,7 +298,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		Nickname: nickname,
 		ImageURL: maps["image_url"].(string),
 	}
-	if err := db.Select("uid", "post_id", "content", "nickname", "image_url").Create(&newFloor).Error; err != nil {
+	if err := db.Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
 	// 如果不是回复自己的帖子，通知帖子主人
@@ -351,7 +351,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		} else {
 			var cnt int64
 			// 除去owner
-			if err := db.Table("floors").Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
+			if err := db.Model(&Floor{}).Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
 			// nickname = FLOOR_NAME[cnt]
@@ -376,7 +376,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		newFloor.SubTo = toFloor.SubTo
 	}
 
-	if err := db.Select("uid", "post_id", "content", "nickname", "image_url", "reply_to", "reply_to_name", "sub_to").Create(&newFloor).Error; err != nil {
+	if err := db.Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
 	// 如果不是回复自己的楼层，通知楼层归属楼层主人和回复的人，如果都有要避免重复
