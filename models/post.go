@@ -237,7 +237,7 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	}
 	// 如果要加上是否解决的字段
 	if solved != "" {
-		d = d.Where("solved = ?", solved)
+		d = d.Where("solved = ?", solved == "1")
 	}
 	// 如果需要搜索标签
 	if tagId != "" {

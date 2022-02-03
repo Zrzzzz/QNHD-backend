@@ -28,27 +28,16 @@ func GetPosts(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postType, "type")
 	valid.Numeric(postType, "type")
-	if solved != "" {
-		valid.Numeric(solved, "solved")
-	}
-	if departmentId != "" {
-		valid.Numeric(departmentId, "department_id")
-	}
-	if tagId != "" {
-		valid.Numeric(tagId, "tag_id")
-	}
-	ok, verr := r.ErrorValid(&valid, "Get posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
+	valid.Numeric(solved, "solved")
+	valid.Numeric(departmentId, "department_id")
+	valid.Numeric(tagId, "tag_id")
 	postTypeint := util.AsInt(postType)
 	valid.Range(postTypeint, 0, 2, "postType")
 	if solved != "" {
 		solvedint := util.AsInt(solved)
 		valid.Range(solvedint, 0, 1, "solved")
 	}
-	ok, verr = r.ErrorValid(&valid, "Get posts")
+	ok, verr := r.ErrorValid(&valid, "Get posts")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
