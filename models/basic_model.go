@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Model struct {
 	Id        uint64         `gorm:"primaryKey;autoIncrement;" json:"id"`
-	CreatedAt string         `json:"create_at" gorm:"default:null;"`
+	CreatedAt string         `json:"created_at" gorm:"default:null;"`
 	DeletedAt gorm.DeletedAt `json:"-"`
 }
 

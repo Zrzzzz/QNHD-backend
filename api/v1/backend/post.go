@@ -129,7 +129,7 @@ func TransferPost(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	if ok := models.IsDepartmentHasUser(util.AsUint(uid), post.DepartmentId); !ok {
+	if !models.RequireRight(uid, models.UserRight{Super: true}) && !models.IsDepartmentHasUser(util.AsUint(uid), post.DepartmentId) {
 		r.Error(c, e.ERROR_RIGHT, "")
 		return
 	}

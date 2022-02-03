@@ -26,7 +26,3 @@ func AddUserToDepartment(uid, departmentId uint64) error {
 	}
 	return nil
 }
-
-func (UserDepartment) TableName() string {
-	return "user_department"
-}

@@ -53,7 +53,3 @@ func DeleteImageInPostReply(tx *gorm.DB, replyId uint64) error {
 	err = tx.Where("post_reply_id = ?", replyId).Delete(&PostReplyImage{}).Error
 	return err
 }
-
-func (PostReplyImage) TableName() string {
-	return "post_reply_image"
-}

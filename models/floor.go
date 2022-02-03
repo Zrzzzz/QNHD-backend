@@ -30,17 +30,9 @@ type LogFloorLike struct {
 	FloorId uint64 `json:"floor_id"`
 }
 
-func (LogFloorLike) TableName() string {
-	return "log_floor_like"
-}
-
 type LogFloorDis struct {
 	Uid     uint64 `json:"uid"`
 	FloorId uint64 `json:"floor_id"`
-}
-
-func (LogFloorDis) TableName() string {
-	return "log_floor_dis"
 }
 
 // 楼层返回数据
@@ -62,10 +54,6 @@ type FloorResponseUser struct {
 	IsOwner     bool                `json:"is_owner"`
 	// 处理链式错误
 	Error error `json:"-"`
-}
-
-func (Floor) TableName() string {
-	return "floors"
 }
 
 func (f *Floor) geneResponse(searchSubFloors bool) FloorResponse {

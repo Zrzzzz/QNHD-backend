@@ -20,7 +20,7 @@ type Report struct {
 
 func GetReports(rType ReportType) ([]Report, error) {
 	var reports []Report
-	if err := db.Where("type = ?", rType).Find(&reports).Error; err != nil {
+	if err := db.Where("type = ?", rType).Find(&reports).Order("created_at DESC").Error; err != nil {
 		return nil, err
 	}
 	return reports, nil
@@ -44,8 +44,4 @@ func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
 		tx = db
 	}
 	return tx.Where(maps).Delete(&Report{}).Error
-}
-
-func (Report) TableName() string {
-	return "reports"
 }

@@ -21,10 +21,6 @@ type PostReply struct {
 	Content string        `json:"content"`
 }
 
-func (PostReply) TableName() string {
-	return "post_reply"
-}
-
 type PostReplyResponse struct {
 	PostReply
 	ImageUrls []string `json:"image_urls"`
@@ -57,7 +53,7 @@ func GetPostReplyResponse(replyId string) (PostReplyResponse, error) {
 // 获取帖子内的回复记录
 func GetPostReplys(postId string) ([]PostReply, error) {
 	var prs = []PostReply{}
-	err := db.Where("post_id = ?", postId).Find(&prs).Error
+	err := db.Where("post_id = ?", postId).Find(&prs).Order("id").Error
 	return prs, err
 }
 
@@ -115,7 +111,7 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 		logs := tx.Model(&PostReply{}).Where("post_id = ?", postId)
 		if err := tx.Table("(?) as a", logs).
 			Select("b.*").
-			Joins("JOIN post_reply_image as b ON a.id = b.post_reply_id").
+			Joins("JOIN qnhd.post_reply_image as b ON a.id = b.post_reply_id").
 			Find(&images).
 			Error; err != nil {
 			return err

@@ -50,7 +50,7 @@ func ExistTagByName(name string) (bool, error) {
 
 func GetTags(name string) ([]Tag, error) {
 	var tags []Tag
-	if err := db.Where("name LIKE ?", "%"+name+"%").Find(&tags).Error; err != nil {
+	if err := db.Where("name LIKE ?", "%"+name+"%").Order("id").Find(&tags).Error; err != nil {
 		return nil, err
 	}
 	// 如果有name，对搜索到的加入记录，仅匹配精确搜索
@@ -83,11 +83,11 @@ func GetRecommendTag() (HotTagResult, error) {
 // 获取24小时内高赞tag
 func GetHotTags() ([]HotTagResult, error) {
 	var results []HotTagResult
-	logs := db.Model(&LogTag{}).Where("created_at > DATE_SUB(NOW(),INTERVAL 1 DAY)")
+	logs := db.Model(&LogTag{}).Where("created_at > CURRENT_TIMESTAMP + '-1 day'")
 	if err := db.Table("(?) as a", logs).
-		Joins("JOIN tags ON tags.id = tag_id").
+		Joins("JOIN qnhd.tag ON qnhd.tag.id = tag_id").
 		Select("tag_id", "sum(point) as point", "name").
-		Group("tag_id").
+		Group("tag_id, name").
 		Limit(5).
 		Order("point desc").
 		Find(&results).Error; err != nil {
@@ -137,12 +137,4 @@ func addTagLog(id uint64, point TAG_POINT) {
 	if err := db.Select("tag_id").Create(&log).Error; err != nil {
 		logging.Error("add tag log error: %v", log)
 	}
-}
-
-func (LogTag) TableName() string {
-	return "log_tag"
-}
-
-func (Tag) TableName() string {
-	return "tags"
 }

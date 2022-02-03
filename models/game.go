@@ -12,10 +12,6 @@ type Game struct {
 	CreatedAt string `json:"create_at" gorm:"default:null;"`
 }
 
-func (Game) TableName() string {
-	return "games"
-}
-
 func GetNewestGame() (Game, error) {
 	var game Game
 	err := db.Last(&game).Error

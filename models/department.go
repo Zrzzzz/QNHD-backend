@@ -42,7 +42,7 @@ func GetDepartmentByPostId(id uint64) (Department, error) {
 // 获取用户所在部门
 func GetDepartmentByUid(uid uint64) (Department, error) {
 	var depart Department
-	err := db.Joins("JOIN user_department AS ud ON ud.department_id = departments.id AND ud.uid = ?", uid).First(&depart).Error
+	err := db.Joins("JOIN qnhd.user_department AS ud ON ud.department_id = qnhd.department.id AND ud.uid = ?", uid).First(&depart).Error
 	return depart, err
 }
 
@@ -91,8 +91,4 @@ func IsDepartmentHasUser(uid, departmentId uint64) bool {
 		return false
 	}
 	return cnt > 0
-}
-
-func (Department) TableName() string {
-	return "departments"
 }

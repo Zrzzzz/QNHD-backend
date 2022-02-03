@@ -10,14 +10,10 @@ import (
 )
 
 type LogUnreadFloor struct {
-	Id      uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
-	Uid     uint64 `json:"uid"`
-	FloorId uint64 `json:"floor_id"`
-	IsRead  int    `json:"is_read"`
-}
-
-func (LogUnreadFloor) TableName() string {
-	return "log_unread_floor"
+	Uid       uint64 `json:"uid"`
+	FloorId   uint64 `json:"floor_id"`
+	IsRead    bool   `json:"is_read"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 
 type LogUnreadNotice struct {
@@ -25,19 +21,11 @@ type LogUnreadNotice struct {
 	NoticeId uint64 `json:"floor_id"`
 }
 
-func (LogUnreadNotice) TableName() string {
-	return "log_unread_notice"
-}
-
 type LogUnreadPostReply struct {
-	Id      uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
-	Uid     uint64 `json:"uid"`
-	ReplyId uint64 `json:"reply_id"`
-	IsRead  int    `json:"is_read"`
-}
-
-func (LogUnreadPostReply) TableName() string {
-	return "log_unread_post_reply"
+	Uid       uint64 `json:"uid"`
+	ReplyId   uint64 `json:"reply_id"`
+	IsRead    bool   `json:"is_read"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 
 type UnreadFloorResponse struct {
@@ -60,14 +48,14 @@ func GetMessageFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error)
 	)
 
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC")
+	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("is_read, created_at DESC")
 	// 找到楼层
 	if err = db.Table("(?) as a", logs).
 		Unscoped().
-		Select("floors.*").
-		Joins("JOIN floors ON a.floor_id = floors.id").
+		Select("f.*").
+		Joins("JOIN qnhd.floor as f ON a.floor_id = f.id").
 		Find(&floors).
-		Where("floors.deleted_at IS NULL").
+		Where("f.deleted_at IS NULL").
 		Error; err != nil {
 		return ret, err
 	}
@@ -105,14 +93,14 @@ func GetMessagePostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, er
 		ret    = []UnreadReplyResponse{}
 	)
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("`is_read`, `id` DESC")
+	logs := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("is_read, created_at DESC")
 	// 找到回复
 	if err = db.Table("(?) as a", logs).
 		Unscoped().
-		Select("post_reply.*").
-		Joins("JOIN post_reply ON a.reply_id = post_reply.id").
+		Select("pr.*").
+		Joins("JOIN qnhd.post_reply as pr ON a.reply_id = pr.id").
 		Find(&replys).
-		Where("replys.deleted_at IS NULL").
+		Where("pr.deleted_at IS NULL").
 		Error; err != nil {
 		return ret, err
 	}
@@ -139,7 +127,7 @@ func GetMessagePostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, er
 func addUnreadNoticeToAllUser(noticeId uint64) error {
 	var userIds []uint64
 	// 查询所有用户id
-	if err := db.Model(&User{}).Select("id").Where("is_user = 1 AND active = 1").Find(&userIds).Error; err != nil {
+	if err := db.Model(&User{}).Select("id").Where("is_user = true AND active = true").Find(&userIds).Error; err != nil {
 		return err
 	}
 	var logs = []LogUnreadNotice{}
@@ -167,7 +155,7 @@ func addUnreadFloor(uid, floorId uint64) error {
 func ReadFloor(uid, floorId uint64) error {
 	return db.Model(&LogUnreadFloor{}).
 		Where("uid = ? AND floor_id = ?", uid, floorId).
-		Update("`is_read`", 1).Error
+		Update("is_read", 1).Error
 }
 
 // 添加回复通知
@@ -176,9 +164,10 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 	if err := db.Model(&Post{}).Select("uid").Where("id = ?", postId).Find(&uid).Error; err != nil {
 		return err
 	}
-	return db.Select("uid", "reply_id").Create(&LogUnreadPostReply{
+	return db.Create(&LogUnreadPostReply{
 		Uid:     uid,
 		ReplyId: replyId,
+		IsRead:  false,
 	}).Error
 }
 
@@ -186,7 +175,7 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 func ReadPostReply(uid, replyId uint64) error {
 	return db.Model(&LogUnreadPostReply{}).
 		Where("uid = ? AND reply_id = ?", uid, replyId).
-		Update("`is_read`", 1).Error
+		Update("is_read", 1).Error
 }
 
 // 是否通知已读
@@ -202,10 +191,10 @@ func IsReadNotice(uid, noticeId uint64) bool {
 // 是否评论已读
 func IsReadFloor(uid, floorId uint64) bool {
 	var log LogUnreadFloor
-	if err := db.Where("uid = ? AND floorId = ?", uid, floorId).Find(log).Error; err != nil {
+	if err := db.Where("uid = ? AND floor_id = ?", uid, floorId).Find(log).Error; err != nil {
 		return false
 	}
-	return log.IsRead == 1
+	return log.IsRead
 }
 
 // 是否回复已读
@@ -214,7 +203,7 @@ func IsReadPostReply(uid, replyId uint64) bool {
 	if err := db.Where("uid = ? AND reply_id = ?", uid, replyId).Find(log).Error; err != nil {
 		return false
 	}
-	return log.IsRead == 1
+	return log.IsRead
 }
 
 type MessageCount struct {
@@ -229,11 +218,11 @@ func GetMessageCount(uid string) (MessageCount, error) {
 	// 楼层未读 回复未读 通知未读
 	var fcnt, rcnt, ncnt int64
 	// 获取楼层未读数
-	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND is_read = 0", uid).Count(&fcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND is_read = true", uid).Count(&fcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取回复未读数
-	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND is_read = 0", uid).Count(&rcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND is_read = true", uid).Count(&rcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取通知未读数

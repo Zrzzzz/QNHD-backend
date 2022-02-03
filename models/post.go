@@ -36,7 +36,7 @@ type Post struct {
 	Type         PostType       `json:"type"`
 	DepartmentId uint64         `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType `json:"campus"`
-	Solved       int            `json:"solved" gorm:"defalut:0"`
+	Solved       bool           `json:"solved" gorm:"defalut:0"`
 
 	// 帖子内容
 	Title   string `json:"title"`
@@ -205,7 +205,7 @@ func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, e
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		return pr, err
 	}
-	if _, err := addVisitHistory(uid, postId); err != nil {
+	if err := addVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
 	if err := addTagLogInPost(util.AsUint(postId), TAG_VISIT); err != nil {
@@ -213,48 +213,6 @@ func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, e
 	}
 	ret := post.geneResponse().searchByUid(uid)
 	return ret, ret.Error
-}
-
-func GetPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) {
-	var (
-		posts []Post
-		cnt   int64
-	)
-	content := maps["content"].(string)
-	postType := maps["type"].(PostType)
-	departmentId := maps["department_id"].(string)
-	solved := maps["solved"].(string)
-	tagId := maps["tag_id"].(string)
-
-	var d = db.Model(&Post{}).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
-	// 校区 不为全部时加上区分
-	if postType != POST_ALL {
-		d = d.Where("type = ?", postType)
-	}
-	// 如果有部门要加上
-	if departmentId != "" {
-		d = d.Where("department_id = ?", departmentId)
-	}
-	// 如果要加上是否解决的字段
-	if solved != "" {
-		d = d.Where("solved = ?", solved)
-	}
-	// 如果需要搜索标签
-	if tagId != "" {
-		// 搜索相关帖子
-		var tagIds = []uint64{}
-		// 不需要处理错误，空的返回也行
-		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
-		// 然后加上条件
-		d = d.Where("id IN (?)", tagIds)
-		// 添加搜索记录
-		addTagLog(util.AsUint(tagId), TAG_VISIT)
-	}
-	if err := d.Count(&cnt).Error; err != nil {
-		return posts, int(cnt), err
-	}
-	err := d.Scopes(util.Paginate(c)).Find(&posts).Error
-	return posts, int(cnt), err
 }
 
 func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post, int, error) {
@@ -330,7 +288,9 @@ func GetUserPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, e
 
 func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
-	if err := db.Joins("JOIN log_post_fav ON posts.id = log_post_fav.post_id AND log_post_fav.uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
+	if err := db.Joins(`JOIN qnhd.log_post_fav
+	ON qnhd.posts.id = qnhd.log_post_fav.post_id
+	AND qnhd.log_post_fav.uid = ?`, uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return transPostsToResponsesWithUid(&posts, uid)
@@ -339,7 +299,7 @@ func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, er
 func GetHistoryPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	var ids []string
-	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id").Scopes(util.Paginate(c)).Scan(&ids).Error; err != nil {
+	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Order("created_at DESC").Distinct("post_id").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
 		return nil, err
 	}
 
@@ -417,7 +377,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 
 func EditPostSolved(postId string, rating string) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
-		"solved": 1,
+		"solved": true,
 		"rating": rating,
 	}).Error
 
@@ -704,20 +664,4 @@ func IsOwnPostByUid(uid, postId string) bool {
 		return false
 	}
 	return util.AsStrU(post.Uid) == uid
-}
-
-func (LogPostFav) TableName() string {
-	return "log_post_fav"
-}
-
-func (LogPostLike) TableName() string {
-	return "log_post_like"
-}
-
-func (LogPostDis) TableName() string {
-	return "log_post_dis"
-}
-
-func (Post) TableName() string {
-	return "posts"
 }

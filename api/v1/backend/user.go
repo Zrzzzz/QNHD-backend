@@ -84,7 +84,7 @@ func GetCommonUser(c *gin.Context) {
 		nUser.BlockedRemain = detail.Remain
 	}
 	nUser.IsBlocked = isBlocked
-	nUser.IsBanned = user.Active == 0
+	nUser.IsBanned = !user.Active
 	data := make(map[string]interface{})
 	data["user"] = nUser
 
@@ -121,7 +121,7 @@ func GetCommonUsers(c *gin.Context) {
 			nUser.BlockedRemain = detail.Remain
 		}
 		nUser.IsBlocked = isBlocked
-		nUser.IsBanned = user.Active == 0
+		nUser.IsBanned = !user.Active
 		retList = append(retList, nUser)
 	}
 	data := make(map[string]interface{})

@@ -91,6 +91,7 @@ func AddTag(c *gin.Context) {
 	}
 	if exist {
 		r.OK(c, e.ERROR_EXIST_TAG, nil)
+		return
 	}
 	id, err := models.AddTag(name, uid)
 	if err != nil {

@@ -15,11 +15,11 @@ type User struct {
 	Number      string `json:"number"`
 	Password    string `json:"-" gorm:"column:password;"`
 	PhoneNumber string `json:"phone_number"`
-	IsSuper     int    `json:"is_super"`
-	IsSchAdmin  int    `json:"is_sch_admin"`
-	IsStuAdmin  int    `json:"is_stu_admin"`
-	IsUser      int    `json:"is_user"`
-	Active      int    `json:"active" gorm:"default:1"`
+	IsSuper     bool   `json:"is_super" gorm:"default:false"`
+	IsSchAdmin  bool   `json:"is_sch_admin" gorm:"default:false"`
+	IsStuAdmin  bool   `json:"is_stu_admin" gorm:"default:false"`
+	IsUser      bool   `json:"is_user" gorm:"default:false"`
+	Active      bool   `json:"active" gorm:"default:true"`
 	CreatedAt   string `json:"-" gorm:"autoCreateTime;default:null;"`
 }
 
@@ -27,9 +27,9 @@ type NewUserData struct {
 	Number       string `json:"number"`
 	Password     string `json:"password" gorm:"column:password;"`
 	PhoneNumber  string `json:"phone_number"`
-	IsSuper      int    `json:"is_super"`
-	IsSchAdmin   int    `json:"is_sch_admin"`
-	IsStuAdmin   int    `json:"is_stu_admin"`
+	IsSuper      bool   `json:"is_super"`
+	IsSchAdmin   bool   `json:"is_sch_admin"`
+	IsStuAdmin   bool   `json:"is_stu_admin"`
 	DepartmentId int    `json:"department_id"`
 }
 
@@ -44,13 +44,13 @@ func RequireRight(uid string, right UserRight) bool {
 	user, _ := GetUser(map[string]interface{}{"id": uid})
 	var b = false
 	if right.Super {
-		b = b || user.IsSuper == 1
+		b = b || user.IsSuper
 	}
 	if right.SchAdmin {
-		b = b || user.IsSchAdmin == 1
+		b = b || user.IsSchAdmin
 	}
 	if right.StuAdmin {
-		b = b || user.IsStuAdmin == 1
+		b = b || user.IsStuAdmin
 	}
 	return b
 }
@@ -64,10 +64,10 @@ func RequireAdmin(uid string) error {
 		}
 		return err
 	}
-	if user.IsUser != 0 {
+	if user.IsUser {
 		return fmt.Errorf("非管理员身份")
 	}
-	if user.IsSuper == 0 && user.IsSchAdmin == 0 && user.IsStuAdmin == 0 {
+	if !user.IsSuper && !user.IsSchAdmin && !user.IsStuAdmin {
 		return fmt.Errorf("无管理员权限")
 	}
 	return nil
@@ -78,7 +78,7 @@ func RequireUser(uid string) error {
 	if err != nil {
 		return err
 	}
-	if user.IsUser != 1 {
+	if !user.IsUser {
 		return fmt.Errorf("非用户身份")
 	}
 	return nil
@@ -97,7 +97,7 @@ func ExistUser(number string) (uint64, error) {
 
 func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("number like ? AND is_user = 1", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND is_user = true", "%"+name+"%").Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -105,7 +105,7 @@ func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 
 func GetAllUsers(c *gin.Context, name string) ([]User, error) {
 	var users []User
-	if err := db.Where("number like ? AND is_super = 0", "%"+name+"%").Scopes(util.Paginate(c)).Find(&users).Error; err != nil {
+	if err := db.Where("number like ? AND is_super = false", "%"+name+"%").Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -119,13 +119,14 @@ type Manager struct {
 
 func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	var list []Manager
-	users := db.Model(&User{}).Where("number like ? AND is_super = 0 AND is_user = 0", "%"+name+"%")
+	users := db.Model(&User{}).Where("number like ? AND is_super = false AND is_user = false", "%"+name+"%")
 	if err := db.
 		Table("(?) as a", users).
-		Select("a.*, `departments`.`name`, `departments`.`introduction`").
-		Joins("LEFT JOIN user_department ON a.id = user_department.uid").
-		Joins("LEFT JOIN departments ON user_department.department_id = departments.id").
+		Select("a.*", "qd.name", "qd.introduction").
+		Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
+		Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
 		Scopes(util.Paginate(c)).
+		Order("id").
 		Find(&list).Error; err != nil {
 		return nil, err
 	}
@@ -136,8 +137,9 @@ func GetUsersInDepartment(departmentId uint64) ([]User, error) {
 	var users []User
 	ud := db.Model(&UserDepartment{}).Where("department_id = ?", departmentId)
 	err := db.Table("(?) as a", ud).
-		Select("users.*").
-		Joins("JOIN users ON a.uid = users.id").
+		Select("u.*").
+		Joins("JOIN qnhd.user as u ON a.uid = u.id").
+		Order("id").
 		Find(&users).
 		Error
 	return users, err
@@ -156,13 +158,9 @@ func AddUser(number, password, phoneNumber string, isUser bool) (uint64, error) 
 		Number:      number,
 		Password:    password,
 		PhoneNumber: phoneNumber,
+		IsUser:      isUser,
 	}
-	if isUser {
-		user.IsUser = 1
-	} else {
-		user.IsUser = 0
-	}
-	if err := db.Select("number", "password", "phone_number", "is_user").Create(&user).Error; err != nil {
+	if err := db.Create(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil
@@ -172,7 +170,7 @@ func AddUsers(users []NewUserData) error {
 	// 先检查是否合理
 	var err error
 	for i, u := range users {
-		if u.IsSchAdmin+u.IsStuAdmin+u.IsSuper > 1 {
+		if !(u.IsSchAdmin && u.IsStuAdmin && u.IsSuper) {
 			err = giterrors.Wrap(err, fmt.Sprintf("line %v: 权限分配不正确", i))
 		}
 	}
@@ -188,12 +186,14 @@ func AddUsers(users []NewUserData) error {
 			IsSuper:     u.IsSuper,
 			IsSchAdmin:  u.IsSchAdmin,
 			IsStuAdmin:  u.IsSchAdmin,
-			IsUser:      0,
+			IsUser:      false,
 		}
 		newUsers = append(newUsers, new)
 	}
-	if err = db.Create(&newUsers).Error; err != nil {
-		return err
+	for _, u := range newUsers {
+		if e := db.Create(&u).Error; e != nil {
+			err = giterrors.Wrap(err, e.Error())
+		}
 	}
 	// 看是否需要创建部门
 	for i, new := range newUsers {
@@ -216,8 +216,4 @@ func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 		return err
 	}
 	return db.Model(&user).Update("password", newPasswd).Error
-}
-
-func (User) TableName() string {
-	return "users"
 }

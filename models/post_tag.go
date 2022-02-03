@@ -8,14 +8,13 @@ import (
 )
 
 type PostTag struct {
-	Id     uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	PostId uint64 `json:"post_id" `
 	TagId  uint64 `json:"tag_id" `
 }
 
 func GetTagInPost(postId string) (*Tag, error) {
 	var tag *Tag
-	if err := db.Joins("JOIN post_tag ON tags.id = post_tag.tag_id").Where("post_id = ?", postId).First(&tag).Error; err != nil {
+	if err := db.Joins("JOIN qnhd.post_tag as pt ON qnhd.tags.id = pt.tag_id").Where("post_id = ?", postId).First(&tag).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		} else {
@@ -44,8 +43,4 @@ func deleteTagInPost(tx *gorm.DB, postId uint64) error {
 	}
 	err := tx.Where("post_id = ?", postId).Delete(&PostTag{}).Error
 	return err
-}
-
-func (PostTag) TableName() string {
-	return "post_tag"
 }

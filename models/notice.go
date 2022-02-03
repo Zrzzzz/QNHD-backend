@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 type Notice struct {
 	Model
 	Sender  string `json:"sender"`
@@ -11,7 +13,7 @@ type Notice struct {
 
 func GetNotices() ([]Notice, error) {
 	var notices []Notice
-	if err := db.Find(&notices).Error; err != nil {
+	if err := db.Find(&notices).Order("id").Error; err != nil {
 		return nil, err
 	}
 	return notices, nil
@@ -45,12 +47,11 @@ func EditNotice(id uint64, data map[string]interface{}) error {
 
 func DeleteNotice(id uint64) (uint64, error) {
 	var notice Notice
-	if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {
-		return 0, err
-	}
-	return notice.Id, nil
-}
-
-func (Notice) TableName() string {
-	return "notices"
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {
+			return err
+		}
+		return db.Where("notice_id = ?", id).Delete(&LogUnreadNotice{}).Error
+	})
+	return notice.Id, err
 }

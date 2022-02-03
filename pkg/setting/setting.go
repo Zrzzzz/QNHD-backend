@@ -43,11 +43,11 @@ type App struct {
 }
 
 type Database struct {
-	Type     string
 	User     string
 	Password string
 	Host     string
-	Name     string
+	Database string
+	Port     string
 }
 
 var ServerSetting = &Server{}
