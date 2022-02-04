@@ -20,13 +20,5 @@ func load() {
 }
 
 func Cut(text string, sep string) string {
-	str := seg.CutAll(text)
-	res := make([]string, 0, len(str))
-	for _, t := range str {
-		if t != " " {
-
-			res = append(res, t)
-		}
-	}
-	return strings.Join(res, sep)
+	return strings.Join(seg.CutAll(text), sep)
 }

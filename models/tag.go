@@ -15,7 +15,7 @@ type Tag struct {
 	Id     uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	Uid    uint64 `json:"-"`
 	Name   string `json:"name"`
-	Tokens string `json:"-" gorm:"default:''"`
+	Tokens string `json:"-"`
 }
 
 type LogTag struct {
@@ -55,7 +55,7 @@ func GetTags(name string) ([]Tag, error) {
 	var d = db.Model(&Tag{})
 	if name != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, to_tsquery('simple', ?) as q", d, segment.Cut(name, "|")).
+			Table("(?) as p, plainto_tsquery(?) as q", d, segment.Cut(name, " ")).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	if err := d.Order("id").Find(&tags).Error; err != nil {

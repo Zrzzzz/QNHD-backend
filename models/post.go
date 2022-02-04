@@ -58,7 +58,7 @@ type Post struct {
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
 	// 分词
-	Tokens string `json:"-" gorm:"default:''"`
+	Tokens string `json:"-"`
 
 	UpdatedAt string `json:"-" gorm:"default:null;"`
 }
@@ -241,7 +241,7 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	// 当搜索不为空时加上全文检索
 	if content != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, to_tsquery('simple', ?) as q", d, segment.Cut(content, "|")).
+			Table("(?) as p, plainto_tsquery(?) as q", d, segment.Cut(content, " ")).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	// 排序方式
