@@ -70,6 +70,7 @@ func GetCommonUser(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
+	user.Number = ""
 
 	nUser := userResponse{User: user}
 	isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
@@ -109,6 +110,7 @@ func GetCommonUsers(c *gin.Context) {
 
 	for _, user := range list {
 		nUser := userResponse{User: user}
+		nUser.Number = ""
 		isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)

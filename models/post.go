@@ -431,10 +431,9 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 }
 
 func DeletePostsAdmin(uid, postId string) (uint64, error) {
-	// 首先判断是否有权限
 	var post, _ = GetPost(postId)
-	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
-	if !RequireRight(uid, UserRight{Super: true}) && !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true})) {
+	// 如果能删，要么是超管 要么是湖底管理员
+	if !RequireRight(uid, UserRight{Super: true}) {
 		return 0, fmt.Errorf("无权删除")
 	}
 	err := deletePost(&post)
@@ -696,4 +695,8 @@ func IsOwnPostByUid(uid, postId string) bool {
 		return false
 	}
 	return util.AsStrU(post.Uid) == uid
+}
+
+func updatePostTime(postId uint64) error {
+	return db.Model(&Post{}).Where("id = ?", postId).Update("updated_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
 }

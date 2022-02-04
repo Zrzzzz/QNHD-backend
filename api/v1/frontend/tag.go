@@ -41,7 +41,19 @@ func GetTags(c *gin.Context) {
 // @return hottag
 // @route /f/tag/recommend
 func GetRecommendTag(c *gin.Context) {
-	tag, err := models.GetRecommendTag()
+	tagId := c.Query("id")
+	valid := validation.Validation{}
+	valid.Numeric(tagId, "id")
+	ok, verr := r.ErrorValid(&valid, "tag id")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	tagint := -1
+	if tagId != "" {
+		tagint = util.AsInt(tagId)
+	}
+	tag, err := models.GetRecommendTag(tagint)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

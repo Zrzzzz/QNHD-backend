@@ -70,7 +70,7 @@ func GetTags(name string) ([]Tag, error) {
 	return tags, nil
 }
 
-func GetRecommendTag() (HotTagResult, error) {
+func GetRecommendTag(lastId int) (HotTagResult, error) {
 	var tag HotTagResult
 	tags, err := GetHotTags(10)
 	if err != nil {
@@ -85,7 +85,11 @@ func GetRecommendTag() (HotTagResult, error) {
 		return tag, nil
 	}
 	rand.Seed(time.Now().UnixNano())
-	return tags[rand.Intn(len(tags))], nil
+	idx := rand.Intn(len(tags))
+	for idx == int(lastId) {
+		idx = rand.Intn(len(tags))
+	}
+	return tags[idx], nil
 }
 
 // 获取24小时内高赞tag

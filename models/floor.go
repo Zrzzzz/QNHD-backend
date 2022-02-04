@@ -400,10 +400,8 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
 		return 0, err
 	}
-	// 首先判断是否有权限
-	var post, _ = GetPost(util.AsStrU(floor.PostId))
-	// 如果能删，要么是超管 要么是湖底帖且是湖底管理员
-	if !RequireRight(uid, UserRight{Super: true}) && !(post.Type == POST_HOLE && RequireRight(uid, UserRight{StuAdmin: true})) {
+	// 如果能删，要么是超管 要么是湖底管理员
+	if !RequireRight(uid, UserRight{Super: true, StuAdmin: true}) {
 		return 0, fmt.Errorf("无权删除")
 	}
 
