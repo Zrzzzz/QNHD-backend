@@ -7,6 +7,7 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/cronic"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/segment"
 	"qnhd/pkg/setting"
 )
 
@@ -22,10 +23,13 @@ import (
 // @name token
 func main() {
 	setting.Setup()
+	segment.Setup()
 	logging.Setup()
 	models.Setup()
 	router := api.InitRouter()
 	cronic.Setup()
+
+	// models.FlushPostTokens()
 	// tlscfg := api.InitTlsConfig()
 
 	s := &http.Server{
@@ -41,3 +45,11 @@ func main() {
 	defer models.Close()
 	defer cronic.Close()
 }
+
+// func main() {
+// 	segment.Setup()
+// 	setting.Setup()
+// 	models.Setup()
+// 	models.FlushPostsTokens(true)
+// 	models.FlushTagsTokens()
+// }

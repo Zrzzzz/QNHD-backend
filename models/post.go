@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/segment"
 	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
@@ -28,6 +29,13 @@ const (
 	POST_ALL
 )
 
+type SearchModeType int
+
+const (
+	SEARCH_BY_TIME = iota
+	SEARCH_BY_UPDATE
+)
+
 type Post struct {
 	Model
 	Uid uint64 `json:"uid" gorm:"column:uid"`
@@ -49,6 +57,8 @@ type Post struct {
 
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
+	// 分词
+	Tokens string `json:"-" gorm:"default:''"`
 
 	UpdatedAt string `json:"-" gorm:"default:null;"`
 }
@@ -222,11 +232,25 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	)
 	content := maps["content"].(string)
 	postType := maps["type"].(PostType)
+	searchMode := maps["search_mode"].(SearchModeType)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
 
-	var d = db.Model(&Post{}).Where("CONCAT(title,content) LIKE ?", "%"+content+"%").Order("created_at DESC")
+	var d = db.Model(&Post{})
+	// 当搜索不为空时加上全文检索
+	if content != "" {
+		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
+			Table("(?) as p, to_tsquery('simple', ?) as q", d, segment.Cut(content, "|")).
+			Where("q @@ p.tokens").Order("score DESC")
+	}
+	// 排序方式
+	if searchMode == SEARCH_BY_TIME {
+		d = d.Order("created_at DESC")
+	} else if searchMode == SEARCH_BY_UPDATE {
+		d = d.Order("updated_at DESC")
+	}
+
 	// 校区 不为全部时加上区分
 	if postType != POST_ALL {
 		d = d.Where("type = ?", postType)
@@ -289,7 +313,7 @@ func GetUserPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, e
 func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	if err := db.Joins(`JOIN qnhd.log_post_fav
-	ON qnhd.posts.id = qnhd.log_post_fav.post_id
+	ON qnhd.post.id = qnhd.log_post_fav.post_id
 	AND qnhd.log_post_fav.uid = ?`, uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
@@ -370,6 +394,9 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		}
 	} else {
 		return 0, fmt.Errorf("invalid post type")
+	}
+	if err := flushPostTokens(post.Id, post.Title, post.Content); err != nil {
+		return 0, err
 	}
 
 	return post.Id, nil

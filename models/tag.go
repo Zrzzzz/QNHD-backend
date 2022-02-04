@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"qnhd/pkg/logging"
+	"qnhd/pkg/segment"
 	"qnhd/pkg/util"
 	"time"
 
@@ -11,9 +12,10 @@ import (
 )
 
 type Tag struct {
-	Id   uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
-	Uid  uint64 `json:"-"`
-	Name string `json:"name"`
+	Id     uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
+	Uid    uint64 `json:"-"`
+	Name   string `json:"name"`
+	Tokens string `json:"-" gorm:"default:''"`
 }
 
 type LogTag struct {
@@ -50,7 +52,13 @@ func ExistTagByName(name string) (bool, error) {
 
 func GetTags(name string) ([]Tag, error) {
 	var tags []Tag
-	if err := db.Where("name LIKE ?", "%"+name+"%").Order("id").Find(&tags).Error; err != nil {
+	var d = db.Model(&Tag{})
+	if name != "" {
+		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
+			Table("(?) as p, to_tsquery('simple', ?) as q", d, segment.Cut(name, "|")).
+			Where("q @@ p.tokens").Order("score DESC")
+	}
+	if err := d.Order("id").Find(&tags).Error; err != nil {
 		return nil, err
 	}
 	// 如果有name，对搜索到的加入记录，仅匹配精确搜索
@@ -99,6 +107,9 @@ func GetHotTags() ([]HotTagResult, error) {
 func AddTag(name, uid string) (uint64, error) {
 	var tag = Tag{Name: name, Uid: util.AsUint(uid)}
 	if err := db.Select("name", "uid").Create(&tag).Error; err != nil {
+		return 0, err
+	}
+	if err := flushTagTokens(tag.Id, tag.Name); err != nil {
 		return 0, err
 	}
 	return tag.Id, nil

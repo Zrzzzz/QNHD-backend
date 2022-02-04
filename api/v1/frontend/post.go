@@ -20,6 +20,7 @@ import (
 // @route /f/posts
 func GetPosts(c *gin.Context) {
 	postType := c.Query("type")
+	searchMode := c.Query("search_mode")
 	content := c.Query("content")
 	departmentId := c.Query("department_id")
 	solved := c.Query("solved")
@@ -28,16 +29,25 @@ func GetPosts(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postType, "type")
 	valid.Numeric(postType, "type")
+	valid.Required(searchMode, "search_mode")
+	valid.Numeric(searchMode, "search_mode")
+	ok, verr := r.ErrorValid(&valid, "Get posts")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
 	valid.Numeric(solved, "solved")
 	valid.Numeric(departmentId, "department_id")
 	valid.Numeric(tagId, "tag_id")
 	postTypeint := util.AsInt(postType)
-	valid.Range(postTypeint, 0, 2, "postType")
+	valid.Range(postTypeint, 0, 2, "type")
+	searchModeint := util.AsInt(searchMode)
+	valid.Range(searchModeint, 0, 1, "search_mode")
 	if solved != "" {
 		solvedint := util.AsInt(solved)
 		valid.Range(solvedint, 0, 1, "solved")
 	}
-	ok, verr := r.ErrorValid(&valid, "Get posts")
+	ok, verr = r.ErrorValid(&valid, "Get posts")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -46,6 +56,7 @@ func GetPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 	maps := map[string]interface{}{
 		"type":          models.PostType(postTypeint),
+		"search_mode":   models.SearchModeType(searchModeint),
 		"content":       content,
 		"solved":        solved,
 		"department_id": departmentId,

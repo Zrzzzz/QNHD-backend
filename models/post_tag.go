@@ -14,7 +14,7 @@ type PostTag struct {
 
 func GetTagInPost(postId string) (*Tag, error) {
 	var tag *Tag
-	if err := db.Joins("JOIN qnhd.post_tag as pt ON qnhd.tags.id = pt.tag_id").Where("post_id = ?", postId).First(&tag).Error; err != nil {
+	if err := db.Joins("JOIN qnhd.post_tag as pt ON qnhd.tag.id = pt.tag_id").Where("post_id = ?", postId).First(&tag).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		} else {
