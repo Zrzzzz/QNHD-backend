@@ -518,6 +518,10 @@ func FavPost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("fav_count", post.FavCount+1).Error; err != nil {
 		return 0, err
 	}
+
+	if uid != util.AsStrU(post.Uid) {
+		updatePostTime(post.Id)
+	}
 	return post.FavCount, nil
 }
 
@@ -574,6 +578,9 @@ func LikePost(postId string, uid string) (uint64, error) {
 		return 0, err
 	}
 
+	if uid != util.AsStrU(post.Uid) {
+		updatePostTime(post.Id)
+	}
 	addUnreadLike(post.Uid, LIKE_POST, post.Id)
 	UnDisPost(postId, uid)
 	return post.LikeCount, nil

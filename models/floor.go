@@ -304,7 +304,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if post.Type == POST_HOLE {
 		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
-
+	updatePostTime(post.Id)
 	return newFloor.Id, nil
 }
 
@@ -391,6 +391,9 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if post.Type == POST_HOLE {
 		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
+
+	updatePostTime(post.Id)
+
 	return newFloor.Id, nil
 }
 
@@ -408,6 +411,9 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
+
+	updatePostTime(floor.PostId)
+
 	return floor.Id, nil
 }
 
@@ -419,6 +425,9 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
+
+	updatePostTime(floor.PostId)
+
 	return floor.Id, nil
 }
 
@@ -525,6 +534,8 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return 0, err
 	}
+
+	updatePostTime(floor.PostId)
 	addUnreadLike(floor.Uid, LIKE_FLOOR, floor.Id)
 	UndisFloor(floorId, uid)
 	return floor.LikeCount, nil
