@@ -234,3 +234,14 @@ func GetMessageCount(uid string) (MessageCount, error) {
 	ret.Notice = int(ncnt)
 	return ret, nil
 }
+
+// 全部已读
+func ReadAllMessage(uid uint64) error {
+	if err := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Update("is_read", true).Error; err != nil {
+		return err
+	}
+	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Update("is_read", true).Error; err != nil {
+		return err
+	}
+	return db.Where("uid = ?", uid).Delete(&LogUnreadNotice{}).Error
+}

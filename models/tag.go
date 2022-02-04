@@ -21,7 +21,7 @@ type Tag struct {
 type LogTag struct {
 	TagId     uint64    `json:"tag_id"`
 	Point     TAG_POINT `json:"point"`
-	CreatedAt string    `json:"create_at" gorm:"default:null;"`
+	CreatedAt string    `json:"created_at" gorm:"default:null;"`
 }
 
 type HotTagResult struct {

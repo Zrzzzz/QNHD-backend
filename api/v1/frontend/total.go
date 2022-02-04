@@ -123,6 +123,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/message/floor/read", ReadFloor)
 		// 已读回复
 		g.POST("/message/reply/read", ReadReply)
+		// 全部已读
+		g.POST("/message/all", ReadAllMessage)
 	case Game:
 		// 获取游戏列表
 		g.GET("/game", GetNewestGame)

@@ -7,7 +7,7 @@ import (
 type LogVisitHistory struct {
 	Uid       uint64 `json:"uid"`
 	PostId    uint64 `json:"post_id"`
-	CreatedAt string `json:"create_at" gorm:"default:null;"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 
 func addVisitHistory(uid string, postId string) error {

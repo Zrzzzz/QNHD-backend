@@ -9,7 +9,7 @@ import (
 type Game struct {
 	Id        uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	Content   string `json:"content"`
-	CreatedAt string `json:"create_at" gorm:"default:null;"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 
 func GetNewestGame() (Game, error) {

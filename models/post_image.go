@@ -7,8 +7,9 @@ import (
 )
 
 type PostImage struct {
-	PostId   uint64 `json:"post_id" `
-	ImageUrl string `json:"image_url" `
+	PostId    uint64         `json:"post_id" `
+	ImageUrl  string         `json:"image_url" `
+	DeletedAt gorm.DeletedAt `json:"-"`
 }
 
 func GetImageInPost(postId uint64) ([]string, error) {

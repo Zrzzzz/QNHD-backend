@@ -5,8 +5,9 @@ import (
 )
 
 type PostReplyImage struct {
-	PostReplyId uint64 `json:"post_reply_id"`
-	ImageUrl    string `json:"image_url"`
+	PostReplyId uint64         `json:"post_reply_id"`
+	ImageUrl    string         `json:"image_url"`
+	DeletedAt   gorm.DeletedAt `json:"-"`
 }
 
 func GetImageInPostReply(replyId uint64) ([]string, error) {
