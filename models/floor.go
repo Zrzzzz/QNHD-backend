@@ -469,6 +469,9 @@ func deleteFloor(floor *Floor) error {
 		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorDis{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("id IN (?) AND type = ?", ids, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
+			return err
+		}
 		// 加上自己
 		ids = append(ids, floor.Id)
 		return db.Delete(&Floor{}, ids).Error
@@ -480,8 +483,16 @@ func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 	if tx == nil {
 		tx = db
 	}
-	var floors []Floor
-	if err := tx.Where("post_id = ?", postId).Find(&floors).Error; err != nil {
+	var floorIds []uint64
+	if err := tx.Model(&Floor{}).Select("id").Where("post_id = ?", postId).Find(&floorIds).Error; err != nil {
+		return err
+	}
+	// 楼层回复记录
+	if err := tx.Where("floor_id IN (?)", floorIds).Delete(&LogUnreadFloor{}).Error; err != nil {
+		return err
+	}
+	// 楼层点赞记录
+	if err := tx.Where("id IN (?) AND type = ?", floorIds, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
 		return err
 	}
 	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
@@ -516,7 +527,7 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return 0, err
 	}
-
+	addUnreadLike(floor.Uid, LIKE_FLOOR, floor.Id)
 	UndisFloor(floorId, uid)
 	return floor.LikeCount, nil
 }

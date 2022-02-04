@@ -116,9 +116,12 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 		if len(images) == 0 {
 			return nil
 		}
-
 		// 删除reply
 		if err := tx.Where("post_id = ?", postId).Delete(&PostReply{}).Error; err != nil {
+			return err
+		}
+		// 删除记录
+		if err := tx.Where("post_id = ?", postId).Delete(&LogUnreadPostReply{}).Error; err != nil {
 			return err
 		}
 		return nil

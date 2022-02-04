@@ -16,7 +16,7 @@ const (
 	History
 	Department
 	Report
-	Notice
+	Message
 	Game
 )
 
@@ -27,7 +27,7 @@ var FrontTypes = [...]FrontType{
 	History,
 	Department,
 	Report,
-	Notice,
+	Message,
 	Game,
 }
 
@@ -108,13 +108,15 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Report:
 		// 添加举报
 		g.POST("/report", AddReport)
-	case Notice:
+	case Message:
 		// 获取未读楼层
 		g.GET("/message/floors", GetMessageFloors)
 		// 获取未读回复
 		g.GET("/message/replys", GetMessagePostReplys)
 		// 获取未读通知
 		g.GET("/message/notices", GetMessageNotices)
+		// 获取未读点赞
+		g.GET("/message/likes", GetMessageLikes)
 		// 获取未读数量
 		g.GET("/message/count", GetMessageCount)
 		// 已读通知
@@ -123,6 +125,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/message/floor/read", ReadFloor)
 		// 已读回复
 		g.POST("/message/reply/read", ReadReply)
+		// 已读点赞
+		g.POST("/message/like/read", ReadLike)
 		// 全部已读
 		g.POST("/message/all", ReadAllMessage)
 	case Game:

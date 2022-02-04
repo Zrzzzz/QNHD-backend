@@ -32,7 +32,7 @@ const (
 type SearchModeType int
 
 const (
-	SEARCH_BY_TIME = iota
+	SEARCH_BY_TIME SearchModeType = iota
 	SEARCH_BY_UPDATE
 )
 
@@ -447,7 +447,7 @@ func deletePost(post *Post) error {
 		需要删除的内容
 		post_tag
 		reports
-		log_post_dis, log_post_fav, log_post_like
+		log_post_dis, log_post_fav, log_post_like, log_unread_like
 		log_visit_history
 		放后面因为涉及到图片
 		post_reply
@@ -481,6 +481,9 @@ func deletePost(post *Post) error {
 			return err
 		}
 		if err := DeleteFloorsInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := tx.Where("id = ? AND type = ?", post.Id, LIKE_POST).Delete(&LogUnreadLike{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Delete(&post, post.Id).Error; err != nil {
@@ -571,6 +574,8 @@ func LikePost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("like_count", post.LikeCount+1).Error; err != nil {
 		return 0, err
 	}
+
+	addUnreadLike(post.Uid, LIKE_POST, post.Id)
 	UnDisPost(postId, uid)
 	return post.LikeCount, nil
 }

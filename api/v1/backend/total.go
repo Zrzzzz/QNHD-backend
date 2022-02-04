@@ -112,7 +112,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 帖子转移部门
 		g.POST("/post/transfer", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPost)
 		// 删除指定帖子
-		g.GET("/post/delete", DeletePosts)
+		g.GET("/post/delete", DeletePost)
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)

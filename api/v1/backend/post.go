@@ -151,7 +151,7 @@ func TransferPost(c *gin.Context) {
 // @param id
 // @return
 // @route /b/post/delete
-func DeletePosts(c *gin.Context) {
+func DeletePost(c *gin.Context) {
 	uid := r.GetUid(c)
 	id := c.Query("id")
 
