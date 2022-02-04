@@ -298,15 +298,11 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	}
 	// 如果不是回复自己的帖子，通知帖子主人
 	if post.Uid != uid {
-		if err := addUnreadFloor(post.Uid, newFloor.Id); err != nil {
-			return 0, err
-		}
+		addUnreadFloor(post.Uid, newFloor.Id)
 	}
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {
-		if err := addTagLogInPost(post.Id, TAG_ADDFLOOR); err != nil {
-			return 0, err
-		}
+		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
 
 	return newFloor.Id, nil
@@ -374,22 +370,26 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.Create(&newFloor).Error; err != nil {
 		return 0, err
 	}
-	// 如果不是回复自己的楼层，通知楼层归属楼层主人和回复的人，如果都有要避免重复
-	var subToFloor, _ = GetFloor(util.AsStrU(newFloor.SubTo))
-	// 回复的人
-	if toFloor.Uid != uid {
+
+	// 如果不是回复自己的帖子，通知帖子主人
+	if post.Uid != uid {
+		addUnreadFloor(post.Uid, newFloor.Id)
+	}
+	// 如果回复的楼层不是子楼层，通知回复的楼层的主人，这里开始避免重复
+	if toFloor.Uid != uid && toFloor.Uid != post.Uid {
 		addUnreadFloor(toFloor.Uid, newFloor.Id)
 	}
-	// 楼层归属楼层主人，同时避免重复
-	if subToFloor.Uid != uid && subToFloor.Uid != toFloor.Uid {
-		addUnreadFloor(subToFloor.Uid, newFloor.Id)
+	// 如果回复的帖子是子楼层，通知层主
+	if toFloor.SubTo != 0 {
+		subToFloor, _ := GetFloor(util.AsStrU(newFloor.SubTo))
+		if subToFloor.Uid != uid && subToFloor.Uid != toFloor.Uid && subToFloor.Uid != post.Uid {
+			addUnreadFloor(subToFloor.Uid, newFloor.Id)
+		}
 	}
 
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {
-		if err := addTagLogInPost(post.Id, TAG_ADDFLOOR); err != nil {
-			return 0, err
-		}
+		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
 	return newFloor.Id, nil
 }
