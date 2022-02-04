@@ -1,8 +1,6 @@
 package models
 
 import (
-	"qnhd/pkg/upload"
-
 	"gorm.io/gorm"
 )
 
@@ -41,15 +39,5 @@ func DeleteImageInPostReply(tx *gorm.DB, replyId uint64) error {
 	if tx == nil {
 		tx = db
 	}
-	// 先删除本地文件
-	imageUrls, err := GetImageInPost(replyId)
-	if err != nil {
-		return err
-	}
-	err = upload.DeleteImageUrls(imageUrls)
-	if err != nil {
-		return err
-	}
-	err = tx.Where("post_reply_id = ?", replyId).Delete(&PostReplyImage{}).Error
-	return err
+	return tx.Where("post_reply_id = ?", replyId).Delete(&PostReplyImage{}).Error
 }

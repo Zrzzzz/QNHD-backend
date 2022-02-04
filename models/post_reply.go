@@ -1,8 +1,6 @@
 package models
 
 import (
-	"qnhd/pkg/upload"
-
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -104,7 +102,6 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 	}
 	var (
 		images []PostReplyImage
-		urls   []string
 	)
 	err := ttx.Transaction(func(tx *gorm.DB) error {
 		// 获取所有image
@@ -120,13 +117,6 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 			return nil
 		}
 
-		for _, r := range images {
-			urls = append(urls, r.ImageUrl)
-		}
-		// 删除本地图片
-		if err := upload.DeleteImageUrls(urls); err != nil {
-			return err
-		}
 		// 删除reply
 		if err := tx.Where("post_id = ?", postId).Delete(&PostReply{}).Error; err != nil {
 			return err

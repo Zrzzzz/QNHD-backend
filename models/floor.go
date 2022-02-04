@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"qnhd/pkg/logging"
-	"qnhd/pkg/upload"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -486,18 +485,7 @@ func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 		tx = db
 	}
 	var floors []Floor
-	var imgs = []string{}
 	if err := tx.Where("post_id = ?", postId).Find(&floors).Error; err != nil {
-		return err
-	}
-	for _, f := range floors {
-		if f.ImageURL != "" {
-			imgs = append(imgs, f.ImageURL)
-		}
-	}
-	// 删除本地文件
-	if err := upload.DeleteImageUrls(imgs); err != nil {
-		logging.Error(err.Error())
 		return err
 	}
 	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
