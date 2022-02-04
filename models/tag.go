@@ -21,7 +21,7 @@ type Tag struct {
 type LogTag struct {
 	TagId     uint64    `json:"tag_id"`
 	Point     TAG_POINT `json:"point"`
-	CreatedAt string    `json:"create_at"`
+	CreatedAt string    `json:"create_at" gorm:"default:null;"`
 }
 
 type HotTagResult struct {
@@ -72,7 +72,7 @@ func GetTags(name string) ([]Tag, error) {
 
 func GetRecommendTag() (HotTagResult, error) {
 	var tag HotTagResult
-	tags, err := GetHotTags()
+	tags, err := GetHotTags(10)
 	if err != nil {
 		return tag, err
 	}
@@ -89,14 +89,14 @@ func GetRecommendTag() (HotTagResult, error) {
 }
 
 // 获取24小时内高赞tag
-func GetHotTags() ([]HotTagResult, error) {
+func GetHotTags(cnt int) ([]HotTagResult, error) {
 	var results []HotTagResult
 	logs := db.Model(&LogTag{}).Where("created_at > CURRENT_TIMESTAMP + '-1 day'")
 	if err := db.Table("(?) as a", logs).
 		Joins("JOIN qnhd.tag ON qnhd.tag.id = tag_id").
 		Select("tag_id", "sum(point) as point", "name").
 		Group("tag_id, name").
-		Limit(5).
+		Limit(cnt).
 		Order("point desc").
 		Find(&results).Error; err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func addTagLogInPost(postId uint64, point TAG_POINT) error {
 // 增加Tag访问记录
 func addTagLog(id uint64, point TAG_POINT) {
 	var log = LogTag{TagId: id, Point: point}
-	if err := db.Select("tag_id").Create(&log).Error; err != nil {
+	if err := db.Create(&log).Error; err != nil {
 		logging.Error("add tag log error: %v", log)
 	}
 }

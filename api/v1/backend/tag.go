@@ -40,7 +40,7 @@ func GetTags(c *gin.Context) {
 // @return
 // @route /b/tags/hot
 func GetHotTag(c *gin.Context) {
-	list, err := models.GetHotTags()
+	list, err := models.GetHotTags(5)
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("Get hot tag error: %v", err)

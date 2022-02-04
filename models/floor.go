@@ -263,31 +263,27 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
-
+	// 如果是帖子主人
 	if post.Uid == uid {
 		nickname = OWNER_NAME
 	} else {
-		// 还有可能已经发过言
 		var floor Floor
-		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, err
-			}
+		if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&floor).Error; err != nil {
+			return 0, err
 		}
+		// 是否已经发过言
 		if floor.Id > 0 {
 			nickname = floor.Nickname
 		} else {
 			var cnt int64
-			// 除去owner
-			if err := db.Model(&Floor{}).Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
+			// 除去owner, 这里加上被删除的楼
+			if err := db.Model(&Floor{}).Unscoped().Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
 			// nickname = FLOOR_NAME[cnt]
-			nickname = fmt.Sprintf("%v%d", FLOOR_NAME, cnt)
+			nickname = fmt.Sprintf("%s%d", FLOOR_NAME, cnt)
 		}
 	}
 	var newFloor = Floor{
