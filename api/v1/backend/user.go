@@ -364,3 +364,26 @@ func EditUserDepartment(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [get]
+// @way [query]
+// @param user_id
+// @return
+// @route /b/user/manager/delete
+func DeleteManager(c *gin.Context) {
+	userId := c.Query("user_id")
+	valid := validation.Validation{}
+	valid.Required(userId, "user_id")
+	valid.Numeric(userId, "user_id")
+	ok, verr := r.ErrorValid(&valid, "Delete manager Error")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	if err := models.DeleteUser(util.AsUint(userId)); err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		logging.Error("Delete manager error: %v", err)
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}

@@ -206,14 +206,21 @@ func AddUsers(users []NewUserData) error {
 	return err
 }
 
+// 修改用户属性
 func EditUser(uid string, maps map[string]interface{}) error {
 	return db.Model(&User{}).Where("id = ?", uid).Updates(maps).Error
 }
 
+// 修改密码，要求原密码
 func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 	var user User
 	if err := db.Where("id = ? AND password = ?", uid, rawPasswd).First(&user).Error; err != nil {
 		return err
 	}
 	return db.Model(&user).Update("password", newPasswd).Error
+}
+
+// 删除用户
+func DeleteUser(uid uint64) error {
+	return db.Where("id = ?", uid).Delete(&User{}).Error
 }

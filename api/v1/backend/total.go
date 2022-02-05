@@ -100,6 +100,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user/right/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserRight)
 		// 修改用户部门
 		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
+		// 删除管理员
+		g.GET("/user/manager/delete", permission.RightDemand(models.UserRight{Super: true}), DeleteManager)
 	case Post:
 		// 获取帖子列表
 		g.GET("/posts", GetPosts)
