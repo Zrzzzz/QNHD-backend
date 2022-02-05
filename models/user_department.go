@@ -8,12 +8,11 @@ type UserDepartment struct {
 // 同时如果已经有部门了会删除之前的
 func AddUserToDepartment(uid, departmentId uint64) error {
 	var ud UserDepartment
-	if err := db.Where("uid = ? AND department_id = ?", uid, departmentId).Find(&ud).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Find(&ud).Error; err != nil {
 		return err
 	}
 	if ud.Uid > 0 {
-		ud.DepartmentId = departmentId
-		if err := db.Model(&ud).Updates(ud).Error; err != nil {
+		if err := db.Model(&ud).Where("uid = ?", ud.Uid).Update("department_id", departmentId).Error; err != nil {
 			return err
 		}
 	} else {
