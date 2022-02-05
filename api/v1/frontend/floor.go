@@ -110,7 +110,6 @@ func AddFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
-	valid.Required(content, "content")
 	valid.MaxSize(content, 200, "content")
 	ok, verr := r.ErrorValid(&valid, "Add floors")
 	if !ok {
@@ -130,6 +129,10 @@ func AddFloor(c *gin.Context) {
 	}
 	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	if content == "" && len(imageURLs) == 0 {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
@@ -194,7 +197,10 @@ func ReplyFloor(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
-
+	if content == "" && len(imageURLs) == 0 {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
 	intuid := util.AsUint(uid)
 	intfloor := util.AsUint(replyToFloor)
 	imageURL := ""

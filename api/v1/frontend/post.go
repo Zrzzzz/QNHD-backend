@@ -185,7 +185,6 @@ func AddPost(c *gin.Context) {
 	campus := c.PostForm("campus")
 	departId := c.PostForm("department_id")
 	valid := validation.Validation{}
-	valid.Required(content, "content")
 	valid.Required(postType, "postType")
 	valid.Numeric(postType, "postType")
 	valid.Required(campus, "campus")
@@ -241,7 +240,11 @@ func AddPost(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
-
+	// 限制无文字时必须有图
+	if content == "" && len(imageUrls) == 0 {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
 	intuid := util.AsUint(uid)
 	maps := map[string]interface{}{
 		"uid":        intuid,

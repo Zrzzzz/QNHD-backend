@@ -6,3 +6,4 @@ tmp/
 docs/
 cert/
 .vscode/*
+.air*

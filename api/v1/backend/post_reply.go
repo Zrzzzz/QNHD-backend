@@ -23,7 +23,7 @@ func AddPostReply(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(postId, "post_id")
 	valid.Numeric(postId, "post_id")
-	valid.Required(content, "content")
+	valid.MaxSize(content, 1000, "content")
 	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -54,6 +54,11 @@ func AddPostReply(c *gin.Context) {
 	}
 	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
 	if err != nil {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		return
+	}
+	// 限制无文字时必须有图
+	if content == "" && len(imageUrls) == 0 {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
 		return
 	}
