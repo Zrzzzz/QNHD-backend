@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
-	"qnhd/pkg/upload"
+
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -364,10 +364,6 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			}
 			return nil
 		})
-		if err != nil {
-			upload.DeleteImageUrls(imgs)
-			return 0, err
-		}
 	} else if post.Type == POST_SCHOOL {
 		// 先对department_id进行查找，不存在要报错
 		departId := maps["department_id"].(uint64)
@@ -388,10 +384,6 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			}
 			return nil
 		})
-		if err != nil {
-			upload.DeleteImageUrls(imgs)
-			return 0, err
-		}
 	} else {
 		return 0, fmt.Errorf("invalid post type")
 	}

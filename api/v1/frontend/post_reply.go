@@ -4,7 +4,7 @@ import (
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
-	"qnhd/pkg/upload"
+
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
@@ -46,9 +46,11 @@ func AddPostReply(c *gin.Context) {
 	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	content := c.PostForm("content")
+	imageURLs := c.PostFormArray("images")
 	valid := validation.Validation{}
 	valid.Required(postId, "post_id")
 	valid.Numeric(postId, "post_id")
+	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -60,25 +62,10 @@ func AddPostReply(c *gin.Context) {
 		r.OK(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	// 处理图片
-	form, err := c.MultipartForm()
-	if err != nil {
-		r.Error(c, e.INVALID_PARAMS, err.Error())
-		return
-	}
-	imgs := form.File["images"]
-	if len(imgs) > 1 {
-		r.Error(c, e.INVALID_PARAMS, "images count should less than 1.")
-		return
-	}
-	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
-	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
-		return
-	}
+
 	// 限制无文字时必须有图
-	if content == "" && len(imageUrls) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+	if content == "" && len(imageURLs) == 0 {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
 		return
 	}
 	// 添加回复
@@ -86,7 +73,7 @@ func AddPostReply(c *gin.Context) {
 		"post_id": util.AsUint(postId),
 		"sender":  models.PostReplyFromUser,
 		"content": content,
-		"urls":    imageUrls,
+		"urls":    imageURLs,
 	})
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())

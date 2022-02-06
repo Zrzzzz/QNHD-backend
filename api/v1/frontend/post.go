@@ -5,7 +5,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/upload"
+
 	"qnhd/pkg/util"
 	"qnhd/request/yunpian"
 
@@ -184,6 +184,7 @@ func AddPost(c *gin.Context) {
 	tagId := c.PostForm("tag_id")
 	campus := c.PostForm("campus")
 	departId := c.PostForm("department_id")
+	imageURLs := c.PostFormArray("images")
 	valid := validation.Validation{}
 	valid.Required(postType, "postType")
 	valid.Numeric(postType, "postType")
@@ -192,6 +193,7 @@ func AddPost(c *gin.Context) {
 	valid.Required(title, "title")
 	valid.MaxSize(title, 30, "title")
 	valid.MaxSize(content, 1000, "content")
+	valid.MaxSize(imageURLs, 3, "images")
 	ok, verr := r.ErrorValid(&valid, "Add posts")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -224,25 +226,9 @@ func AddPost(c *gin.Context) {
 		return
 	}
 
-	// 处理图片
-	form, err := c.MultipartForm()
-	if err != nil {
-		r.Error(c, e.INVALID_PARAMS, err.Error())
-		return
-	}
-	imgs := form.File["images"]
-	if len(imgs) > 3 {
-		r.Error(c, e.INVALID_PARAMS, "images count should less than 3.")
-		return
-	}
-	imageUrls, err := upload.SaveImagesFromFromData(imgs, c)
-	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
-		return
-	}
 	// 限制无文字时必须有图
-	if content == "" && len(imageUrls) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+	if content == "" && len(imageURLs) == 0 {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
 		return
 	}
 	intuid := util.AsUint(uid)
@@ -252,7 +238,7 @@ func AddPost(c *gin.Context) {
 		"campus":     models.PostCampusType(campusint),
 		"title":      title,
 		"content":    content,
-		"image_urls": imageUrls,
+		"image_urls": imageURLs,
 	}
 
 	if postTypeint == int(models.POST_HOLE) && tagId != "" {
@@ -275,7 +261,6 @@ func AddPost(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
-	data["image_urls"] = imageUrls
 	r.OK(c, e.SUCCESS, data)
 }
 

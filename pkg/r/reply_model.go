@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/util"
 
 	"github.com/astaxie/beego/validation"
-	"github.com/fatih/structs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,15 +20,6 @@ func GetUid(c *gin.Context) string {
 		claims, _ = util.ParseToken(token)
 		return claims.Uid
 	}
-}
-
-// 通过code和data生成一个gin.H
-func H(code int, data map[string]interface{}) gin.H {
-	return structs.Map(models.Response{
-		Code: code,
-		Msg:  e.GetMsg(code),
-		Data: data,
-	})
 }
 
 // 返回是否没有错误

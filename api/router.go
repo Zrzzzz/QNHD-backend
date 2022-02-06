@@ -5,7 +5,6 @@ import (
 	"qnhd/api/v1/frontend"
 	"qnhd/middleware/crossfield"
 	"qnhd/pkg/setting"
-	"qnhd/pkg/upload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,13 +14,10 @@ func InitRouter() (r *gin.Engine) {
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	// r.Use(qnhdtls.LoadTls())
 	gin.SetMode(setting.ServerSetting.RunMode)
 
-	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// 解决跨域问题
 	r.Use(crossfield.CrossField())
-	r.StaticFS("/upload/images", gin.Dir(upload.GetImageFullPath(), false))
 
 	avb := r.Group("/api/v1/b")
 	backend.Setup(avb)

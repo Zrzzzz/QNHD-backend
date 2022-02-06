@@ -5,7 +5,6 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
-	"qnhd/pkg/upload"
 
 	"qnhd/pkg/util"
 
@@ -106,34 +105,21 @@ func AddFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	content := c.PostForm("content")
+	imageURLs := c.PostFormArray("images")
 
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
 	valid.MaxSize(content, 200, "content")
+	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Add floors")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	// 处理图片
-	form, err := c.MultipartForm()
-	if err != nil {
-		r.Error(c, e.INVALID_PARAMS, err.Error())
-		return
-	}
-	imgs := form.File["images"]
-	if len(imgs) > 1 {
-		r.Error(c, e.INVALID_PARAMS, "images count should less than 1.")
-		return
-	}
-	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
-	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
-		return
-	}
+
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
 		return
 	}
 
@@ -170,35 +156,22 @@ func ReplyFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	replyToFloor := c.PostForm("reply_to_floor")
 	content := c.PostForm("content")
+	imageURLs := c.PostFormArray("images")
 
 	valid := validation.Validation{}
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
 	valid.Required(content, "content")
 	valid.MaxSize(content, 200, "content")
+	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Reply floors")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	// 处理图片
-	form, err := c.MultipartForm()
-	if err != nil {
-		r.Error(c, e.INVALID_PARAMS, err.Error())
-		return
-	}
-	imgs := form.File["images"]
-	if len(imgs) > 1 {
-		r.Error(c, e.INVALID_PARAMS, "images count should less than 1.")
-		return
-	}
-	imageURLs, err := upload.SaveImagesFromFromData(imgs, c)
-	if err != nil {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
-		return
-	}
+
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": err.Error()})
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
 		return
 	}
 	intuid := util.AsUint(uid)
