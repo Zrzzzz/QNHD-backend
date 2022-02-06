@@ -49,8 +49,9 @@ func Setup() {
 	if err != nil {
 		logging.Fatal("Fail to open database: %v", err)
 	}
-	sqlDB, err = db.DB()
-	sqlDB.SetMaxIdleConns(10)
+	sqlDB, _ = db.DB()
+	sqlDB.SetConnMaxLifetime(time.Second * 30)
+	sqlDB.SetMaxIdleConns(20)
 	sqlDB.SetMaxOpenConns(100)
 }
 func Close() {

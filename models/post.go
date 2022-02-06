@@ -387,6 +387,9 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	} else {
 		return 0, fmt.Errorf("invalid post type")
 	}
+	if err != nil {
+		return 0, err
+	}
 	if err := flushPostTokens(post.Id, post.Title, post.Content); err != nil {
 		return 0, err
 	}
