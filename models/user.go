@@ -12,7 +12,8 @@ import (
 
 type User struct {
 	Uid         uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Number      string `json:"number"`
+	Nickname    string `json:"nickname" gorm:"default:''"`
+	Number      string `json:"-" gorm:"default:''"`
 	Password    string `json:"-" gorm:"column:password;"`
 	PhoneNumber string `json:"phone_number"`
 	IsSuper     bool   `json:"is_super" gorm:"default:false"`
@@ -24,7 +25,7 @@ type User struct {
 }
 
 type NewUserData struct {
-	Number       string `json:"number"`
+	Nickname     string `json:"nickname"`
 	Password     string `json:"password" gorm:"column:password;"`
 	PhoneNumber  string `json:"phone_number"`
 	IsSuper      bool   `json:"is_super"`
@@ -84,9 +85,9 @@ func RequireUser(uid string) error {
 	return nil
 }
 
-func ExistUser(number string) (uint64, error) {
+func ExistUser(nickname, number string) (uint64, error) {
 	var user User
-	if err := db.Where(User{Number: number}).First(&user).Error; err != nil {
+	if err := db.Where(User{Nickname: nickname, Number: number}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, nil
 		}
@@ -103,14 +104,6 @@ func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
 	return users, nil
 }
 
-func GetAllUsers(c *gin.Context, name string) ([]User, error) {
-	var users []User
-	if err := db.Where("number like ? AND is_super = false", "%"+name+"%").Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
 type Manager struct {
 	User
 	Name         string `json:"department_name"`
@@ -119,7 +112,7 @@ type Manager struct {
 
 func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	var list []Manager
-	users := db.Model(&User{}).Where("number like ? AND is_super = false AND is_user = false", "%"+name+"%")
+	users := db.Model(&User{}).Where("nickname like ? AND is_super = false AND is_user = false", "%"+name+"%")
 	if err := db.
 		Table("(?) as a", users).
 		Select("a.*", "qd.name", "qd.introduction").
@@ -153,8 +146,9 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	return u, nil
 }
 
-func AddUser(number, password, phoneNumber string, isUser bool) (uint64, error) {
+func AddUser(nickname, number, password, phoneNumber string, isUser bool) (uint64, error) {
 	var user = User{
+		Nickname:    nickname,
 		Number:      number,
 		Password:    password,
 		PhoneNumber: phoneNumber,
@@ -180,7 +174,7 @@ func AddUsers(users []NewUserData) error {
 	var newUsers []User
 	for _, u := range users {
 		new := User{
-			Number:      u.Number,
+			Nickname:    u.Nickname,
 			Password:    u.Password,
 			PhoneNumber: u.PhoneNumber,
 			IsSuper:     u.IsSuper,

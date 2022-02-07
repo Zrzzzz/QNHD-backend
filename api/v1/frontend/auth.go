@@ -77,7 +77,7 @@ func GetAuthPasswd(c *gin.Context) {
 
 // 认证过程
 func auth(result twtauth.TwTAuthResult, c *gin.Context) {
-	uid, err := models.ExistUser(result.UserNumber)
+	uid, err := models.ExistUser("", result.UserNumber)
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)
@@ -86,7 +86,7 @@ func auth(result twtauth.TwTAuthResult, c *gin.Context) {
 	}
 	// 如果不存在就创建一个用户
 	if uid == 0 {
-		uid, err = models.AddUser(result.UserNumber, "", result.Telephone, true)
+		uid, err = models.AddUser("", result.UserNumber, "", result.Telephone, true)
 	}
 
 	if err != nil {

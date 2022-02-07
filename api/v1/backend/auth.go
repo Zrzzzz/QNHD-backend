@@ -17,11 +17,11 @@ import (
 // @return token
 // @route /b/auth
 func GetAuth(c *gin.Context) {
-	number := c.Query("user")
+	nickname := c.Query("user")
 	password := c.Query("password")
 
 	valid := validation.Validation{}
-	valid.Required(number, "number")
+	valid.Required(nickname, "nickname")
 	valid.Required(password, "password")
 	ok, verr := r.ErrorValid(&valid, "Auth")
 	if !ok {
@@ -30,11 +30,11 @@ func GetAuth(c *gin.Context) {
 	}
 	user, err := chainAuth(
 		map[string]interface{}{
-			"number":   number,
+			"nickname": nickname,
 			"password": password,
 		},
 		map[string]interface{}{
-			"phone_number": number,
+			"phone_number": nickname,
 			"password":     password,
 		},
 	)

@@ -70,7 +70,6 @@ func GetCommonUser(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	user.Number = ""
 
 	nUser := userResponse{User: user}
 	isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
@@ -98,7 +97,7 @@ func GetCommonUser(c *gin.Context) {
 // @return userList
 // @route /b/users/common
 func GetCommonUsers(c *gin.Context) {
-	name := c.Query("number")
+	name := c.Query("user")
 	code := e.SUCCESS
 	list, err := models.GetCommonUsers(c, name)
 	if err != nil {
@@ -110,7 +109,6 @@ func GetCommonUsers(c *gin.Context) {
 
 	for _, user := range list {
 		nUser := userResponse{User: user}
-		nUser.Number = ""
 		isBlocked, detail, err := models.IsBlockedByUidDetailed(user.Uid)
 		if err != nil {
 			logging.Error("Get users error: %v", err)
@@ -139,7 +137,7 @@ func GetCommonUsers(c *gin.Context) {
 // @return userList
 // @route /b/users/manager
 func GetManagers(c *gin.Context) {
-	name := c.Query("number")
+	name := c.Query("user")
 	list, err := models.GetManagers(c, name)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -155,15 +153,15 @@ func GetManagers(c *gin.Context) {
 
 // @method [post]
 // @way [formdata]
-// @param number, password
+// @param user, password
 // @return uid
 // @route /b/user
 func AddUser(c *gin.Context) {
-	number := c.PostForm("number")
+	nickname := c.PostForm("nickname")
 	password := c.PostForm("password")
 	phoneNumber := c.PostForm("phone_number")
 	valid := validation.Validation{}
-	valid.Required(number, "number")
+	valid.Required(nickname, "number")
 	valid.Required(password, "password")
 	valid.Required(phoneNumber, "phoneNumber")
 	ok, verr := r.ErrorValid(&valid, "Add backend user")
@@ -171,7 +169,7 @@ func AddUser(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	uid, err := models.ExistUser(number)
+	uid, err := models.ExistUser(nickname, "")
 	if err != nil {
 		logging.Error("Add user error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -182,7 +180,7 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	uid, err = models.AddUser(number, password, phoneNumber, false)
+	uid, err = models.AddUser(nickname, "", password, phoneNumber, false)
 	if err != nil {
 		logging.Error("Add users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
