@@ -161,7 +161,6 @@ func ReplyFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(replyToFloor, "floorId")
 	valid.Numeric(replyToFloor, "floorId")
-	valid.Required(content, "content")
 	valid.MaxSize(content, 200, "content")
 	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Reply floors")

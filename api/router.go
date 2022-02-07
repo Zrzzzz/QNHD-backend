@@ -10,11 +10,11 @@ import (
 )
 
 func InitRouter() (r *gin.Engine) {
+	gin.SetMode(setting.ServerSetting.RunMode)
 	r = gin.New()
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	gin.SetMode(setting.ServerSetting.RunMode)
 
 	// 解决跨域问题
 	r.Use(crossfield.CrossField())

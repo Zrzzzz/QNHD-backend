@@ -1,7 +1,6 @@
 .PHONY: start refresh watch stop tstart
 
 tstart:
-	export GIN_MODE="debug"
 	go run main.go
 
 tstop:
