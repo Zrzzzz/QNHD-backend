@@ -30,7 +30,7 @@ const (
 
 func GetUnreadLikes(c *gin.Context, uid string) ([]UnreadLikeResponse, error) {
 	var (
-		ret  []UnreadLikeResponse
+		ret  = []UnreadLikeResponse{}
 		logs []LogUnreadLike
 	)
 	// 找到log

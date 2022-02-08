@@ -15,6 +15,7 @@ type LogUnreadFloor struct {
 
 type UnreadFloorResponse struct {
 	Type    int    `json:"type"`
+	IsRead  bool   `json:"is_read"`
 	ToFloor *Floor `json:"to_floor"`
 	Post    Post   `json:"post"`
 	Floor   Floor  `json:"floor"`
@@ -22,9 +23,10 @@ type UnreadFloorResponse struct {
 
 func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) {
 	var (
-		ret    = []UnreadFloorResponse{}
-		floors []Floor
-		err    error
+		ret       = []UnreadFloorResponse{}
+		logFloors []LogUnreadFloor
+		floors    []Floor
+		err       error
 	)
 
 	// 先筛选出未读记录
@@ -39,9 +41,17 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 		Error; err != nil {
 		return ret, err
 	}
+	if err := logs.Find(&logFloors).Error; err != nil {
+		return ret, err
+	}
 	// 对每个楼层分析
 	for _, f := range floors {
 		var r = UnreadFloorResponse{Floor: f}
+		for _, log := range logFloors {
+			if log.FloorId == f.Id {
+				r.IsRead = log.IsRead
+			}
+		}
 		// 搜索floor
 		if f.SubTo > 0 {
 			tof, e := GetFloor(util.AsStrU(f.ReplyTo))
@@ -63,6 +73,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 		r.Post = p
 		ret = append(ret, r)
 	}
+
 	return ret, err
 }
 

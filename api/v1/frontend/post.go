@@ -5,9 +5,9 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
+	"qnhd/request/yunpian"
 
 	"qnhd/pkg/util"
-	"qnhd/request/yunpian"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"

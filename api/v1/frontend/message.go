@@ -18,20 +18,13 @@ import (
 // @route /f/message/notices
 func GetMessageNotices(c *gin.Context) {
 	uid := util.AsUint(r.GetUid(c))
-	list, err := models.GetNotices()
+	list, err := models.GetUnreadNotices(c, uid)
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	// 对每个查询是否已读
-	for idx, i := range list {
-		if models.IsReadFloor(uid, i.Id) {
-			list[idx].Read = 0
-		} else {
-			list[idx].Read = 1
-		}
-	}
+
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)

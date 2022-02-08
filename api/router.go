@@ -18,7 +18,6 @@ func InitRouter() (r *gin.Engine) {
 
 	// 解决跨域问题
 	r.Use(crossfield.CrossField())
-
 	avb := r.Group("/api/v1/b")
 	backend.Setup(avb)
 	avf := r.Group("/api/v1/f")

@@ -8,7 +8,6 @@ type Notice struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Url     string `json:"url"`
-	Read    int    `json:"read" gorm:"-"`
 }
 
 func GetNotices() ([]Notice, error) {
@@ -31,7 +30,7 @@ func AddNotice(data map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 	// 对所有用户通知
-	if err := addUnreadNoticeToAllUser(notice.Id); err != nil {
+	if err := addUnreadNoticeToAllUser(&notice); err != nil {
 		return 0, err
 	}
 	return notice.Id, nil

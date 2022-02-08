@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
+	"qnhd/request/twtservice"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -299,6 +300,12 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	// 如果不是回复自己的帖子，通知帖子主人
 	if post.Uid != uid {
 		addUnreadFloor(post.Uid, newFloor.Id)
+		var user User
+		if err := db.Where("id = ?", post.Uid).Find(&user).Error; err == nil {
+			if err := twtservice.NotifyFloor(user.Number); err != nil {
+				logging.Error(err.Error())
+			}
+		}
 	}
 	// 对帖子的tag增加记录, 当是树洞帖才会有
 	if post.Type == POST_HOLE {
@@ -378,6 +385,10 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	// 如果回复的楼层不是子楼层，通知回复的楼层的主人，这里开始避免重复
 	if toFloor.Uid != uid && toFloor.Uid != post.Uid {
 		addUnreadFloor(toFloor.Uid, newFloor.Id)
+		var user User
+		if err := db.Where("id = ?", toFloor).Find(&user).Error; err == nil {
+			twtservice.NotifyFloor(user.Number)
+		}
 	}
 	// 如果回复的帖子是子楼层，通知层主
 	if toFloor.SubTo != 0 {
