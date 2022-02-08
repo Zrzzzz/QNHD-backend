@@ -8,7 +8,7 @@ import (
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/util"
-	"qnhd/request/twtauth"
+	"qnhd/request/twtservice"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -29,7 +29,7 @@ func GetAuthToken(c *gin.Context) {
 		return
 	}
 
-	v, err := twtauth.GetAuthByToken(token)
+	v, err := twtservice.GetAuthByToken(token)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -60,7 +60,7 @@ func GetAuthPasswd(c *gin.Context) {
 		return
 	}
 
-	v, err := twtauth.GetAuthByPasswd(user, password)
+	v, err := twtservice.GetAuthByPasswd(user, password)
 	if err != nil {
 		logging.Error("Auth error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -76,7 +76,7 @@ func GetAuthPasswd(c *gin.Context) {
 }
 
 // 认证过程
-func auth(result twtauth.TwTAuthResult, c *gin.Context) {
+func auth(result twtservice.TwTAuthResult, c *gin.Context) {
 	uid, err := models.ExistUser("", result.UserNumber)
 	data := make(map[string]interface{})
 	if err != nil {

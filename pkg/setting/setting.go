@@ -36,6 +36,7 @@ type App struct {
 	WPYAppSecret  string
 	WPYAppKey     string
 	YunPianAppKey string
+	PushToken     string
 
 	// 发贴间隔时间
 	TimeLimit       int
