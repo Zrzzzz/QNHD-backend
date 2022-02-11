@@ -37,5 +37,8 @@ func ReadAllMessage(uid uint64) error {
 	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Update("is_read", true).Error; err != nil {
 		return err
 	}
+	if err := db.Where("uid = ?", uid).Delete(&LogUnreadLike{}).Error; err != nil {
+		return err
+	}
 	return db.Where("uid = ?", uid).Delete(&LogUnreadNotice{}).Error
 }

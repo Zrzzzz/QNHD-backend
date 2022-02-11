@@ -89,7 +89,7 @@ func addUnreadFloor(uid, floorId uint64) error {
 func ReadFloor(uid, floorId uint64) error {
 	return db.Model(&LogUnreadFloor{}).
 		Where("uid = ? AND floor_id = ?", uid, floorId).
-		Update("is_read", 1).Error
+		Update("is_read", true).Error
 }
 
 // 是否评论已读

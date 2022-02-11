@@ -100,7 +100,7 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 func ReadPostReply(uid, replyId uint64) error {
 	return db.Model(&LogUnreadPostReply{}).
 		Where("uid = ? AND reply_id = ?", uid, replyId).
-		Update("is_read", 1).Error
+		Update("is_read", true).Error
 }
 
 // 是否回复已读
