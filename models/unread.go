@@ -1,6 +1,7 @@
 package models
 
 type MessageCount struct {
+	Like   int `json:"like"`
 	Floor  int `json:"floor"`
 	Reply  int `json:"reply"`
 	Notice int `json:"notice"`
@@ -10,19 +11,24 @@ type MessageCount struct {
 func GetMessageCount(uid string) (MessageCount, error) {
 	var ret = MessageCount{}
 	// 楼层未读 回复未读 通知未读
-	var fcnt, rcnt, ncnt int64
+	var lcnt, fcnt, rcnt, ncnt int64
+	// 获取点赞未读数
+	if err := db.Model(&LogUnreadLike{}).Where("uid = ?", uid).Count(&lcnt).Error; err != nil {
+		return ret, err
+	}
 	// 获取楼层未读数
-	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND is_read = true", uid).Count(&fcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadFloor{}).Where("uid = ? AND is_read = false", uid).Count(&fcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取回复未读数
-	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND is_read = true", uid).Count(&rcnt).Error; err != nil {
+	if err := db.Model(&LogUnreadPostReply{}).Where("uid = ? AND is_read = false", uid).Count(&rcnt).Error; err != nil {
 		return ret, err
 	}
 	// 获取通知未读数
 	if err := db.Model(&LogUnreadNotice{}).Where("uid = ?", uid).Count(&ncnt).Error; err != nil {
 		return ret, err
 	}
+	ret.Like = int(lcnt)
 	ret.Floor = int(fcnt)
 	ret.Reply = int(rcnt)
 	ret.Notice = int(ncnt)
