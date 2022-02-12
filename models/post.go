@@ -428,7 +428,7 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 func DeletePostsAdmin(uid, postId string) (uint64, error) {
 	var post, _ = GetPost(postId)
 	// 如果能删，要么是超管 要么是湖底管理员
-	if !RequireRight(uid, UserRight{Super: true}) {
+	if !RequireRight(uid, UserRight{Super: true, StuAdmin: true}) {
 		return 0, fmt.Errorf("无权删除")
 	}
 	err := deletePost(&post)

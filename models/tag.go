@@ -121,18 +121,31 @@ func AddTag(name, uid string) (uint64, error) {
 
 func DeleteTagAdmin(id uint64) (uint64, error) {
 	var tag Tag
-	if err := db.Where("id = ?", id).Delete(&tag).Error; err != nil {
-		return 0, err
-	}
-	return tag.Id, nil
+	err := deleteTag(id)
+	return tag.Id, err
 }
 
 func DeleteTag(id uint64, uid string) (uint64, error) {
 	var tag Tag
-	if err := db.Where("id = ? AND uid = ?", id, uid).Delete(&tag).Error; err != nil {
+	var err error
+	if err = db.Where("id = ? AND uid = ?", id, uid).Find(&tag).Error; err != nil {
 		return 0, err
 	}
-	return tag.Id, nil
+	if tag.Id > 0 {
+		err = deleteTag(id)
+	}
+	return tag.Id, err
+}
+
+func deleteTag(id uint64) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		// 删除下面的关联帖子
+		if err := tx.Where("post_id = ?", id).Delete(&PostTag{}).Error; err != nil {
+			return err
+		}
+		// 删除tag
+		return tx.Where("id = ?", id).Delete(&Tag{}).Error
+	})
 }
 
 func addTagLogInPost(postId uint64, point TAG_POINT) error {
