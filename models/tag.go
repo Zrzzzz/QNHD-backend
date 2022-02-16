@@ -140,7 +140,11 @@ func DeleteTag(id uint64, uid string) (uint64, error) {
 func deleteTag(id uint64) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// 删除下面的关联帖子
-		if err := tx.Where("post_id = ?", id).Delete(&PostTag{}).Error; err != nil {
+		if err := tx.Where("tag_id = ?", id).Delete(&PostTag{}).Error; err != nil {
+			return err
+		}
+		// 删除tag记录
+		if err := tx.Where("tag_id = ?", id).Delete(&LogTag{}).Error; err != nil {
 			return err
 		}
 		// 删除tag

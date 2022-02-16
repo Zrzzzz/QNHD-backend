@@ -40,7 +40,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 		// TLSConfig:      tlscfg,
 	}
-	s.ListenAndServeTLS("cert/5193613_zrzz.site.pem", "cert/5193613_zrzz.site.key")
+	s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key")
 
 	defer models.Close()
 	defer cronic.Close()
