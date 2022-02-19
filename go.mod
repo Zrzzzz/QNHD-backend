@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/astaxie/beego v1.12.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/fatih/structs v1.1.0 // indirect
 	github.com/gin-gonic/gin v1.7.3
 	github.com/go-ego/gse v0.69.15
 	github.com/go-ini/ini v1.62.0

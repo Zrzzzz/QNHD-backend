@@ -30,7 +30,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 	)
 
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("is_read, created_at DESC")
+	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("created_at DESC")
 	// 找到楼层
 	if err = db.Table("(?) as a", logs).
 		Unscoped().

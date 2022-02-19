@@ -16,7 +16,7 @@ type UnreadNoticeResponse struct {
 
 type LogUnreadNotice struct {
 	Uid      uint64 `json:"uid"`
-	NoticeId uint64 `json:"floor_id"`
+	NoticeId uint64 `json:"notice_id"`
 }
 
 // 通知所有用户
@@ -56,9 +56,10 @@ func GetUnreadNotices(c *gin.Context, uid uint64) ([]UnreadNoticeResponse, error
 	}
 	for _, n := range notices {
 		var r = UnreadNoticeResponse{Notice: n}
+		r.IsRead = true
 		for _, log := range logs {
 			if log.NoticeId == n.Id {
-				r.IsRead = true
+				r.IsRead = false
 			}
 		}
 		ret = append(ret, r)
