@@ -15,4 +15,3 @@ watch:
 
 stop:
 	pkill air
-	rm /tmp/qnhd.log 2>/dev/null

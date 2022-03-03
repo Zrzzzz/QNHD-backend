@@ -159,5 +159,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		sGroup.GET("/sensitive", GetSensitiveWordFile)
 		// 上传关键词文件
 		sGroup.POST("/sensitive", UploadSensitiveWordFile)
+		// 追加词语
+		sGroup.POST("/sensitive/words", AddWordsToSensitiveFile)
 	}
 }

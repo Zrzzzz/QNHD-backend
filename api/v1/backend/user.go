@@ -49,7 +49,12 @@ func GetUserDetail(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	detail := twtservice.QueryUserDetail(u.Number)
+	detail, err := twtservice.QueryUserDetail(u.Number)
+	if err != nil {
+		logging.Error("get user error: %v", err)
+		r.Error(c, e.ERROR_SERVER, err.Error())
+		return
+	}
 	r.OK(c, e.SUCCESS, map[string]interface{}{"detail": detail})
 }
 
