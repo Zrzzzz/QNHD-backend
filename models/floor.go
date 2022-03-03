@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
 	"qnhd/request/twtservice"
@@ -290,7 +291,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	var newFloor = Floor{
 		Uid:      uid,
 		PostId:   postId,
-		Content:  maps["content"].(string),
+		Content:  filter.Filter(maps["content"].(string)),
 		Nickname: nickname,
 		ImageURL: maps["image_url"].(string),
 	}

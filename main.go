@@ -6,6 +6,7 @@ import (
 	"qnhd/api"
 	"qnhd/models"
 	"qnhd/pkg/cronic"
+	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
 	"qnhd/pkg/setting"
@@ -26,6 +27,7 @@ func main() {
 	segment.Setup()
 	logging.Setup()
 	models.Setup()
+	filter.Setup()
 	router := api.InitRouter()
 	cronic.Setup()
 
@@ -42,6 +44,7 @@ func main() {
 	}
 	s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key")
 
+	defer s.Close()
 	defer models.Close()
 	defer cronic.Close()
 }

@@ -6,6 +6,7 @@ import (
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
+	"qnhd/request/twtservice"
 
 	"qnhd/pkg/r"
 
@@ -25,6 +26,31 @@ type userResponse struct {
 type userInfo struct {
 	models.User
 	Department models.Department `json:"department"`
+}
+
+// @method [get]
+// @way [query]
+// @param uid
+// @return
+// @route /b/user/detail
+func GetUserDetail(c *gin.Context) {
+	uid := c.Query("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "get common user")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	u, err := models.GetUser(map[string]interface{}{"id": uid})
+	if err != nil {
+		logging.Error("get user error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	detail := twtservice.QueryUserDetail(u.Number)
+	r.OK(c, e.SUCCESS, map[string]interface{}{"detail": detail})
 }
 
 // @method [get]

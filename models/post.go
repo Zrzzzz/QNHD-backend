@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
 
@@ -339,8 +340,8 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		Type:    maps["type"].(PostType),
 		Uid:     maps["uid"].(uint64),
 		Campus:  maps["campus"].(PostCampusType),
-		Title:   maps["title"].(string),
-		Content: maps["content"].(string),
+		Title:   filter.Filter(maps["title"].(string)),
+		Content: filter.Filter(maps["content"].(string)),
 	}
 	if post.Type == POST_HOLE {
 		imgs, img_ok := maps["image_urls"].([]string)

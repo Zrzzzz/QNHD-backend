@@ -14,11 +14,11 @@ type LogUnreadFloor struct {
 }
 
 type UnreadFloorResponse struct {
-	Type    int    `json:"type"`
-	IsRead  bool   `json:"is_read"`
-	ToFloor *Floor `json:"to_floor"`
-	Post    Post   `json:"post"`
-	Floor   Floor  `json:"floor"`
+	Type    int            `json:"type"`
+	IsRead  bool           `json:"is_read"`
+	ToFloor *FloorResponse `json:"to_floor"`
+	Post    PostResponse   `json:"post"`
+	Floor   FloorResponse  `json:"floor"`
 }
 
 func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) {
@@ -46,7 +46,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 	}
 	// 对每个楼层分析
 	for _, f := range floors {
-		var r = UnreadFloorResponse{Floor: f}
+		var r = UnreadFloorResponse{Floor: f.geneResponse(false)}
 		for _, log := range logFloors {
 			if log.FloorId == f.Id {
 				r.IsRead = log.IsRead
@@ -60,7 +60,8 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 				break
 			}
 			r.Type = 1
-			r.ToFloor = &tof
+			tofr := tof.geneResponse(false)
+			r.ToFloor = &tofr
 		} else {
 			r.Type = 0
 		}
@@ -70,7 +71,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 			err = e
 			break
 		}
-		r.Post = p
+		r.Post = p.geneResponse()
 		ret = append(ret, r)
 	}
 

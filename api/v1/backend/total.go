@@ -22,6 +22,7 @@ const (
 	Tag
 	Department
 	Game
+	Sensitive
 )
 
 var BackendTypes = [...]BackendType{
@@ -35,6 +36,7 @@ var BackendTypes = [...]BackendType{
 	Tag,
 	Department,
 	Game,
+	Sensitive,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -82,6 +84,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user", permission.RightDemand(models.UserRight{Super: true}), AddUser)
 		// 新建多个用户
 		g.POST("/users", permission.RightDemand(models.UserRight{Super: true}), AddUsers)
+		// 获取某用户详细信息
+		g.GET("/user/detail", permission.RightDemand(models.UserRight{Super: true}), GetUserDetail)
 		// 获取请求者用户信息
 		g.GET("/user/info", GetUserInfo)
 		// 获取普通用户列表
@@ -149,5 +153,11 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/game", GetNewestGame)
 		// 更新列表
 		g.POST("/game", permission.RightDemand(models.UserRight{Super: true}), AddNewGame)
+	case Sensitive:
+		sGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		// 获取关键词文件
+		sGroup.GET("/sensitive", GetSensitiveWordFile)
+		// 上传关键词文件
+		sGroup.POST("/sensitive", UploadSensitiveWordFile)
 	}
 }

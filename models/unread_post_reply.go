@@ -17,7 +17,7 @@ type LogUnreadPostReply struct {
 
 type UnreadReplyResponse struct {
 	IsRead bool              `json:"is_read"`
-	Post   Post              `json:"post"`
+	Post   PostResponse      `json:"post"`
 	Reply  PostReplyResponse `json:"reply"`
 }
 
@@ -56,7 +56,7 @@ func GetUnreadPostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, err
 			err = e
 			break
 		}
-		u.Post = p
+		u.Post = p.geneResponse()
 		// 加上未读
 		for _, l := range logPrs {
 			if l.ReplyId == r.Id {

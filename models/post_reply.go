@@ -1,6 +1,8 @@
 package models
 
 import (
+	"qnhd/pkg/filter"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -79,7 +81,7 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	var pr = PostReply{
 		PostId:  maps["post_id"].(uint64),
 		Sender:  maps["sender"].(PostReplyType),
-		Content: maps["content"].(string),
+		Content: filter.Filter(maps["content"].(string)),
 	}
 	urls := maps["urls"].([]string)
 	err := db.Transaction(func(tx *gorm.DB) error {
