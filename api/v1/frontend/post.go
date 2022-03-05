@@ -271,8 +271,8 @@ func AddPost(c *gin.Context) {
 // @route /f/post/solve
 func EditPostSolved(c *gin.Context) {
 	uid := r.GetUid(c)
-	postId := c.Query("post_id")
-	rating := c.Query("rating")
+	postId := c.PostForm("post_id")
+	rating := c.PostForm("rating")
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")

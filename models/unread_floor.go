@@ -4,6 +4,7 @@ import (
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type LogUnreadFloor struct {
@@ -74,8 +75,10 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 		r.Post = p.geneResponse()
 		ret = append(ret, r)
 	}
-
-	return ret, err
+	if err != gorm.ErrRecordNotFound {
+		return ret, err
+	}
+	return ret, nil
 }
 
 // 添加评论通知
