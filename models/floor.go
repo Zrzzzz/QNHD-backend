@@ -127,12 +127,19 @@ func transFloorsToResponsesWithUid(floor *[]Floor, uid string, searchSubFloors b
 	return frs, err
 }
 
-const OWNER_NAME = "Owner"
+const OWNER_NAME = "青年湖"
 
-// var FLOOR_NAME = []string{
-// 	"Angus", "Bertram", "Conrad", "Devin", "Emmanuel", "Fitzgerald", "Gregary", "Herbert", "Ingram", "Joyce", "Kelly", "Leo", "Morton", "Nathaniel", "Orville", "Payne", "Quintion", "Regan", "Sean", "Tracy", "Uriah", "Valentine", "Walker", "Xavier", "Yves", "Zachary",
-// }
-const FLOOR_NAME = "测试"
+var FLOOR_NAME = []string{
+	"9教", "19教", "23教", "26教", "33教", "44教", "45教", "46教", "47教", "规圆楼", "矩方楼", "天麟广场", "北洋广场", "北洋纪念亭", "求实会堂", "天津大学星", "三问桥", "太雷广场", "北洋纪念林", "鹏翔公寓", "克拉公寓", "留园", "格园", "诚园", "正园", "修园", "治园", "平园", "知园", "梅园餐厅", "兰园餐厅", "桃园餐厅", "棠园餐厅", "竹园餐厅", "留园餐厅", "青园餐厅", "菊园餐厅", "天大美食广场", "校训石", "尚贤石", "敬业湖", "友谊湖", "爱晚湖", "1895行政楼", "郑东图书馆", "科学图书馆", "海棠书屋", "土立方", "大学生活动中心", "体育馆", "游泳馆", "土木馆", "水利馆", "校史馆", "冯骥才艺术研究院", "王学仲艺术研究所", "天南楼", "北洋门诊部", "北洋超市", "罗森便利店", "京东便利店", "小诚食", "菜鸟驿站", "天大四季村", "天津大学幼儿园", "斗兽场", "求实影院", "海小棠", "洗衣房", "天大纪念品店", "理发店", "修车铺", "隔壁南开", "地科院",
+}
+
+func getFloorNickname(cnt int) string {
+	idx := cnt % len(FLOOR_NAME)
+	if cnt/len(FLOOR_NAME) >= 1 {
+		return fmt.Sprintf("%s%d号", FLOOR_NAME[idx], cnt/len(FLOOR_NAME)+1)
+	}
+	return FLOOR_NAME[idx]
+}
 
 // 根据id返回
 func GetFloor(floorId string) (Floor, error) {
@@ -284,8 +291,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 			if err := db.Model(&Floor{}).Unscoped().Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
-			// nickname = FLOOR_NAME[cnt]
-			nickname = fmt.Sprintf("%s%d", FLOOR_NAME, cnt)
+			nickname = getFloorNickname(int(cnt))
 		}
 	}
 	var newFloor = Floor{
@@ -353,8 +359,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 			if err := db.Model(&Floor{}).Where("post_id = ? AND uid <> ?", postId, post.Uid).Distinct("uid").Count(&cnt).Error; err != nil {
 				return 0, err
 			}
-			// nickname = FLOOR_NAME[cnt]
-			nickname = fmt.Sprintf("%v%d", FLOOR_NAME, cnt)
+			nickname = getFloorNickname(int(cnt))
 		}
 	}
 
