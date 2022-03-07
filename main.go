@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"qnhd/api"
 	"qnhd/models"
 	"qnhd/pkg/cronic"
@@ -28,31 +26,10 @@ func main() {
 	logging.Setup()
 	models.Setup()
 	filter.Setup()
-	router := api.InitRouter()
+	api.Setup()
 	cronic.Setup()
 
-	// models.FlushPostTokens()
-	// tlscfg := api.InitTlsConfig()
-
-	s := &http.Server{
-		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HTTPPort),
-		Handler:        router,
-		ReadTimeout:    setting.ServerSetting.ReadTimeout,
-		WriteTimeout:   setting.ServerSetting.WriteTimeout,
-		MaxHeaderBytes: 1 << 20,
-		// TLSConfig:      tlscfg,
-	}
-	s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key")
-
-	defer s.Close()
 	defer models.Close()
+	defer api.Close()
 	defer cronic.Close()
 }
-
-// func main() {
-// 	segment.Setup()
-// 	setting.Setup()
-// 	models.Setup()
-// 	models.FlushPostsTokens(true)
-// 	models.FlushTagsTokens()
-// }
