@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 	)
 
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("created_at DESC")
+	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c))
 	// 找到楼层
 	if err = db.Table("(?) as a", logs).
 		Unscoped().
@@ -39,12 +40,15 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 		Joins("JOIN qnhd.floor as f ON a.floor_id = f.id").
 		Find(&floors).
 		Where("f.deleted_at IS NULL").
+		Order("created_at DESC").
 		Error; err != nil {
 		return ret, err
 	}
 	if err := logs.Find(&logFloors).Error; err != nil {
 		return ret, err
 	}
+	fmt.Println(floors)
+	fmt.Println(logFloors)
 	// 对每个楼层分析
 	for _, f := range floors {
 		var r = UnreadFloorResponse{Floor: f.geneResponse(false)}
