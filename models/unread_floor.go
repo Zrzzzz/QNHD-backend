@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -47,8 +46,6 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 	if err := logs.Find(&logFloors).Error; err != nil {
 		return ret, err
 	}
-	fmt.Println(floors)
-	fmt.Println(logFloors)
 	// 对每个楼层分析
 	for _, f := range floors {
 		var r = UnreadFloorResponse{Floor: f.geneResponse(false)}
