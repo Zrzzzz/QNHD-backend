@@ -35,9 +35,9 @@ func GetUnreadPostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, err
 		Unscoped().
 		Select("pr.*").
 		Joins("JOIN qnhd.post_reply as pr ON a.reply_id = pr.id").
-		Find(&replys).
 		Where("pr.deleted_at IS NULL").
 		Order("created_at DESC").
+		Find(&replys).
 		Error; err != nil {
 		return ret, err
 	}

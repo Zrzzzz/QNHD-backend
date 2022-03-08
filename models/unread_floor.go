@@ -37,9 +37,9 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 		Unscoped().
 		Select("f.*").
 		Joins("JOIN qnhd.floor as f ON a.floor_id = f.id").
-		Find(&floors).
 		Where("f.deleted_at IS NULL").
 		Order("created_at DESC").
+		Find(&floors).
 		Error; err != nil {
 		return ret, err
 	}
