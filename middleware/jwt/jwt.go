@@ -16,7 +16,7 @@ func JWT() gin.HandlerFunc {
 		var claims *util.Claims
 		var err error
 		code = e.SUCCESS
-		token := findToken(c)
+		token := r.FindToken(c)
 		// token不空
 		if token == "" {
 			code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
@@ -44,12 +44,4 @@ func JWT() gin.HandlerFunc {
 		}
 		c.Next()
 	}
-}
-
-func findToken(c *gin.Context) string {
-	token := c.GetHeader("token")
-	if token == "" {
-		token = c.Query("token")
-	}
-	return token
 }

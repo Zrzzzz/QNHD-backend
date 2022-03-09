@@ -11,9 +11,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func FindToken(c *gin.Context) string {
+	token := c.GetHeader("token")
+	if token == "" {
+		token = c.Query("token")
+	}
+	return token
+}
+
 func GetUid(c *gin.Context) string {
 	var claims *util.Claims
-	token := c.GetHeader("token")
+	token := FindToken(c)
 	if token == "" {
 		return ""
 	} else {
