@@ -14,20 +14,14 @@ import (
 	"gorm.io/gorm"
 )
 
+const POST_ALL = 0
+
 type PostCampusType int
 
 const (
 	CAMPUS_NONE PostCampusType = iota
 	CAMPUS_OLD
 	CAMPUS_NEW
-)
-
-type PostType int
-
-const (
-	POST_HOLE PostType = iota
-	POST_SCHOOL
-	POST_ALL
 )
 
 type SearchModeType int
@@ -42,7 +36,7 @@ type Post struct {
 	Uid uint64 `json:"uid" gorm:"column:uid"`
 
 	// 帖子分类
-	Type         PostType       `json:"type"`
+	Type         int            `json:"type"`
 	DepartmentId uint64         `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType `json:"campus"`
 	Solved       bool           `json:"solved" gorm:"default:0"`
@@ -232,7 +226,7 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 		cnt   int64
 	)
 	content := maps["content"].(string)
-	postType := maps["type"].(PostType)
+	postType := maps["type"].(int)
 	searchMode := maps["search_mode"].(SearchModeType)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
@@ -337,13 +331,33 @@ func GetHistoryPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser
 func AddPost(maps map[string]interface{}) (uint64, error) {
 	var err error
 	var post = &Post{
-		Type:    maps["type"].(PostType),
+		Type:    maps["type"].(int),
 		Uid:     maps["uid"].(uint64),
 		Campus:  maps["campus"].(PostCampusType),
 		Title:   filter.Filter(maps["title"].(string)),
 		Content: filter.Filter(maps["content"].(string)),
 	}
-	if post.Type == POST_HOLE {
+	if post.Type == POST_SCHOOL_TYPE {
+		// 先对department_id进行查找，不存在要报错
+		departId := maps["department_id"].(uint64)
+		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {
+			return 0, err
+		}
+		post.DepartmentId = departId
+		imgs, img_ok := maps["image_urls"].([]string)
+		err = db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Create(post).Error; err != nil {
+				return err
+			}
+
+			if img_ok {
+				if err := AddImageInPost(tx, post.Id, imgs); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	} else if IsValidPostType(post.Type) {
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Create(post).Error; err != nil {
@@ -362,26 +376,6 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 				}
 				// 对帖子的tag增加记录
 				addTagLog(util.AsUint(tagId), TAG_ADDPOST)
-			}
-			return nil
-		})
-	} else if post.Type == POST_SCHOOL {
-		// 先对department_id进行查找，不存在要报错
-		departId := maps["department_id"].(uint64)
-		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {
-			return 0, err
-		}
-		post.DepartmentId = departId
-		imgs, img_ok := maps["image_urls"].([]string)
-		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Create(post).Error; err != nil {
-				return err
-			}
-
-			if img_ok {
-				if err := AddImageInPost(tx, post.Id, imgs); err != nil {
-					return err
-				}
 			}
 			return nil
 		})

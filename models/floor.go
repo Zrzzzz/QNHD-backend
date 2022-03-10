@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const POST_SCHOOL_TYPE = 1
+
 type Floor struct {
 	Model
 	Uid         uint64 `json:"uid"`
@@ -314,8 +316,8 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 			}
 		}
 	}
-	// 对帖子的tag增加记录, 当是树洞帖才会有
-	if post.Type == POST_HOLE {
+	// 对帖子的tag增加记录, 当不是校务才会有
+	if post.Type != POST_SCHOOL_TYPE {
 		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
 	updatePostTime(post.Id)
@@ -404,8 +406,8 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		}
 	}
 
-	// 对帖子的tag增加记录, 当是树洞帖才会有
-	if post.Type == POST_HOLE {
+	// 对帖子的tag增加记录, 当不是校务才会有
+	if post.Type != POST_SCHOOL_TYPE {
 		addTagLogInPost(post.Id, TAG_ADDFLOOR)
 	}
 

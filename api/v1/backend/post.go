@@ -39,7 +39,6 @@ func GetPosts(c *gin.Context) {
 	valid.Numeric(departmentId, "department_id")
 	valid.Numeric(tagId, "tag_id")
 	postTypeint := util.AsInt(postType)
-	valid.Range(postTypeint, 0, 2, "type")
 	searchModeint := util.AsInt(searchMode)
 	valid.Range(searchModeint, 0, 1, "search_mode")
 	if solved != "" {
@@ -53,7 +52,7 @@ func GetPosts(c *gin.Context) {
 	}
 
 	maps := map[string]interface{}{
-		"type":          models.PostType(postTypeint),
+		"type":          postTypeint,
 		"search_mode":   models.SearchModeType(searchModeint),
 		"content":       content,
 		"solved":        solved,

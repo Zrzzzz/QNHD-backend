@@ -13,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const POST_SCHOOL_TYPE = 1
+
 // @method [get]
 // @way [query]
 // @param content page page_size
@@ -40,7 +42,6 @@ func GetPosts(c *gin.Context) {
 	valid.Numeric(departmentId, "department_id")
 	valid.Numeric(tagId, "tag_id")
 	postTypeint := util.AsInt(postType)
-	valid.Range(postTypeint, 0, 2, "type")
 	searchModeint := util.AsInt(searchMode)
 	valid.Range(searchModeint, 0, 1, "search_mode")
 	if solved != "" {
@@ -55,7 +56,7 @@ func GetPosts(c *gin.Context) {
 
 	uid := r.GetUid(c)
 	maps := map[string]interface{}{
-		"type":          models.PostType(postTypeint),
+		"type":          postTypeint,
 		"search_mode":   models.SearchModeType(searchModeint),
 		"content":       content,
 		"solved":        solved,
@@ -202,7 +203,6 @@ func AddPost(c *gin.Context) {
 	campusint := util.AsInt(campus)
 	valid.Range(campusint, 0, 2, "campus")
 	postTypeint := util.AsInt(postType)
-	valid.Range(postTypeint, 0, 1, "postType")
 	ok, verr = r.ErrorValid(&valid, "Add posts")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
@@ -210,15 +210,15 @@ func AddPost(c *gin.Context) {
 	}
 	// 需要根据类型判断返回类型
 	// 判断type
-	if postTypeint == int(models.POST_HOLE) {
+	if postTypeint == POST_SCHOOL_TYPE {
+		// 必须要求部门id不为0
+		valid.Required(departId, "department_id")
+		valid.Numeric(departId, "department_id")
+	} else if models.IsValidPostType(postTypeint) {
 		// 可选tag
 		if tagId != "" {
 			valid.Numeric(tagId, "tag_id")
 		}
-	} else if postTypeint == int(models.POST_SCHOOL) {
-		// 必须要求部门id不为0
-		valid.Required(departId, "department_id")
-		valid.Numeric(departId, "department_id")
 	}
 	ok, verr = r.ErrorValid(&valid, "Add posts")
 	if !ok {
@@ -234,17 +234,16 @@ func AddPost(c *gin.Context) {
 	intuid := util.AsUint(uid)
 	maps := map[string]interface{}{
 		"uid":        intuid,
-		"type":       models.PostType(postTypeint),
+		"type":       postTypeint,
 		"campus":     models.PostCampusType(campusint),
 		"title":      title,
 		"content":    content,
 		"image_urls": imageURLs,
 	}
-
-	if postTypeint == int(models.POST_HOLE) && tagId != "" {
-		maps["tag_id"] = tagId
-	} else if postTypeint == int(models.POST_SCHOOL) {
+	if postTypeint == POST_SCHOOL_TYPE {
 		maps["department_id"] = util.AsUint(departId)
+	} else if tagId != "" {
+		maps["tag_id"] = tagId
 	}
 	id, err := models.AddPost(maps)
 	if err != nil {
@@ -253,7 +252,7 @@ func AddPost(c *gin.Context) {
 		return
 	}
 	// 如果是校务贴，需要对部门发出通知
-	if postTypeint == int(models.POST_SCHOOL) {
+	if postTypeint == POST_SCHOOL_TYPE {
 		err = yunpian.NotifyNewPost(util.AsUint(departId), title)
 		if err != nil {
 			logging.Error(err.Error())

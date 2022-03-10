@@ -23,6 +23,7 @@ const (
 	Department
 	Game
 	Sensitive
+	PostType
 )
 
 var BackendTypes = [...]BackendType{
@@ -37,6 +38,7 @@ var BackendTypes = [...]BackendType{
 	Department,
 	Game,
 	Sensitive,
+	PostType,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -161,5 +163,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		sGroup.POST("/sensitive", UploadSensitiveWordFile)
 		// 追加词语
 		sGroup.POST("/sensitive/words", AddWordsToSensitiveFile)
+	case PostType:
+		// 获取帖子类型
+		g.GET("/posttypes", frontend.GetPostTypes)
+		// 增加帖子类型
+		g.POST("/posttype", permission.RightDemand(models.UserRight{Super: true}), AddPostType)
 	}
 }
