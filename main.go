@@ -15,7 +15,7 @@ func main() {
 	setting.Setup()
 	segment.Setup()
 	logging.Setup()
-	models.Setup()
+	setupModels()
 	filter.Setup()
 	refreshToken()
 	api.Setup()
@@ -24,6 +24,11 @@ func main() {
 	defer models.Close()
 	defer api.Close()
 	defer cronic.Close()
+}
+
+func setupModels() {
+	modelDebug := os.Getenv("DB_DEBUG")
+	models.Setup(modelDebug == "1")
 }
 
 func refreshToken() {
