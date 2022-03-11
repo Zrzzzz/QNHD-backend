@@ -14,10 +14,10 @@ import (
 func main() {
 	setting.Setup()
 	segment.Setup()
-	refreshToken()
 	logging.Setup()
 	models.Setup()
 	filter.Setup()
+	refreshToken()
 	api.Setup()
 	cronic.Setup()
 
