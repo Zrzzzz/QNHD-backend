@@ -57,7 +57,7 @@ func FlushPostsTokens(all bool) error {
 		}
 	} else {
 		for _, p := range posts {
-			if p.Tokens != "" {
+			if p.Tokens == "" {
 				if err := db.Model(&Post{}).Where("id = ?", p.Id).
 					Update("tokens", gorm.Expr(geneTokenString(p.Title, p.Content))).Error; err != nil {
 					return err
@@ -76,13 +76,22 @@ func flushTagTokens(tagId uint64, content string) error {
 }
 
 // 刷新tag的token
-func FlushTagsTokens() error {
+func FlushTagsTokens(all bool) error {
 	var tags []Tag
 	db.Find(&tags)
 	for _, p := range tags {
-		if err := db.Model(&Tag{}).Where("id = ?", p.Id).
-			Update("tokens", gorm.Expr(geneTokenString(p.Name))).Error; err != nil {
-			return err
+		if all {
+			if err := db.Model(&Tag{}).Where("id = ?", p.Id).
+				Update("tokens", gorm.Expr(geneTokenString(p.Name))).Error; err != nil {
+				return err
+			}
+		} else {
+			if p.Tokens == "" {
+				if err := db.Model(&Tag{}).Where("id = ?", p.Id).
+					Update("tokens", gorm.Expr(geneTokenString(p.Name))).Error; err != nil {
+					return err
+				}
+			}
 		}
 		fmt.Println(p.Name, "更新成功")
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"qnhd/api"
 	"qnhd/models"
 	"qnhd/pkg/cronic"
@@ -10,19 +11,10 @@ import (
 	"qnhd/pkg/setting"
 )
 
-// @title QNHD API
-// @version 1.0
-// @schemes http
-// @description 青年湖底api
-// @host 116.62.107.46:7013
-// @BasePath /api/v1
-// @license.name Apache 2.0
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name token
 func main() {
 	setting.Setup()
 	segment.Setup()
+	refreshToken()
 	logging.Setup()
 	models.Setup()
 	filter.Setup()
@@ -32,4 +24,13 @@ func main() {
 	defer models.Close()
 	defer api.Close()
 	defer cronic.Close()
+}
+
+func refreshToken() {
+	shouldRefresh := os.Getenv("QNHD_REFRESH")
+	if shouldRefresh == "1" {
+		// 更新未处理的数据
+		models.FlushPostsTokens(false)
+		models.FlushTagsTokens(false)
+	}
 }
