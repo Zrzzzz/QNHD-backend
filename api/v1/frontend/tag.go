@@ -1,8 +1,10 @@
 package frontend
 
 import (
+	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/e"
+	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/util"
@@ -93,6 +95,11 @@ func AddTag(c *gin.Context) {
 	ok, verr := r.ErrorValid(&valid, "Add tag")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	ok, s := filter.Validate(name)
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": fmt.Sprintf("Tag触发敏感词%s", s)})
 		return
 	}
 	exist, err := models.ExistTagByName(name)

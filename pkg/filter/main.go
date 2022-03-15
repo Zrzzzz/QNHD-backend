@@ -16,3 +16,7 @@ func Reload() error {
 func Filter(s string) string {
 	return filter.Replace(s, '*')
 }
+
+func Validate(s string) (bool, string) {
+	return filter.Validate(s)
+}
