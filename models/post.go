@@ -149,12 +149,12 @@ func (p PostResponse) searchByUid(uid string) PostResponseUser {
 		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
 	}
 
-	frs, err := getShortFloorResponsesInPostWithUid(util.AsStrU(p.Id), uid)
-	if err != nil {
-		pr.Error = err
-		return pr
-	}
-	pr.Floors = frs
+	// frs, err := getShortFloorResponsesInPostWithUid(util.AsStrU(p.Id), uid)
+	// if err != nil {
+	// 	pr.Error = err
+	// 	return pr
+	// }
+	// pr.Floors = frs
 	return pr
 }
 
