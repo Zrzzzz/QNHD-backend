@@ -18,8 +18,8 @@ func main() {
 	setupModels()
 	filter.Setup()
 	refreshToken()
-	api.Setup()
 	cronic.Setup()
+	api.Setup()
 
 	defer models.Close()
 	defer api.Close()
