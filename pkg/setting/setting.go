@@ -32,11 +32,14 @@ type App struct {
 
 	PageSize int
 
-	WPYDomain     string
-	WPYAppSecret  string
-	WPYAppKey     string
+	WPYDomain    string
+	WPYAppSecret string
+	WPYAppKey    string
+
+	WPYLoginAc string
+	WPYLoginPw string
+
 	YunPianAppKey string
-	PushToken     string
 
 	// 发贴间隔时间
 	TimeLimit       int

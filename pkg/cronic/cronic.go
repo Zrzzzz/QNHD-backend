@@ -3,6 +3,7 @@ package cronic
 import (
 	"qnhd/models"
 	"qnhd/pkg/logging"
+	"qnhd/request/twtservice"
 
 	cron "github.com/robfig/cron/v3"
 )
@@ -14,6 +15,10 @@ func Setup() {
 	if err != nil {
 		logging.Error(err.Error())
 	}
+	err = twtservice.SaveToken()
+	if err != nil {
+		logging.Error(err.Error())
+	}
 	// 定时任务
 	c = cron.New()
 	c.AddFunc("00 00 00 * * ?", func() {
@@ -22,11 +27,12 @@ func Setup() {
 		if err != nil {
 			logging.Error(err.Error())
 		}
-		// 清理已读楼层
-
-		// 清理已读回复
+		// 更新token
+		err = twtservice.SaveToken()
+		if err != nil {
+			logging.Error(err.Error())
+		}
 		// 清理已读点赞
-		// 清理已读通知
 	})
 	c.Start()
 }
