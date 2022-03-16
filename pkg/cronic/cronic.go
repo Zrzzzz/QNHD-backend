@@ -17,7 +17,7 @@ func Setup() {
 	}
 	err = twtservice.SaveToken()
 	if err != nil {
-		logging.Fatal(err.Error())
+		logging.Error(err.Error())
 	}
 	// 定时任务
 	c = cron.New()

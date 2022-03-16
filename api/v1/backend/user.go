@@ -28,6 +28,14 @@ type userInfo struct {
 	Department models.Department `json:"department"`
 }
 
+func ForceTokenUpdate(c *gin.Context) {
+	if err := twtservice.SaveToken(); err != nil {
+		r.Error(c, e.ERROR_SERVER, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [get]
 // @way [query]
 // @param uid
