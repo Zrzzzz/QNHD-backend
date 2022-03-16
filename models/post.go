@@ -103,19 +103,19 @@ type PostResponseUser struct {
 func (p *Post) geneResponse() PostResponse {
 	var pr PostResponse
 
-	frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
-	if err != nil {
-		pr.Error = err
-		return pr
-	}
+	// frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
+	// if err != nil {
+	// 	pr.Error = err
+	// 	return pr
+	// }
 	imgs, err := GetImageInPost(p.Id)
 	if err != nil {
 		pr.Error = err
 		return pr
 	}
 	pr = PostResponse{
-		Post:         *p,
-		Floors:       frs,
+		Post: *p,
+		// Floors:       frs,
 		CommentCount: GetCommentCount(p.Id, true),
 		ImageUrls:    imgs,
 	}
