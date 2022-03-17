@@ -31,13 +31,25 @@ type HotTagResult struct {
 	Name  string `json:"name"`
 }
 
-type TAG_POINT uint64
+type TAG_POINT int64
 
 const (
-	TAG_SEARCH TAG_POINT = iota + 1
-	TAG_VISIT
-	TAG_ADDFLOOR
-	TAG_ADDPOST
+	TAG_ADD_POST  TAG_POINT = 20
+	TAG_ADD_FLOOR TAG_POINT = 20
+
+	TAG_LIKE_POST TAG_POINT = 4
+	TAG_FAV_POST  TAG_POINT = 3
+	TAG_DIS_POST  TAG_POINT = 4
+
+	TAG_UNLIKE_POST TAG_POINT = -4
+	TAG_UNFAV_POST  TAG_POINT = -3
+	TAG_UNDIS_POST  TAG_POINT = -4
+
+	TAG_LIKE_FLOOR TAG_POINT = 1
+	TAG_DIS_FLOOR  TAG_POINT = 1
+
+	TAG_UNLIKE_FLOOR TAG_POINT = -1
+	TAG_UNDIS_FLOOR  TAG_POINT = -1
 )
 
 func ExistTagByName(name string) (bool, error) {
@@ -61,12 +73,6 @@ func GetTags(name string) ([]Tag, error) {
 	}
 	if err := d.Order("id").Find(&tags).Error; err != nil {
 		return nil, err
-	}
-	// 如果有name，对搜索到的加入记录，仅匹配精确搜索
-	for _, t := range tags {
-		if t.Name == "name" {
-			addTagLog(t.Id, TAG_SEARCH)
-		}
 	}
 	return tags, nil
 }

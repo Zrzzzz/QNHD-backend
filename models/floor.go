@@ -318,7 +318,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	}
 	// 对帖子的tag增加记录, 当不是校务才会有
 	if post.Type != POST_SCHOOL_TYPE {
-		addTagLogInPost(post.Id, TAG_ADDFLOOR)
+		addTagLogInPost(post.Id, TAG_ADD_FLOOR)
 	}
 	updatePostTime(post.Id)
 	return newFloor.Id, nil
@@ -408,7 +408,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 
 	// 对帖子的tag增加记录, 当不是校务才会有
 	if post.Type != POST_SCHOOL_TYPE {
-		addTagLogInPost(post.Id, TAG_ADDFLOOR)
+		addTagLogInPost(post.Id, TAG_ADD_FLOOR)
 	}
 
 	updatePostTime(post.Id)
@@ -557,6 +557,7 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	updatePostTime(floor.PostId)
 	addUnreadLike(floor.Uid, LIKE_FLOOR, floor.Id)
 	UndisFloor(floorId, uid)
+	addTagLogInPost(floor.PostId, TAG_LIKE_FLOOR)
 	return floor.LikeCount, nil
 }
 
@@ -586,7 +587,7 @@ func UnlikeFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount-1).Error; err != nil {
 		return 0, err
 	}
-
+	addTagLogInPost(floor.PostId, TAG_UNLIKE_FLOOR)
 	return floor.LikeCount, nil
 }
 
@@ -617,6 +618,7 @@ func DisFloor(floorId string, uid string) (uint64, error) {
 		return 0, err
 	}
 	UnlikeFloor(floorId, uid)
+	addTagLogInPost(floor.PostId, TAG_DIS_FLOOR)
 	return floor.DisCount, nil
 }
 
@@ -644,7 +646,7 @@ func UndisFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount-1).Error; err != nil {
 		return 0, err
 	}
-
+	addTagLogInPost(floor.PostId, TAG_UNDIS_FLOOR)
 	return floor.DisCount, nil
 }
 

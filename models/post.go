@@ -213,9 +213,6 @@ func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, e
 	if err := addVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
-	if err := addTagLogInPost(util.AsUint(postId), TAG_VISIT); err != nil {
-		return pr, err
-	}
 	ret := post.geneResponse().searchByUid(uid)
 	return ret, ret.Error
 }
@@ -266,10 +263,6 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 		db.Model(&PostTag{}).Select("post_id").Where("tag_id = ?", tagId).Find(&tagIds)
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
-		if taglog {
-			// 添加搜索记录
-			addTagLog(util.AsUint(tagId), TAG_VISIT)
-		}
 	}
 	if err := d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
@@ -375,7 +368,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 					return err
 				}
 				// 对帖子的tag增加记录
-				addTagLog(util.AsUint(tagId), TAG_ADDPOST)
+				addTagLog(util.AsUint(tagId), TAG_ADD_POST)
 			}
 			return nil
 		})
@@ -511,6 +504,7 @@ func FavPost(postId string, uid string) (uint64, error) {
 
 	if uid != util.AsStrU(post.Uid) {
 		updatePostTime(post.Id)
+		addTagLogInPost(post.Id, TAG_FAV_POST)
 	}
 	return post.FavCount, nil
 }
@@ -538,6 +532,9 @@ func UnfavPost(postId string, uid string) (uint64, error) {
 	}
 	if err := db.Model(&post).Update("fav_count", post.FavCount-1).Error; err != nil {
 		return 0, err
+	}
+	if uid != util.AsStrU(post.Uid) {
+		addTagLogInPost(post.Id, TAG_UNFAV_POST)
 	}
 	return post.FavCount, nil
 }
@@ -570,6 +567,7 @@ func LikePost(postId string, uid string) (uint64, error) {
 
 	if uid != util.AsStrU(post.Uid) {
 		updatePostTime(post.Id)
+		addTagLogInPost(post.Id, TAG_LIKE_POST)
 	}
 	addUnreadLike(post.Uid, LIKE_POST, post.Id)
 	UnDisPost(postId, uid)
@@ -601,6 +599,9 @@ func UnLikePost(postId string, uid string) (uint64, error) {
 	if err := db.Model(&post).Update("like_count", post.LikeCount-1).Error; err != nil {
 		return 0, err
 	}
+	if uid != util.AsStrU(post.Uid) {
+		addTagLogInPost(post.Id, TAG_UNLIKE_POST)
+	}
 	return post.LikeCount, nil
 }
 
@@ -627,6 +628,10 @@ func DisPost(postId string, uid string) (uint64, error) {
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount+1).Error; err != nil {
 		return 0, err
+	}
+	if uid != util.AsStrU(post.Uid) {
+		updatePostTime(post.Id)
+		addTagLogInPost(post.Id, TAG_DIS_POST)
 	}
 	UnLikePost(postId, uid)
 	return post.DisCount, nil
@@ -655,6 +660,9 @@ func UnDisPost(postId string, uid string) (uint64, error) {
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount-1).Error; err != nil {
 		return 0, err
+	}
+	if uid != util.AsStrU(post.Uid) {
+		addTagLogInPost(post.Id, TAG_UNDIS_POST)
 	}
 	return post.DisCount, nil
 }
