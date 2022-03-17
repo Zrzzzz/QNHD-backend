@@ -453,9 +453,9 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 func deleteFloor(floor *Floor) error {
 	/*
 		删除楼层逻辑
-		log_floor_dis, log_floor_like, log_unread_floor
 		subto的帖子, reply_to的帖子
-		report
+		log_floor_dis, log_floor_like, log_unread_floor
+		reports
 	*/
 	return db.Transaction(func(tx *gorm.DB) error {
 
@@ -496,6 +496,9 @@ func deleteFloor(floor *Floor) error {
 			return err
 		}
 		if err := tx.Where("id IN (?) AND type = ?", ids, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
+			return err
+		}
+		if err := deleteReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
 			return err
 		}
 		// 加上自己

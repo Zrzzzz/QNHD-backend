@@ -126,6 +126,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
+		// 删除举报
+		g.GET("/report/delete", DeleteReport)
 	case Floor:
 		// 查询单个楼层
 		g.GET("/floor", GetFloor)

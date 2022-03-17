@@ -11,14 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Tags backend, report
-// @Summary 获取举报列表
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Response{data=models.ListRes{list=[]models.Report}}
-// @Failure 400 {object} models.Response "无效参数"
-// @Router /b/report [get]
+// @method [get]
+// @way [query]
+// @param type
+// @return
+// @route /b/reports
 func GetReports(c *gin.Context) {
 	rType := c.Query("type")
 	valid := validation.Validation{}
@@ -47,4 +44,27 @@ func GetReports(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
+// @param id
+// @return
+// @route /b/report/delete
+func DeleteReport(c *gin.Context) {
+	id := c.Query("id")
+	valid := validation.Validation{}
+	valid.Required(id, "id")
+	valid.Numeric(id, "id")
+	ok, verr := r.ErrorValid(&valid, "delete report")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	if err := models.DeleteReport(id); err != nil {
+		logging.Error("Delete report error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
 }

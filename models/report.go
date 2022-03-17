@@ -38,6 +38,10 @@ func AddReport(maps map[string]interface{}) error {
 	return err
 }
 
+func DeleteReport(id string) error {
+	return deleteReports(nil, map[string]interface{}{"id": id})
+}
+
 // 删除举报
 func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
 	if tx == nil {
