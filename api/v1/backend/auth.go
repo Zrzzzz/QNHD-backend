@@ -34,6 +34,10 @@ func GetAuth(c *gin.Context) {
 			"password": password,
 		},
 		map[string]interface{}{
+			"number":   nickname,
+			"password": password,
+		},
+		map[string]interface{}{
 			"phone_number": nickname,
 			"password":     password,
 		},
