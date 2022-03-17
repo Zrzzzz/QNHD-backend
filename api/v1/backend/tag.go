@@ -6,6 +6,7 @@ import (
 	"qnhd/pkg/logging"
 	"qnhd/pkg/r"
 	"qnhd/pkg/util"
+	"qnhd/request/twtservice"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,46 @@ func GetTags(c *gin.Context) {
 	data["list"] = list
 	data["total"] = len(list)
 	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
+// @param uid
+// @return
+// @route /b/tag/detail
+func GetTagDetail(c *gin.Context) {
+	id := c.Query("id")
+	valid := validation.Validation{}
+	valid.Required(id, "id")
+	valid.Numeric(id, "id")
+	ok, verr := r.ErrorValid(&valid, "get tag detail")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	tag, err := models.GetTag(id)
+	if err != nil {
+		logging.Error("get tag detail error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	if tag.Id == 0 {
+		r.Error(c, e.ERROR_DATABASE, "无此标签")
+		return
+	}
+	u, err := models.GetUser(map[string]interface{}{"id": tag.Uid})
+	if err != nil {
+		logging.Error("get tag detail error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	detail, err := twtservice.QueryUserDetail(u.Number)
+	if err != nil {
+		logging.Error("get tag detail error: %v", err)
+		r.Error(c, e.ERROR_SERVER, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, map[string]interface{}{"detail": detail})
 }
 
 // @method [get]

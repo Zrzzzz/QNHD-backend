@@ -77,6 +77,12 @@ func GetTags(name string) ([]Tag, error) {
 	return tags, nil
 }
 
+func GetTag(tagId string) (Tag, error) {
+	var tag Tag
+	err := db.Where("id = ?", tagId).Find(&tag).Error
+	return tag, err
+}
+
 func GetRecommendTag(lastId int) (HotTagResult, error) {
 	var tag HotTagResult
 	tags, err := GetHotTags(10)

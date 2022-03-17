@@ -46,7 +46,7 @@ func GetUserDetail(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
-	ok, verr := r.ErrorValid(&valid, "get common user")
+	ok, verr := r.ErrorValid(&valid, "get user detail")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
@@ -79,7 +79,7 @@ func GetUserInfo(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	depart, err := models.GetDepartmentByUid(util.AsUint(uid))
+	depart, _ := models.GetDepartmentByUid(util.AsUint(uid))
 	data := map[string]interface{}{
 		"user_info": userInfo{User: user, Department: depart},
 	}

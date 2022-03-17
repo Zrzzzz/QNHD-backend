@@ -142,6 +142,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/tags", GetTags)
 		// 删除指定标签
 		g.GET("/tag/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteTag)
+		// 获取标签详情
+		g.GET("/tag/detail", permission.RightDemand(models.UserRight{Super: true}), GetTagDetail)
 		// 获取热议标签
 		g.GET("/tags/hot", GetHotTag)
 	case Department:
