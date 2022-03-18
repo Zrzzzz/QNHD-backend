@@ -52,8 +52,11 @@ func GetReports(c *gin.Context) {
 // @return
 // @route /b/report/delete
 func DeleteReport(c *gin.Context) {
+	reportType := c.Query("type")
 	id := c.Query("id")
 	valid := validation.Validation{}
+	valid.Required(reportType, "type")
+	valid.Numeric(reportType, "type")
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "delete report")
@@ -61,7 +64,7 @@ func DeleteReport(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	if err := models.DeleteReport(id); err != nil {
+	if err := models.DeleteReports(reportType, id); err != nil {
 		logging.Error("Delete report error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

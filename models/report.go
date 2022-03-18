@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
 
 type ReportType int
 
@@ -38,8 +42,14 @@ func AddReport(maps map[string]interface{}) error {
 	return err
 }
 
-func DeleteReport(id string) error {
-	return deleteReports(nil, map[string]interface{}{"id": id})
+func DeleteReports(t string, id string) error {
+	if t == "1" {
+		return deleteReports(nil, map[string]interface{}{"type": "1", "post_id": id})
+	} else if t == "2" {
+		return deleteReports(nil, map[string]interface{}{"type": "2", "floor_id": id})
+	} else {
+		return fmt.Errorf("举报类型错误")
+	}
 }
 
 // 删除举报
