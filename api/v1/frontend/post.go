@@ -20,62 +20,81 @@ const POST_SCHOOL_TYPE = 1
 // @param content page page_size
 // @return postList
 // @route /f/posts
-func GetPosts(c *gin.Context) {
-	postType := c.Query("type")
-	searchMode := c.Query("search_mode")
-	content := c.Query("content")
-	departmentId := c.Query("department_id")
-	solved := c.Query("solved")
-	tagId := c.Query("tag_id")
+func GetPosts(front bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		postType := c.Query("type")
+		searchMode := c.Query("search_mode")
+		content := c.Query("content")
+		departmentId := c.Query("department_id")
+		solved := c.Query("solved")
+		tagId := c.Query("tag_id")
+		valueMode := c.Query("value_mode")
 
-	valid := validation.Validation{}
-	valid.Required(postType, "type")
-	valid.Numeric(postType, "type")
-	valid.Required(searchMode, "search_mode")
-	valid.Numeric(searchMode, "search_mode")
-	ok, verr := r.ErrorValid(&valid, "Get posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-	valid.Numeric(solved, "solved")
-	valid.Numeric(departmentId, "department_id")
-	valid.Numeric(tagId, "tag_id")
-	postTypeint := util.AsInt(postType)
-	searchModeint := util.AsInt(searchMode)
-	valid.Range(searchModeint, 0, 1, "search_mode")
-	if solved != "" {
-		solvedint := util.AsInt(solved)
-		valid.Range(solvedint, 0, 1, "solved")
-	}
-	ok, verr = r.ErrorValid(&valid, "Get posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
+		valid := validation.Validation{}
+		valid.Required(postType, "type")
+		valid.Numeric(postType, "type")
+		valid.Required(searchMode, "search_mode")
+		valid.Numeric(searchMode, "search_mode")
+		if valueMode == "" {
+			// 默认值
+			valueMode = "0"
+		}
+		valid.Numeric(valueMode, "value_mode")
+		ok, verr := r.ErrorValid(&valid, "Get posts")
+		if !ok {
+			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			return
+		}
+		valid.Numeric(solved, "solved")
+		valid.Numeric(departmentId, "department_id")
+		valid.Numeric(tagId, "tag_id")
+		postTypeint := util.AsInt(postType)
+		searchModeint := util.AsInt(searchMode)
+		valid.Range(searchModeint, 0, 1, "search_mode")
+		if solved != "" {
+			solvedint := util.AsInt(solved)
+			valid.Range(solvedint, 0, 1, "solved")
+		}
+		ok, verr = r.ErrorValid(&valid, "Get posts")
+		if !ok {
+			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			return
+		}
 
-	uid := r.GetUid(c)
-	maps := map[string]interface{}{
-		"type":          postTypeint,
-		"search_mode":   models.SearchModeType(searchModeint),
-		"content":       content,
-		"solved":        solved,
-		"department_id": departmentId,
-		"tag_id":        tagId,
+		data := make(map[string]interface{})
+		maps := map[string]interface{}{
+			"type":          postTypeint,
+			"search_mode":   models.SearchModeType(searchModeint),
+			"content":       content,
+			"solved":        solved,
+			"department_id": departmentId,
+			"tag_id":        tagId,
+			"value_mode":    models.ValueModeType(util.AsInt(valueMode)),
+		}
+		if front {
+			uid := r.GetUid(c)
+			list, err := models.GetPostResponsesWithUid(c, uid, maps)
+			if err != nil {
+				logging.Error("Get posts error: %v", err)
+				r.Error(c, e.ERROR_DATABASE, err.Error())
+				return
+			}
+			data["list"] = list
+			data["total"] = len(list)
+		} else {
+			list, cnt, err := models.GetPostResponses(c, maps)
+			if err != nil {
+				logging.Error("Get posts error: %v", err)
+				r.Error(c, e.ERROR_DATABASE, err.Error())
+				return
+			}
+			data := make(map[string]interface{})
+			data["list"] = list
+			data["total"] = cnt
+		}
+
+		r.OK(c, e.SUCCESS, data)
 	}
-
-	list, err := models.GetPostResponsesWithUid(c, uid, maps)
-	if err != nil {
-		logging.Error("Get posts error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-
-	data := make(map[string]interface{})
-	data["list"] = list
-	data["total"] = len(list)
-
-	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -147,29 +166,40 @@ func GetHistoryPosts(c *gin.Context) {
 // @param id
 // @return post
 // @route /f/post
-func GetPost(c *gin.Context) {
-	id := c.Query("id")
-	uid := r.GetUid(c)
-	valid := validation.Validation{}
-	valid.Required(id, "id")
-	valid.Numeric(id, "id")
+func GetPost(front bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Query("id")
 
-	ok, verr := r.ErrorValid(&valid, "Get Posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
+		valid := validation.Validation{}
+		valid.Required(id, "id")
+		valid.Numeric(id, "id")
 
-	pr, err := models.GetPostResponseUserAndVisit(id, uid)
-	if err != nil {
-		logging.Error("Get post error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
+		ok, verr := r.ErrorValid(&valid, "Get Posts")
+		if !ok {
+			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			return
+		}
+		data := make(map[string]interface{})
+		if front {
+			uid := r.GetUid(c)
+			pr, err := models.GetPostResponseUserAndVisit(id, uid)
+			if err != nil {
+				logging.Error("Get post error: %v", err)
+				r.Error(c, e.ERROR_DATABASE, err.Error())
+				return
+			}
+			data["post"] = pr
+		} else {
+			pr, err := models.GetPostResponse(id)
+			if err != nil {
+				logging.Error("Get post error: %v", err)
+				r.Error(c, e.ERROR_DATABASE, err.Error())
+				return
+			}
+			data["post"] = pr
+		}
+		r.OK(c, e.SUCCESS, data)
 	}
-	data := map[string]interface{}{
-		"post": pr,
-	}
-	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [post]

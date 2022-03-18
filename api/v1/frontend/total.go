@@ -62,7 +62,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/tag/recommend", GetRecommendTag)
 	case Post:
 		// 查询多个帖子
-		g.GET("/posts", GetPosts)
+		g.GET("/posts", GetPosts(true))
 		// 查询个人发帖
 		g.GET("/posts/user", GetUserPosts)
 		// 查询收藏帖子
@@ -70,7 +70,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 查询历史帖子
 		g.GET("/posts/history", GetHistoryPosts)
 		// 查询单个帖子
-		g.GET("/post", GetPost)
+		g.GET("/post", GetPost(true))
 		// 新建帖子
 		g.POST("/post", permission.ValidBlocked(), AddPost)
 		// 解决问题

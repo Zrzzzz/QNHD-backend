@@ -20,6 +20,7 @@ func GetBlocked(c *gin.Context) {
 	uid := c.Query("uid")
 
 	valid := validation.Validation{}
+	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Get blocked")
 	if !ok {

@@ -12,96 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @method [get]
-// @way [query]
-// @param content page page_size
-// @return postList
-// @route /b/posts
-func GetPosts(c *gin.Context) {
-	postType := c.Query("type")
-	searchMode := c.Query("search_mode")
-	content := c.Query("content")
-	departmentId := c.Query("department_id")
-	solved := c.Query("solved")
-	tagId := c.Query("tag_id")
-
-	valid := validation.Validation{}
-	valid.Required(postType, "type")
-	valid.Numeric(postType, "type")
-	valid.Required(searchMode, "search_mode")
-	valid.Numeric(searchMode, "search_mode")
-	ok, verr := r.ErrorValid(&valid, "Get posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-	valid.Numeric(solved, "solved")
-	valid.Numeric(departmentId, "department_id")
-	valid.Numeric(tagId, "tag_id")
-	postTypeint := util.AsInt(postType)
-	searchModeint := util.AsInt(searchMode)
-	valid.Range(searchModeint, 0, 1, "search_mode")
-	if solved != "" {
-		solvedint := util.AsInt(solved)
-		valid.Range(solvedint, 0, 1, "solved")
-	}
-	ok, verr = r.ErrorValid(&valid, "Get posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-
-	maps := map[string]interface{}{
-		"type":          postTypeint,
-		"search_mode":   models.SearchModeType(searchModeint),
-		"content":       content,
-		"solved":        solved,
-		"department_id": departmentId,
-		"tag_id":        tagId,
-	}
-
-	list, cnt, err := models.GetPostResponses(c, maps)
-	if err != nil {
-		logging.Error("Get posts error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	data := make(map[string]interface{})
-	data["list"] = list
-	data["total"] = cnt
-
-	r.OK(c, e.SUCCESS, data)
-}
-
-// @method [post]
-// @way [formdata]
-// @param id
-// @return post
-// @route /b/post
-func GetPost(c *gin.Context) {
-	id := c.Query("id")
-	valid := validation.Validation{}
-	valid.Required(id, "id")
-	valid.Numeric(id, "id")
-
-	ok, verr := r.ErrorValid(&valid, "Get Posts")
-	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
-		return
-	}
-
-	pr, err := models.GetPostResponse(id)
-	if err != nil {
-		logging.Error("Get post error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-	data := map[string]interface{}{
-		"post": pr,
-	}
-	r.OK(c, e.SUCCESS, data)
-}
-
 // @method [put]
 // @way [formdata]
 // @param post_id, transfer_id
@@ -141,6 +51,39 @@ func TransferPost(c *gin.Context) {
 	// 向新的部门的管理员发通知
 	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
 		logging.Error(err.Error())
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param
+// @return
+// @route /b/post/value
+func EditPostValue(c *gin.Context) {
+	postId := c.PostForm("post_id")
+	value := c.PostForm("value")
+	valid := validation.Validation{}
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	valid.Required(value, "value")
+	valid.Numeric(value, "value")
+	ok, verr := r.ErrorValid(&valid, "edit post value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	valid.Range(util.AsInt(value), 0, 30000, "value")
+	ok, verr = r.ErrorValid(&valid, "edit post value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditPostValue(postId, util.AsUint(value))
+	if err != nil {
+		logging.Error("edit post value error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
 	}
 	r.OK(c, e.SUCCESS, nil)
 }

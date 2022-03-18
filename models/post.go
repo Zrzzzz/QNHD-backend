@@ -31,6 +31,14 @@ const (
 	SEARCH_BY_UPDATE
 )
 
+type ValueModeType int
+
+const (
+	VALUE_DEFAULT ValueModeType = iota
+	VALUE_NONE
+	VALUE_ONLY
+)
+
 type Post struct {
 	Model
 	Uid uint64 `json:"uid" gorm:"column:uid"`
@@ -52,10 +60,13 @@ type Post struct {
 
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
+	// 加精值
+	Value uint64 `json:"value" gorm:"default:0"`
+
 	// 分词
 	Tokens string `json:"-"`
 
-	UpdatedAt string `json:"-" gorm:"default:null;"`
+	UpdatedAt string `json:"-" gorm:"efault:null;"`
 }
 
 type LogPostFav struct {
@@ -228,8 +239,18 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
+	valueMode := maps["value_mode"].(ValueModeType)
 
 	var d = db.Model(&Post{})
+	// 加精帖搜索
+	if valueMode == VALUE_DEFAULT {
+		d = d.Order("value DESC")
+	} else if valueMode == VALUE_ONLY {
+		d = d.Where("value <> 0")
+	} else if valueMode == VALUE_NONE {
+		// VALUE_NONE 不做操作
+	}
+
 	// 当搜索不为空时加上全文检索
 	if content != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
@@ -402,6 +423,10 @@ func EditPostDepartment(postId string, departmentId string) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
 		"department_id": departmentId,
 	}).Error
+}
+
+func EditPostValue(postId string, value uint64) error {
+	return db.Where("postId = ?", postId).Update("value", value).Error
 }
 
 func DeletePostsUser(id, uid string) (uint64, error) {

@@ -112,15 +112,17 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/user/update", permission.RightDemand(models.UserRight{Super: true}), ForceTokenUpdate)
 	case Post:
 		// 获取帖子列表
-		g.GET("/posts", GetPosts)
+		g.GET("/posts", frontend.GetPosts(false))
 		// 获取帖子
-		g.GET("/post", GetPost)
+		g.GET("/post", frontend.GetPost(false))
 		// 获取帖子回复
 		g.GET("/post/replys", frontend.GetPostReplys)
 		// 帖子回复校方回应
 		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
 		// 帖子转移部门
 		g.POST("/post/transfer", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPost)
+		// 修改帖子加精值
+		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
 	case Report:
