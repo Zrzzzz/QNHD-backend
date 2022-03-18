@@ -31,21 +31,17 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 	)
 
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c))
-	// 找到楼层
-	if err = db.Table("(?) as a", logs).
-		Unscoped().
-		Select("f.*").
-		Joins("JOIN qnhd.floor as f ON a.floor_id = f.id").
-		Where("f.deleted_at IS NULL").
-		Order("created_at DESC").
-		Find(&floors).
-		Error; err != nil {
+	if err = db.Model(&LogUnreadFloor{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("created_at DESC").Find(&logFloors).Error; err != nil {
 		return ret, err
 	}
-	if err := logs.Find(&logFloors).Error; err != nil {
-		return ret, err
+	for _, log := range logFloors {
+		var floor Floor
+		if err = db.Where("id = ?", log.FloorId).First(&floor).Error; err != nil {
+			continue
+		}
+		floors = append(floors, floor)
 	}
+
 	// 对每个楼层分析
 	for _, f := range floors {
 		var r = UnreadFloorResponse{Floor: f.geneResponse(false)}

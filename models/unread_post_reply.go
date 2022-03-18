@@ -29,20 +29,15 @@ func GetUnreadPostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, err
 		ret    = []UnreadReplyResponse{}
 	)
 	// 先筛选出未读记录
-	logs := db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Scopes(util.Paginate(c))
-	// 找到回复
-	if err = db.Table("(?) as a", logs).
-		Unscoped().
-		Select("pr.*").
-		Joins("JOIN qnhd.post_reply as pr ON a.reply_id = pr.id").
-		Where("pr.deleted_at IS NULL").
-		Order("created_at DESC").
-		Find(&replys).
-		Error; err != nil {
+	if err = db.Model(&LogUnreadPostReply{}).Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("created_at DESC").Find(&logPrs).Error; err != nil {
 		return ret, err
 	}
-	if err := logs.Find(&logPrs).Error; err != nil {
-		return ret, err
+	for _, log := range logPrs {
+		var r PostReply
+		if err = db.Where("id = ?", log.ReplyId).First(&r).Error; err != nil {
+			continue
+		}
+		replys = append(replys, r)
 	}
 	// 再生成返回数据
 	for _, r := range replys {
