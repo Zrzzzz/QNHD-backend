@@ -66,7 +66,7 @@ type Post struct {
 	// 分词
 	Tokens string `json:"-"`
 
-	UpdatedAt string `json:"-" gorm:"efault:null;"`
+	UpdatedAt string `json:"-" gorm:"default:null;"`
 }
 
 type LogPostFav struct {
