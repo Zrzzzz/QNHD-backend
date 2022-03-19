@@ -88,7 +88,6 @@ func GetPosts(front bool) gin.HandlerFunc {
 				r.Error(c, e.ERROR_DATABASE, err.Error())
 				return
 			}
-			data := make(map[string]interface{})
 			data["list"] = list
 			data["total"] = cnt
 		}
