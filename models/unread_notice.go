@@ -34,8 +34,10 @@ func addUnreadNoticeToAllUser(notice *Notice) error {
 		logs = append(logs, LogUnreadNotice{u.Uid, notice.Id})
 		numbers = append(numbers, u.Number)
 	}
-	if err := db.Create(logs).Error; err != nil {
-		return err
+	// 一次插入2个参数，只要少于65535就ok
+	insertCount := 250
+	for i := 0; i < len(logs)/insertCount; i++ {
+		db.Create(logs[i*insertCount : (i+1)*insertCount])
 	}
 
 	return twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...)

@@ -184,8 +184,10 @@ func AddUsers(users []NewUserData) error {
 		}
 		newUsers = append(newUsers, new)
 	}
-	for _, u := range newUsers {
-		if e := db.Create(&u).Error; e != nil {
+	// 一次插入2个参数，只要少于65535就ok
+	insertCount := 50
+	for i := 0; i < len(newUsers)/insertCount; i++ {
+		if e := db.Create(newUsers[i*insertCount : (i+1)*insertCount]).Error; e != nil {
 			err = giterrors.Wrap(err, e.Error())
 		}
 	}
