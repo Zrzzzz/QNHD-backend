@@ -426,7 +426,7 @@ func EditPostDepartment(postId string, departmentId string) error {
 }
 
 func EditPostValue(postId string, value uint64) error {
-	return db.Where("postId = ?", postId).Update("value", value).Error
+	return db.Model(&Post{}).Where("id = ?", postId).Update("value", value).Error
 }
 
 func DeletePostsUser(id, uid string) (uint64, error) {
