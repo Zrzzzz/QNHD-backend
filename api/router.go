@@ -39,11 +39,12 @@ func initRouter() (r *gin.Engine) {
 	r.Use(safety.Safety())
 	// 头像服务转发
 	r.GET("/avatar/*p", avatarReverse)
+
 	avb := r.Group("/api/v1/b")
 	backend.Setup(avb)
 	avf := r.Group("/api/v1/f")
 	frontend.Setup(avf)
-
+	r.Static("src", "pages")
 	return r
 }
 
