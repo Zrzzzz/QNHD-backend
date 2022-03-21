@@ -32,14 +32,17 @@ func GetAuth(c *gin.Context) {
 		map[string]interface{}{
 			"nickname": nickname,
 			"password": password,
+			"is_user":  false,
 		},
 		map[string]interface{}{
 			"number":   nickname,
 			"password": password,
+			"is_user":  false,
 		},
 		map[string]interface{}{
 			"phone_number": nickname,
 			"password":     password,
+			"is_user":      false,
 		},
 	)
 	if err != nil {

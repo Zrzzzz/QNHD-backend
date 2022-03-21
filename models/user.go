@@ -87,10 +87,7 @@ func RequireUser(uid string) error {
 
 func ExistUser(nickname, number string) (uint64, error) {
 	var user User
-	if err := db.Where(User{Nickname: nickname, Number: number}).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
-		}
+	if err := db.Where(User{Nickname: nickname, Number: number, IsUser: true}).Order("id").Find(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil
