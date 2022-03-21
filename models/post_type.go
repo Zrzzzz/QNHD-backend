@@ -21,7 +21,7 @@ func IsValidPostType(t int) bool {
 
 func GetPostTypes() ([]PostType, error) {
 	var ret []PostType
-	err := db.Order("id").Find(&ret).Error
+	err := db.Find(&ret).Error
 	return ret, err
 }
 
