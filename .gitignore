@@ -1,3 +1,5 @@
+/backend
+/nohup.out
 go.sum
 conf/
 runtime/
