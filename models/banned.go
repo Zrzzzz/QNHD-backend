@@ -16,7 +16,7 @@ type Banned struct {
 
 func GetBanned(maps interface{}) ([]Banned, error) {
 	var bans []Banned
-	if err := db.Where(maps).Find(&bans).Order("id DESC").Error; err != nil {
+	if err := db.Where(maps).Order("id DESC").Find(&bans).Error; err != nil {
 		return bans, err
 	}
 	return bans, nil

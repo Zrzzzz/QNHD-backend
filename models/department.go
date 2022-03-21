@@ -14,7 +14,7 @@ type Department struct {
 
 func GetDepartments(name string) ([]Department, error) {
 	var departs []Department
-	if err := db.Where("name LIKE ?", "%"+name+"%").Find(&departs).Order("id DESC").Error; err != nil {
+	if err := db.Where("name LIKE ?", "%"+name+"%").Order("id DESC").Find(&departs).Error; err != nil {
 		return nil, err
 	}
 	return departs, nil

@@ -26,7 +26,7 @@ type BlockedDetail struct {
 
 func GetBlocked(maps interface{}) ([]Blocked, error) {
 	var blocked []Blocked
-	if err := db.Unscoped().Where(maps).Find(&blocked).Order("id DESC").Error; err != nil {
+	if err := db.Unscoped().Where(maps).Order("id DESC").Find(&blocked).Error; err != nil {
 		return nil, err
 	}
 	return blocked, nil

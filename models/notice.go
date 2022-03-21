@@ -12,7 +12,7 @@ type Notice struct {
 
 func GetNotices() ([]Notice, error) {
 	var notices []Notice
-	if err := db.Find(&notices).Order("id").Error; err != nil {
+	if err := db.Order("id").Find(&notices).Error; err != nil {
 		return nil, err
 	}
 	return notices, nil

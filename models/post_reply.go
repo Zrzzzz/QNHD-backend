@@ -53,7 +53,7 @@ func GetPostReplyResponse(replyId string) (PostReplyResponse, error) {
 // 获取帖子内的回复记录
 func GetPostReplys(postId string) ([]PostReply, error) {
 	var prs = []PostReply{}
-	err := db.Where("post_id = ?", postId).Find(&prs).Order("id").Error
+	err := db.Where("post_id = ?", postId).Order("id").Find(&prs).Error
 	return prs, err
 }
 
