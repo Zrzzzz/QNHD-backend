@@ -311,7 +311,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		addUnreadFloor(post.Uid, newFloor.Id)
 		var user User
 		if err := db.Where("id = ?", post.Uid).Find(&user).Error; err == nil {
-			if err := twtservice.NotifyFloor(user.Number); err != nil {
+			if err := twtservice.NotifyPost(post.Title, user.Number); err != nil {
 				logging.Error(err.Error())
 			}
 		}
@@ -394,8 +394,8 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if toFloor.Uid != uid && toFloor.Uid != post.Uid {
 		addUnreadFloor(toFloor.Uid, newFloor.Id)
 		var user User
-		if err := db.Where("id = ?", toFloor).Find(&user).Error; err == nil {
-			twtservice.NotifyFloor(user.Number)
+		if err := db.Where("id = ?", toFloor.Uid).Find(&user).Error; err == nil {
+			twtservice.NotifyFloor(toFloor.Content, user.Number)
 		}
 	}
 	// 如果回复的帖子是子楼层，通知层主

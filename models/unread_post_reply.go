@@ -75,7 +75,11 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 	var (
 		uid  uint64
 		user User
+		post Post
 	)
+	if err := db.Find(&post, postId).Error; err != nil {
+		return err
+	}
 	if err := db.Model(&Post{}).Select("uid").Where("id = ?", postId).Find(&uid).Error; err != nil {
 		return err
 	}
@@ -89,7 +93,7 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 	}).Error; err != nil {
 		return err
 	}
-	return twtservice.NotifyPostReply(user.Number)
+	return twtservice.NotifyPostReply(post.Title, user.Number)
 }
 
 // 已读回复
