@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"qnhd/api"
 	"qnhd/models"
 	"qnhd/pkg/cronic"
@@ -27,13 +26,11 @@ func main() {
 }
 
 func setupModels() {
-	modelDebug := os.Getenv("DB_DEBUG")
-	models.Setup(modelDebug == "1")
+	models.Setup(setting.EnvironmentSetting.DB_DEBUG == "1")
 }
 
 func refreshToken() {
-	shouldRefresh := os.Getenv("QNHD_REFRESH")
-	if shouldRefresh == "1" {
+	if setting.EnvironmentSetting.QNHD_REFRESH == "1" {
 		// 更新未处理的数据
 		models.FlushPostsTokens(false)
 		models.FlushTagsTokens(false)

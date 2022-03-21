@@ -1,6 +1,7 @@
 package segment
 
 import (
+	"qnhd/pkg/setting"
 	"strings"
 
 	"github.com/go-ego/gse"
@@ -15,8 +16,13 @@ func Setup() {
 }
 
 func load() {
-	seg.LoadDict("zh", "jp", "en")
-	seg.LoadStop("zh", "jp")
+	if setting.EnvironmentSetting.RELEASE == "1" {
+		seg.LoadDict("dict/zh/s_1.txt, dict/zh/t_1.txt, dict/jp/dict.txt")
+		seg.LoadStop("dict/zh/stop_word.txt, dict/zh/stop_tokens.txt")
+	} else {
+		seg.LoadDict("zh", "jp", "en")
+		seg.LoadStop("zh", "jp")
+	}
 }
 
 func Cut(text string, sep string) string {

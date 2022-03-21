@@ -2,6 +2,7 @@ package setting
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -53,10 +54,22 @@ type Database struct {
 	Database string
 	Port     string
 }
+type Environment struct {
+	DB_DEBUG     string
+	QNHD_REFRESH string
+	RELEASE      string
+}
 
 var ServerSetting = &Server{}
 var AppSetting = &App{}
 var DatabaseSetting = &Database{}
+var EnvironmentSetting = &Environment{}
+
+func setupEnvironment() {
+	EnvironmentSetting.DB_DEBUG = os.Getenv("DB_DEBUG")
+	EnvironmentSetting.QNHD_REFRESH = os.Getenv("QNHD_REFRESH")
+	EnvironmentSetting.RELEASE = os.Getenv("RELEASE")
+}
 
 func Setup() {
 	Cfg, err := ini.Load("conf/app.ini")
@@ -80,4 +93,6 @@ func Setup() {
 	if err != nil {
 		log.Fatalf("Cfg.MapTo DatabaseSetting err: %v", err)
 	}
+
+	setupEnvironment()
 }
