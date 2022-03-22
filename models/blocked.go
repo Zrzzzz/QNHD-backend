@@ -72,7 +72,10 @@ func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 	if ban.Uid > 0 {
 		var nowtime, overtime *carbon.Carbon
 		nowtime = carbon.Now()
-		overtime, _ = carbon.Parse(carbon.RFC3339Format, ban.ExpiredAt, "Asia/Shanghai")
+		overtime, err := carbon.Parse(carbon.RFC3339Format, ban.ExpiredAt, "Asia/Shanghai")
+		if err != nil {
+			return false, nil, err
+		}
 		remain := uint64(overtime.Timestamp() - nowtime.Timestamp())
 		return true, &BlockedDetail{
 			Starttime: ban.CreatedAt,
