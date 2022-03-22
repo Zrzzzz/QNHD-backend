@@ -281,7 +281,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		nickname = OWNER_NAME
 	} else {
 		var floor Floor
-		if err := db.Where("uid = ? AND post_id = ?", uid, postId).Find(&floor).Error; err != nil {
+		if err := db.Where("uid = ? AND post_id = ?", uid, postId).Unscoped().Find(&floor).Error; err != nil {
 			return 0, err
 		}
 		// 是否已经发过言
