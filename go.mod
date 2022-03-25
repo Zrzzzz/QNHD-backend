@@ -10,6 +10,7 @@ require (
 	github.com/go-ini/ini v1.62.0
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/golang-module/carbon/v2 v2.0.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/importcjj/sensitive v0.0.0-20200106142752-42d1c505be7b

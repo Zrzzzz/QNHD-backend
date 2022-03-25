@@ -93,7 +93,8 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 	}).Error; err != nil {
 		return err
 	}
-	return twtservice.NotifyPostReply(post.Title, user.Number)
+	twtservice.NotifyPostReply(post.Title, user.Number)
+	return nil
 }
 
 // 已读回复

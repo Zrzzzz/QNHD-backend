@@ -93,9 +93,24 @@ func ExistUser(nickname, number string) (uint64, error) {
 	return user.Uid, nil
 }
 
-func GetCommonUsers(c *gin.Context, name string) ([]User, error) {
-	var users []User
-	if err := db.Where("number like ? AND is_user = true", "%"+name+"%").Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
+func GetCommonUsers(c *gin.Context, maps map[string]interface{}) ([]User, error) {
+	var (
+		users     []User
+		d         = db.Where("is_user = true")
+		isBlocked = maps["is_blocked"].(string)
+		IsBanned  = maps["is_banned"].(string)
+	)
+	if isBlocked == "1" {
+		var blocks []uint64
+		if err := db.Model(&Blocked{}).Select("uid").Distinct("uid").Where("expired_at < ?", gorm.Expr("CURRENT_TIMESTAMP")).Find(blocks).Error; err != nil {
+			return users, err
+		}
+		d = d.Where("id IN (?)", blocks)
+	}
+	if IsBanned == "1" {
+		d = d.Where("is_active = false")
+	}
+	if err := d.Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

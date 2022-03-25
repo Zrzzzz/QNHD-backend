@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/uniplaces/carbon"
+	"github.com/golang-module/carbon/v2"
 	"gorm.io/gorm"
 )
 
@@ -54,9 +54,11 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 }
 
 func IsBlockedByUid(uid uint64) bool {
-	var ban Blocked
-	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
-		return !errors.Is(err, gorm.ErrRecordNotFound)
+	var block Blocked
+	if err := db.Where("uid = ? AND expired_at < ?", uid, gorm.Expr("CURRENT_TIMESTAMP")).Last(&block).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return false
+		}
 	}
 	return true
 }
@@ -70,12 +72,10 @@ func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 		return false, nil, err
 	}
 	if ban.Uid > 0 {
-		var nowtime, overtime *carbon.Carbon
+		var nowtime, overtime carbon.Carbon
 		nowtime = carbon.Now()
-		overtime, err := carbon.Parse(carbon.RFC3339Format, ban.ExpiredAt, "Asia/Shanghai")
-		if err != nil {
-			return false, nil, err
-		}
+		overtime = carbon.Parse(ban.ExpiredAt, "Asia/Shanghai")
+
 		remain := uint64(overtime.Timestamp() - nowtime.Timestamp())
 		return true, &BlockedDetail{
 			Starttime: ban.CreatedAt,

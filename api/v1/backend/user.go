@@ -84,6 +84,7 @@ func GetUserInfo(c *gin.Context) {
 		"user_info": userInfo{User: user, Department: depart},
 	}
 	r.OK(c, e.SUCCESS, data)
+
 }
 
 // @method [get]
@@ -136,9 +137,10 @@ func GetCommonUser(c *gin.Context) {
 // @return userList
 // @route /b/users/common
 func GetCommonUsers(c *gin.Context) {
-	name := c.Query("user")
-	code := e.SUCCESS
-	list, err := models.GetCommonUsers(c, name)
+	list, err := models.GetCommonUsers(c, map[string]interface{}{
+		"is_blocked": c.Query("is_blocked"),
+		"is_banned":  c.Query("is_banned"),
+	})
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -167,7 +169,7 @@ func GetCommonUsers(c *gin.Context) {
 	data["list"] = retList
 	data["total"] = len(retList)
 
-	r.OK(c, code, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
