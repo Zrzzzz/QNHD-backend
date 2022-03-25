@@ -102,13 +102,13 @@ func GetCommonUsers(c *gin.Context, maps map[string]interface{}) ([]User, error)
 	)
 	if isBlocked == "1" {
 		var blocks []uint64
-		if err := db.Model(&Blocked{}).Select("uid").Distinct("uid").Where("expired_at < ?", gorm.Expr("CURRENT_TIMESTAMP")).Find(blocks).Error; err != nil {
+		if err := db.Model(&Blocked{}).Select("uid").Distinct("uid").Where("expired_at < ?", gorm.Expr("CURRENT_TIMESTAMP")).Find(&blocks).Error; err != nil {
 			return users, err
 		}
 		d = d.Where("id IN (?)", blocks)
 	}
 	if IsBanned == "1" {
-		d = d.Where("is_active = false")
+		d = d.Where("active = false")
 	}
 	if err := d.Scopes(util.Paginate(c)).Order("id").Find(&users).Error; err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
 	"qnhd/request/twtservice"
 
@@ -39,8 +40,10 @@ func addUnreadNoticeToAllUser(notice *Notice) error {
 	for i := 0; i < len(logs)/insertCount; i++ {
 		db.Create(logs[i*insertCount : (i+1)*insertCount])
 	}
-
-	return twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...)
+	if err := twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...); err != nil {
+		logging.Error(err.Error())
+	}
+	return nil
 }
 
 // 获取未读的所有notice

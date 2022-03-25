@@ -93,7 +93,9 @@ func AddUnreadPostReply(postId, replyId uint64) error {
 	}).Error; err != nil {
 		return err
 	}
-	twtservice.NotifyPostReply(post.Title, user.Number)
+	if err := twtservice.NotifyPostReply(post.Title, user.Number); err != nil {
+		logging.Error(err.Error())
+	}
 	return nil
 }
 
