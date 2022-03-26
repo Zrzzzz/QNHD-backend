@@ -10,11 +10,12 @@ type Department struct {
 	Id           uint64 `gorm:"primaryKey;autoIncrement;default:null;" json:"id"`
 	Name         string `json:"name"`
 	Introduction string `json:"introduction"`
+	Hidden       bool   `json:"-"`
 }
 
 func GetDepartments(name string) ([]Department, error) {
 	var departs []Department
-	if err := db.Where("name LIKE ?", "%"+name+"%").Order("id DESC").Find(&departs).Error; err != nil {
+	if err := db.Where("name LIKE ? AND hidden = FALSE", "%"+name+"%").Order("id").Find(&departs).Error; err != nil {
 		return nil, err
 	}
 	return departs, nil
@@ -66,9 +67,10 @@ func EditDepartment(id, introduction string) error {
 
 func DeleteDepartment(id string) (uint64, error) {
 	var depart Department
-	if err := db.Where("id = ?", id).Delete(&depart).Error; err != nil {
+	if err := db.Model(&depart).Where("id = ?", id).Update("hidden", true).Error; err != nil {
 		return 0, err
 	}
+
 	return depart.Id, nil
 }
 
