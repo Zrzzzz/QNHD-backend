@@ -1,17 +1,11 @@
-.PHONY: start refresh watch stop tstart
+.PHONY: run start stop
 
-tstart:
-	go run main.go
-
-tstop:
-	kill -9 
+run:
+	go run .
 
 start:
-	export GIN_MODE="release"
-	air >> /tmp/qnhd.log 2>&1 &
-
-watch:
-	tail -f /tmp/qnhd.log
+	go build -o backend .
+	nohup ./backend &
 
 stop:
-	pkill air
+	pkill backend

@@ -292,6 +292,28 @@ func AddPost(c *gin.Context) {
 	r.OK(c, e.SUCCESS, data)
 }
 
+// @method [post]
+// @way [formdata]
+// @param post_id
+// @return
+// @route /f/post/visit
+func VisitPost(c *gin.Context) {
+	uid := r.GetUid(c)
+	postId := c.PostForm("post_id")
+	valid := validation.Validation{}
+	valid.Numeric(postId, "post_id")
+	ok, verr := r.ErrorValid(&valid, "add post visit")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	if err := models.AddVisitHistory(uid, postId); err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [put]
 // @way [formdata]
 // @param post_id, rating

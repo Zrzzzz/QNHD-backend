@@ -221,7 +221,7 @@ func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, e
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
 		return pr, err
 	}
-	if err := addVisitHistory(uid, postId); err != nil {
+	if err := AddVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
 	ret := post.geneResponse().searchByUid(uid)

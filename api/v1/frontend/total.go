@@ -85,6 +85,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.POST("/post/like", LikeOrUnlikePost)
 		// 点踩或者取消
 		g.POST("/post/dis", DisOrUndisPost)
+		// 访问记录
+		g.POST("/post/visit", VisitPost)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
 	case Floor:
