@@ -103,7 +103,8 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 		ttx = db
 	}
 	var (
-		images []PostReplyImage
+		images  []PostReplyImage
+		replies []PostReply
 	)
 	err := ttx.Transaction(func(tx *gorm.DB) error {
 		// 获取所有image
@@ -118,14 +119,20 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 		if len(images) == 0 {
 			return nil
 		}
+		if err := logs.Find(&replies).Error; err != nil {
+			return err
+		}
 		// 删除reply
 		if err := tx.Where("post_id = ?", postId).Delete(&PostReply{}).Error; err != nil {
 			return err
 		}
-		// 删除记录
-		if err := tx.Where("post_id = ?", postId).Delete(&LogUnreadPostReply{}).Error; err != nil {
-			return err
+		for _, r := range replies {
+			// 删除记录
+			if err := tx.Where("reply_id = ?", r.Id).Delete(&LogUnreadPostReply{}).Error; err != nil {
+				return err
+			}
 		}
+
 		return nil
 	})
 
