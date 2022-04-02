@@ -19,24 +19,32 @@ const POST_ALL = 0
 type PostCampusType int
 
 const (
-	CAMPUS_NONE PostCampusType = iota
-	CAMPUS_OLD
-	CAMPUS_NEW
+	CAMPUS_NONE PostCampusType = 0
+	CAMPUS_OLD  PostCampusType = 1
+	CAMPUS_NEW  PostCampusType = 2
 )
 
-type SearchModeType int
+type PostSearchModeType int
 
 const (
-	SEARCH_BY_TIME SearchModeType = iota
-	SEARCH_BY_UPDATE
+	SEARCH_BY_TIME   PostSearchModeType = 0
+	SEARCH_BY_UPDATE PostSearchModeType = 1
 )
 
-type ValueModeType int
+type PostValueModeType int
 
 const (
-	VALUE_DEFAULT ValueModeType = iota
-	VALUE_NONE
-	VALUE_ONLY
+	VALUE_DEFAULT PostValueModeType = 0
+	VALUE_NONE    PostValueModeType = 1
+	VALUE_ONLY    PostValueModeType = 2
+)
+
+type PostSolveType int
+
+const (
+	POST_UNSOLVED PostSolveType = 0
+	POST_REPLIED  PostSolveType = 1
+	POST_SOLVED   PostSolveType = 2
 )
 
 type Post struct {
@@ -47,7 +55,7 @@ type Post struct {
 	Type         int            `json:"type"`
 	DepartmentId uint64         `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType `json:"campus"`
-	Solved       bool           `json:"solved" gorm:"default:0"`
+	Solved       PostSolveType  `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
 	Title   string `json:"title"`
@@ -235,11 +243,11 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	)
 	content := maps["content"].(string)
 	postType := maps["type"].(int)
-	searchMode := maps["search_mode"].(SearchModeType)
+	searchMode := maps["search_mode"].(PostSearchModeType)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
-	valueMode := maps["value_mode"].(ValueModeType)
+	valueMode := maps["value_mode"].(PostValueModeType)
 
 	var d = db.Model(&Post{})
 	// 加精帖搜索
@@ -274,7 +282,7 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	}
 	// 如果要加上是否解决的字段
 	if solved != "" {
-		d = d.Where("solved = ?", solved == "1")
+		d = d.Where("solved = ?", solved)
 	}
 	// 如果需要搜索标签
 	if tagId != "" {
@@ -406,12 +414,8 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	return post.Id, nil
 }
 
-func EditPostSolved(postId string, rating string) error {
-	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
-		"solved": true,
-		"rating": rating,
-	}).Error
-
+func EditPost(postId string, maps map[string]interface{}) error {
+	return db.Model(&Post{}).Where("id = ?", postId).Updates(maps).Error
 }
 
 func EditPostDepartment(postId string, departmentId string) error {
@@ -420,13 +424,29 @@ func EditPostDepartment(postId string, departmentId string) error {
 	if err := db.First(&depart, departmentId).Error; err != nil {
 		return err
 	}
-	return db.Model(&Post{}).Where("id = ?", postId).Updates(map[string]interface{}{
-		"department_id": departmentId,
-	}).Error
+
+	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
 }
 
-func EditPostValue(postId string, value uint64) error {
-	return db.Model(&Post{}).Where("id = ?", postId).Update("value", value).Error
+func EditPostType(postId string, typeId string) error {
+	// 判断是否存在类型
+	var pt PostType
+	if err := db.First(&pt, typeId).Error; err != nil {
+		return err
+	}
+	post, err := GetPost(postId)
+	if err != nil {
+		return err
+	}
+	// 如果类型相同
+	if post.Type == util.AsInt(typeId) {
+		return fmt.Errorf("不能修改为同类型")
+	}
+	// 如果是校务类型，需要去掉部门
+	if post.Type == POST_SCHOOL_TYPE {
+		return EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0})
+	}
+	return EditPost(postId, map[string]interface{}{"type": typeId})
 }
 
 func DeletePostsUser(id, uid string) (uint64, error) {

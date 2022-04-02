@@ -53,7 +53,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		valid.Range(searchModeint, 0, 1, "search_mode")
 		if solved != "" {
 			solvedint := util.AsInt(solved)
-			valid.Range(solvedint, 0, 1, "solved")
+			valid.Range(solvedint, 0, 2, "solved")
 		}
 		ok, verr = r.ErrorValid(&valid, "Get posts")
 		if !ok {
@@ -64,12 +64,12 @@ func GetPosts(front bool) gin.HandlerFunc {
 		data := make(map[string]interface{})
 		maps := map[string]interface{}{
 			"type":          postTypeint,
-			"search_mode":   models.SearchModeType(searchModeint),
+			"search_mode":   models.PostSearchModeType(searchModeint),
 			"content":       content,
 			"solved":        solved,
 			"department_id": departmentId,
 			"tag_id":        tagId,
-			"value_mode":    models.ValueModeType(util.AsInt(valueMode)),
+			"value_mode":    models.PostValueModeType(util.AsInt(valueMode)),
 		}
 		if front {
 			uid := r.GetUid(c)
@@ -347,7 +347,10 @@ func EditPostSolved(c *gin.Context) {
 		r.OK(c, e.ERROR_RIGHT, map[string]interface{}{"error": err.Error()})
 		return
 	}
-	err = models.EditPostSolved(postId, rating)
+	err = models.EditPost(postId, map[string]interface{}{
+		"solved": models.POST_SOLVED,
+		"rating": rating,
+	})
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

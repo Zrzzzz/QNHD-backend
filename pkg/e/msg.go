@@ -14,6 +14,7 @@ var MsgFlags = map[int]string{
 	ERROR_NOT_EXIST_TAG:        "该标签不存在",
 	ERROR_EXIST_DEPARTMENT:     "该部门已存在",
 	ERROR_NOT_EXIST_DEPARTMENT: "该部门不存在",
+	ERROR_POST_TYPE:            "帖子类型错误",
 
 	ERROR_BANNED_USER:      "用户已被封禁",
 	ERROR_NOT_BANNED_USER:  "用户未被封禁",

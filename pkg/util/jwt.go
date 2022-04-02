@@ -21,7 +21,7 @@ type Claims struct {
 
 func GenerateToken(uid string) (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(time.Duration(setting.AppSetting.TokenExpireTime) * time.Second)
+	expireTime := nowTime.Add(time.Duration(setting.AppSetting.TokenExpireTime) * time.Hour)
 	claims := Claims{
 		uid,
 		jwt.StandardClaims{
@@ -33,6 +33,7 @@ func GenerateToken(uid string) (string, error) {
 	token, err := tokenClaims.SignedString(jwtSecret)
 	return token, err
 }
+
 func ParseToken(token string) (*Claims, error) {
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)

@@ -60,6 +60,10 @@ func AddPostReply(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
+	if err := models.EditPost(postId, map[string]interface{}{"solved": models.POST_REPLIED}); err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
 	// 通知回复
 	err = models.AddUnreadPostReply(util.AsUint(postId), id)
 	if err != nil {

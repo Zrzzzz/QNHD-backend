@@ -120,7 +120,9 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 帖子回复校方回应
 		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
 		// 帖子转移部门
-		g.POST("/post/transfer", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPost)
+		g.POST("/post/transfer/department", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPostDepartment)
+		// 帖子换类型
+		g.POST("/post/transfer/type", TransferPostType)
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
