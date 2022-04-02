@@ -55,10 +55,8 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 
 func IsBlockedByUid(uid uint64) bool {
 	var block Blocked
-	if err := db.Where("uid = ? AND expired_at < ?", uid, gorm.Expr("CURRENT_TIMESTAMP")).Last(&block).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return false
-		}
+	if err := db.Where("uid = ? AND expired_at > ?", uid, gorm.Expr("CURRENT_TIMESTAMP")).Last(&block).Error; err != nil {
+		return false
 	}
 	return true
 }
