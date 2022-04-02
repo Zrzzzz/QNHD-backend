@@ -100,7 +100,7 @@ func TransferPostType(c *gin.Context) {
 	}
 	uid := r.GetUid(c)
 	// 记录历史
-	if err := models.AddPostTypeTransferLog(util.AsUint(uid), post.Id, post.DepartmentId, util.AsUint(newTypeId)); err != nil {
+	if err := models.AddPostTypeTransferLog(util.AsUint(uid), post.Id, post.Type, util.AsInt(newTypeId)); err != nil {
 		logging.Error(err.Error())
 	}
 	r.OK(c, e.SUCCESS, nil)

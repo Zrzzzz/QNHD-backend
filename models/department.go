@@ -87,7 +87,7 @@ func ExistDepartmentByName(name string) (bool, error) {
 }
 
 // 是否为部门管理员
-func IsDepartmentHasUser(uid, departmentId uint64) bool {
+func IsDepartmentHasUser(uid uint64, departmentId uint64) bool {
 	var cnt int64
 	if err := db.Model(&UserDepartment{}).Select("Count(*)").Where("uid = ? AND department_id = ?", uid, departmentId).Count(&cnt).Error; err != nil {
 		return false
