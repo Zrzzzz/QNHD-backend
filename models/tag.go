@@ -183,3 +183,14 @@ func addTagLog(id uint64, point TAG_POINT) {
 		logging.Error("add tag log error: %v", log)
 	}
 }
+
+// 给tag加热度
+func AddTagLog(id uint64, point int64) error {
+	var log = LogTag{TagId: id, Point: TAG_POINT(point)}
+	return db.Create(&log).Error
+}
+
+// 清空tag热度
+func ClearTagLog(id uint64) error {
+	return db.Where("tag_id = ?", id).Delete(&LogTag{}).Error
+}

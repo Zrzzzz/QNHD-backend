@@ -45,7 +45,6 @@ func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", frontend.RefreshToken)
-	g.GET("/test", Test)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(permission.ADMIN))
 	for _, t := range BackendTypes {
@@ -144,12 +143,17 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
-		// 删除指定标签
-		g.GET("/tag/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteTag)
-		// 获取标签详情
-		g.GET("/tag/detail", permission.RightDemand(models.UserRight{Super: true}), GetTagDetail)
 		// 获取热议标签
 		g.GET("/tags/hot", GetHotTag)
+		tg := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		// 删除指定标签
+		tg.GET("/tag/delete", DeleteTag)
+		// 获取标签详情
+		tg.GET("/tag/detail", GetTagDetail)
+		// 清空标签热度
+		tg.GET("/tag/clear", ClearTagPoint)
+		// 增加标签热度
+		tg.POST("/tag/point", AddTagPoint)
 	case Department:
 		// 查询部门
 		g.GET("/departments", GetDepartments)
