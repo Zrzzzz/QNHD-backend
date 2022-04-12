@@ -338,9 +338,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	postId := toFloor.PostId
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 
 	if post.Uid == uid {
@@ -348,10 +346,8 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	} else {
 		// 还有可能已经发过言
 		var floor Floor
-		if err := db.Where("uid = ? AND post_id = ?", uid, postId).First(&floor).Error; err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, err
-			}
+		if err := db.Where("uid = ? AND post_id = ?", uid, postId).Unscoped().Find(&floor).Error; err != nil {
+			return 0, err
 		}
 		if floor.Id > 0 {
 			nickname = floor.Nickname
