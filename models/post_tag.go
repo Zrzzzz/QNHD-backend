@@ -8,8 +8,8 @@ import (
 )
 
 type PostTag struct {
-	PostId uint64 `json:"post_id" `
-	TagId  uint64 `json:"tag_id" `
+	PostId uint64 `json:"post_id"`
+	TagId  uint64 `json:"tag_id"`
 }
 
 func GetTagInPost(postId string) (*Tag, error) {

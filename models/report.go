@@ -20,11 +20,12 @@ type Report struct {
 	PostId  uint64 `json:"post_id"`
 	FloorId uint64 `json:"floor_id"`
 	Reason  string `json:"reason"`
+	Solved  bool   `json:"solved"`
 }
 
 func GetReports(rType ReportType) ([]Report, error) {
 	var reports []Report
-	if err := db.Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
+	if err := db.Where("type = ? AND solved = false", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
 		return nil, err
 	}
 	return reports, nil
@@ -42,11 +43,11 @@ func AddReport(maps map[string]interface{}) error {
 	return err
 }
 
-func DeleteReports(t string, id string) error {
+func SolveReports(t string, id string) error {
 	if t == "1" {
-		return deleteReports(nil, map[string]interface{}{"type": "1", "post_id": id})
+		return db.Model(&Report{}).Where("type = ? AND post_id = ?", t, id).Update("solved", true).Error
 	} else if t == "2" {
-		return deleteReports(nil, map[string]interface{}{"type": "2", "floor_id": id})
+		return db.Model(&Report{}).Where("type = ? AND floor_id = ?", t, id).Update("solved", true).Error
 	} else {
 		return fmt.Errorf("举报类型错误")
 	}
@@ -58,4 +59,12 @@ func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
 		tx = db
 	}
 	return tx.Where(maps).Delete(&Report{}).Error
+}
+
+// 恢复举报
+func recoverReports(tx *gorm.DB, maps map[string]interface{}) error {
+	if tx == nil {
+		tx = db
+	}
+	return tx.Unscoped().Model(&Report{}).Where(maps).Update("deleted_at", gorm.Expr("NULL")).Error
 }

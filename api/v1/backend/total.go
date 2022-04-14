@@ -107,7 +107,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
 		// 删除管理员
 		g.GET("/user/manager/delete", permission.RightDemand(models.UserRight{Super: true}), DeleteManager)
-		// 强制更新
+		// 强制更新token
 		g.GET("/user/update", permission.RightDemand(models.UserRight{Super: true}), ForceTokenUpdate)
 	case Post:
 		// 获取帖子列表
@@ -125,12 +125,14 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
-		g.GET("/post/delete", DeletePost)
+		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
+		// 恢复指定帖子
+		g.POST("/post/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverPost)
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
 		// 删除举报
-		g.GET("/report/delete", DeleteReport)
+		g.GET("/report/delete", SolveReport)
 	case Floor:
 		// 查询单个楼层
 		g.GET("/floor", GetFloor)
@@ -140,6 +142,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层
 		g.GET("/floor/delete", DeleteFloor)
+		// 恢复指定楼层
+		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)

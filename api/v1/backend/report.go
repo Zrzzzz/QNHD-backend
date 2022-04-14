@@ -51,7 +51,7 @@ func GetReports(c *gin.Context) {
 // @param id
 // @return
 // @route /b/report/delete
-func DeleteReport(c *gin.Context) {
+func SolveReport(c *gin.Context) {
 	reportType := c.Query("type")
 	id := c.Query("id")
 	valid := validation.Validation{}
@@ -64,7 +64,7 @@ func DeleteReport(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	if err := models.DeleteReports(reportType, id); err != nil {
+	if err := models.SolveReports(reportType, id); err != nil {
 		logging.Error("Delete report error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

@@ -159,7 +159,33 @@ func DeletePost(c *gin.Context) {
 
 	_, err := models.DeletePostsAdmin(uid, id)
 	if err != nil {
-		logging.Error("Delete posts error: %v", err)
+		logging.Error("Delete post error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param post_id
+// @return
+// @route /b/post/recover
+func RecoverPost(c *gin.Context) {
+	postId := c.PostForm("post_id")
+
+	valid := validation.Validation{}
+	valid.Required(postId, "postId")
+	valid.Numeric(postId, "postId")
+	ok, verr := r.ErrorValid(&valid, "Recover post")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	err := models.RecoverPost(postId)
+	if err != nil {
+		logging.Error("Recover post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

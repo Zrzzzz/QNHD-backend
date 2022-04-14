@@ -449,11 +449,13 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	return floor.Id, nil
 }
 
+// 删除单个楼层
 func deleteFloor(floor *Floor) error {
 	/*
 		删除楼层逻辑
 		subto的帖子, reply_to的帖子
-		log_floor_dis, log_floor_like, log_unread_floor
+		删除log
+
 		reports
 	*/
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -487,24 +489,76 @@ func deleteFloor(floor *Floor) error {
 		for k := range floors {
 			ids = append(ids, k)
 		}
+		// 加上自己
+		ids = append(ids, floor.Id)
 		// 删除log
-		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorLike{}).Error; err != nil {
-			return err
-		}
-		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorDis{}).Error; err != nil {
-			return err
-		}
 		if err := tx.Where("id IN (?) AND type = ?", ids, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogUnreadFloor{}).Error; err != nil {
 			return err
 		}
 		if err := deleteReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
 			return err
 		}
+		return tx.Delete(&Floor{}, ids).Error
+	})
+}
+
+// 恢复单个楼层
+func RecoverFloor(floorId string) error {
+	/*
+		删除楼层逻辑
+		subto的帖子, reply_to的帖子
+		reports
+	*/
+	return db.Transaction(func(tx *gorm.DB) error {
+
+		// 先找到所有楼层
+		var (
+			floor         Floor
+			floors        = map[uint64]bool{}
+			ids           []uint64
+			subToFloors   []Floor
+			replyToFloors []Floor
+		)
+
+		if err := tx.Unscoped().Where("id = ?", floorId).Find(&floor).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
+			return err
+		}
+		// 这里需要避免重复, 合并到floors里
+		for _, f := range subToFloors {
+			_, ok := floors[f.Id]
+			if !ok {
+				floors[f.Id] = true
+			}
+		}
+		for _, f := range replyToFloors {
+			_, ok := floors[f.Id]
+			if !ok {
+				floors[f.Id] = true
+			}
+		}
+		for k := range floors {
+			ids = append(ids, k)
+		}
 		// 加上自己
 		ids = append(ids, floor.Id)
-		return db.Delete(&Floor{}, ids).Error
+		if err := recoverReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Model(&LogUnreadFloor{}).Where("floor_id IN (?)", ids).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
+			return err
+		}
+		return tx.Unscoped().Model(&Floor{}).Where("id IN (?)", ids).Update("deleted_at", gorm.Expr("NULL")).Error
 	})
-
 }
 
 func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
@@ -524,6 +578,25 @@ func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 		return err
 	}
 	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func RecoverFloorsInPost(tx *gorm.DB, postId uint64) error {
+	if tx == nil {
+		tx = db
+	}
+	var floorIds []uint64
+	if err := tx.Unscoped().Model(&Floor{}).Select("id").Where("post_id = ?", postId).Find(&floorIds).Error; err != nil {
+		return err
+	}
+	// 楼层回复记录
+	if err := tx.Unscoped().Model(&LogUnreadFloor{}).
+		Where("floor_id IN (?)", floorIds).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
+		return err
+	}
+	if err := tx.Unscoped().Model(&Floor{}).Where("post_id = ?", postId).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
 		return err
 	}
 	return nil

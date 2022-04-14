@@ -98,27 +98,16 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	return pr.Id, err
 }
 
+// 删除帖子内的回复记录
 func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 	if ttx == nil {
 		ttx = db
 	}
 	var (
-		images  []PostReplyImage
 		replies []PostReply
 	)
 	err := ttx.Transaction(func(tx *gorm.DB) error {
-		// 获取所有image
 		logs := tx.Model(&PostReply{}).Where("post_id = ?", postId)
-		if err := tx.Table("(?) as a", logs).
-			Select("b.*").
-			Joins("JOIN qnhd.post_reply_image as b ON a.id = b.post_reply_id").
-			Find(&images).
-			Error; err != nil {
-			return err
-		}
-		if len(images) == 0 {
-			return nil
-		}
 		if err := logs.Find(&replies).Error; err != nil {
 			return err
 		}
@@ -137,4 +126,14 @@ func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 	})
 
 	return err
+}
+
+// 恢复帖子内的回复记录
+func RecoverPostReplysInPost(tx *gorm.DB, postId uint64) error {
+	if tx == nil {
+		tx = db
+	}
+
+	// 删除reply
+	return tx.Unscoped().Model(&PostReply{}).Where("post_id = ?", postId).Update("deleted_at", gorm.Expr("NULL")).Error
 }

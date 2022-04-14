@@ -121,6 +121,7 @@ func DeleteTag(c *gin.Context) {
 // @way [formdata]
 // @param id, point
 // @return
+// @route /b/tag/point
 func AddTagPoint(c *gin.Context) {
 	id := c.PostForm("id")
 	point := c.PostForm("point")
@@ -153,6 +154,7 @@ func AddTagPoint(c *gin.Context) {
 // @way [query]
 // @param id
 // @return
+// @route /b/tag/clear
 func ClearTagPoint(c *gin.Context) {
 	id := c.Query("id")
 
