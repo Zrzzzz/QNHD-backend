@@ -47,7 +47,6 @@ func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", frontend.RefreshToken)
-	g.GET("/test", Test)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(permission.ADMIN))
 	for _, t := range BackendTypes {
@@ -110,7 +109,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
 		// 删除管理员
 		g.GET("/user/manager/delete", permission.RightDemand(models.UserRight{Super: true}), DeleteManager)
-		// 强制更新
+		// 强制更新token
 		g.GET("/user/update", permission.RightDemand(models.UserRight{Super: true}), ForceTokenUpdate)
 	case Post:
 		// 获取帖子列表
@@ -128,12 +127,14 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
-		g.GET("/post/delete", DeletePost)
+		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
+		// 恢复指定帖子
+		g.POST("/post/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverPost)
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
 		// 删除举报
-		g.GET("/report/delete", DeleteReport)
+		g.GET("/report/delete", SolveReport)
 	case Floor:
 		// 查询单个楼层
 		g.GET("/floor", GetFloor)
@@ -143,15 +144,22 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层
 		g.GET("/floor/delete", DeleteFloor)
+		// 恢复指定楼层
+		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
-		// 删除指定标签
-		g.GET("/tag/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteTag)
-		// 获取标签详情
-		g.GET("/tag/detail", permission.RightDemand(models.UserRight{Super: true}), GetTagDetail)
 		// 获取热议标签
 		g.GET("/tags/hot", GetHotTag)
+		tg := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		// 删除指定标签
+		tg.GET("/tag/delete", DeleteTag)
+		// 获取标签详情
+		tg.GET("/tag/detail", GetTagDetail)
+		// 清空标签热度
+		tg.GET("/tag/clear", ClearTagPoint)
+		// 增加标签热度
+		tg.POST("/tag/point", AddTagPoint)
 	case Department:
 		// 查询部门
 		g.GET("/departments", GetDepartments)

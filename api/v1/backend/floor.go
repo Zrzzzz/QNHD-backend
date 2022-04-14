@@ -97,6 +97,7 @@ func GetFloorReplys(c *gin.Context) {
 // @way [query]
 // @param floor_id
 // @return nil
+// @route /b/floor/delete
 func DeleteFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	floorId := c.Query("floor_id")
@@ -113,6 +114,32 @@ func DeleteFloor(c *gin.Context) {
 	_, err := models.DeleteFloorByAdmin(uid, floorId)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param post_id
+// @return
+// @route /b/floor/recover
+func RecoverFloor(c *gin.Context) {
+	floorId := c.PostForm("floor_id")
+
+	valid := validation.Validation{}
+	valid.Required(floorId, "floor_id")
+	valid.Numeric(floorId, "floor_id")
+	ok, verr := r.ErrorValid(&valid, "Recover floor")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+
+	err := models.RecoverFloor(floorId)
+	if err != nil {
+		logging.Error("Recover floor error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

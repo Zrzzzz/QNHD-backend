@@ -7,9 +7,8 @@ import (
 )
 
 type PostImage struct {
-	PostId    uint64         `json:"post_id" `
-	ImageUrl  string         `json:"image_url" `
-	DeletedAt gorm.DeletedAt `json:"-"`
+	PostId   uint64 `json:"post_id" `
+	ImageUrl string `json:"image_url" `
 }
 
 func GetImageInPost(postId uint64) ([]string, error) {
@@ -44,11 +43,4 @@ func AddImageInPost(tx *gorm.DB, postId uint64, imageUrls []string) error {
 	}
 	err := tx.Create(&pis).Error
 	return err
-}
-
-func DeleteImageInPost(tx *gorm.DB, postId uint64) error {
-	if tx == nil {
-		tx = db
-	}
-	return tx.Where("post_id = ?", postId).Delete(&PostImage{}).Error
 }

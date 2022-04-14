@@ -12,9 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Test(c *gin.Context) {
-}
-
 // @method [get]
 // @way [query]
 // @param name
@@ -114,6 +111,64 @@ func DeleteTag(c *gin.Context) {
 	_, err := models.DeleteTagAdmin(intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param id, point
+// @return
+// @route /b/tag/point
+func AddTagPoint(c *gin.Context) {
+	id := c.PostForm("id")
+	point := c.PostForm("point")
+	valid := validation.Validation{}
+	valid.Required(id, "id")
+	valid.Numeric(id, "id")
+	valid.Required(point, "point")
+	valid.Numeric(point, "point")
+	ok, verr := r.ErrorValid(&valid, "Add tag point")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	valid.Min(util.AsInt(point), 0, "point")
+	ok, verr = r.ErrorValid(&valid, "Add tag point")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	err := models.AddTagLog(util.AsUint(id), int64(util.AsInt(point)))
+	if err != nil {
+		logging.Error("Add tag point error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [get]
+// @way [query]
+// @param id
+// @return
+// @route /b/tag/clear
+func ClearTagPoint(c *gin.Context) {
+	id := c.Query("id")
+
+	valid := validation.Validation{}
+	valid.Required(id, "id")
+	valid.Numeric(id, "id")
+	ok, verr := r.ErrorValid(&valid, "Clear tag point")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	err := models.ClearTagLog(util.AsUint(id))
+	if err != nil {
+		logging.Error("Clear tag point error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

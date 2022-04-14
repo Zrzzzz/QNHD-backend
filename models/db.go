@@ -32,7 +32,7 @@ func Setup(debug bool) {
 	if debug {
 		logLevel = logger.Info
 	} else {
-		logLevel = logger.Error
+		logLevel = logger.Silent
 	}
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
