@@ -19,6 +19,7 @@ const (
 	Message
 	Game
 	PostType
+	Banner
 )
 
 var FrontTypes = [...]FrontType{
@@ -31,6 +32,7 @@ var FrontTypes = [...]FrontType{
 	Message,
 	Game,
 	PostType,
+	Banner,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -139,5 +141,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case PostType:
 		// 获取帖子类型
 		g.GET("/posttypes", GetPostTypes)
+	case Banner:
+		// 获取游戏列表
+		g.GET("/banner", GetNewestBanner)
 	}
 }

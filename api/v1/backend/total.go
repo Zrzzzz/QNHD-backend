@@ -24,6 +24,7 @@ const (
 	Game
 	Sensitive
 	PostType
+	Banner
 )
 
 var BackendTypes = [...]BackendType{
@@ -39,6 +40,7 @@ var BackendTypes = [...]BackendType{
 	Game,
 	Sensitive,
 	PostType,
+	Banner,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -163,7 +165,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Game:
 		// 获取游戏列表
 		g.GET("/game", GetNewestGame)
-		// 更新列表
+		// 更新游戏列表
 		g.POST("/game", permission.RightDemand(models.UserRight{Super: true}), AddNewGame)
 	case Sensitive:
 		sGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
@@ -178,5 +180,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/posttypes", frontend.GetPostTypes)
 		// 增加帖子类型
 		g.POST("/posttype", permission.RightDemand(models.UserRight{Super: true}), AddPostType)
+	case Banner:
+		// 获取轮播图列表
+		g.GET("/game", GetNewestBanner)
+		// 更新轮播图列表
+		g.POST("/game", permission.RightDemand(models.UserRight{Super: true}), AddNewBanner)
 	}
 }
