@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-module/carbon/v2"
@@ -21,12 +22,12 @@ type Blocked struct {
 type BlockedDetail struct {
 	Starttime string
 	Overtime  string
-	Remain    uint64
+	Remain    int
 }
 
 func GetBlocked(maps interface{}) ([]Blocked, error) {
 	var blocked []Blocked
-	if err := db.Unscoped().Where(maps).Order("id DESC").Find(&blocked).Error; err != nil {
+	if err := db.Where(maps).Order("id DESC").Find(&blocked).Error; err != nil {
 		return nil, err
 	}
 	return blocked, nil
@@ -74,7 +75,8 @@ func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 		nowtime = carbon.Now()
 		overtime = carbon.Parse(ban.ExpiredAt, "Asia/Shanghai")
 
-		remain := uint64(overtime.Timestamp() - nowtime.Timestamp())
+		remain := int(overtime.Timestamp() - nowtime.Timestamp())
+		fmt.Println(remain)
 		return remain > 0, &BlockedDetail{
 			Starttime: ban.CreatedAt,
 			Overtime:  ban.ExpiredAt,

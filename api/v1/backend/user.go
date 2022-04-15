@@ -18,7 +18,7 @@ type userResponse struct {
 	models.User
 	IsBlocked     bool   `json:"is_blocked"`
 	BlockedStart  string `json:"bloced_start"`
-	BlockedRemain uint64 `json:"blocked_remain"`
+	BlockedRemain int    `json:"blocked_remain"`
 	BlockedOver   string `json:"blocked_over"`
 	IsBanned      bool   `json:"is_banned"`
 }
