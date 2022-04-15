@@ -20,7 +20,7 @@ type Report struct {
 	PostId    uint64 `json:"post_id"`
 	FloorId   uint64 `json:"floor_id"`
 	Reason    string `json:"reason"`
-	Solved    bool   `json:"solved" gorm:"-"`
+	Solved    bool   `json:"solved"`
 	IsDeleted bool   `json:"is_deleted" gorm:"-"`
 }
 
@@ -47,7 +47,7 @@ func AddReport(maps map[string]interface{}) error {
 	return err
 }
 
-func SolveReports(t string, id string) error {
+func SolveReport(t string, id string) error {
 	if t == "1" {
 		return db.Model(&Report{}).Where("type = ? AND post_id = ?", t, id).Update("solved", true).Error
 	} else if t == "2" {
