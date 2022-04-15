@@ -393,7 +393,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			// 如果有tag_id
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
-				if err := AddPostWithTag(tx, post.Id, tagId); err != nil {
+				if err := AddPostWithTag(tx, post.Id, util.AsUint(tagId)); err != nil {
 					return err
 				}
 				// 对帖子的tag增加记录

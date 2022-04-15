@@ -129,6 +129,11 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
 		g.GET("/post/delete", DeletePost)
+
+		// 添加帖子标签
+		g.POST("/post_tag", AddPostTag)
+		// 删除帖子的标签
+		g.GET("/post_tag/delete", DeletePostTag)
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)

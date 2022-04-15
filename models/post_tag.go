@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"qnhd/pkg/util"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +23,7 @@ func GetTagInPost(postId string) (*Tag, error) {
 	return tag, nil
 }
 
-func AddPostWithTag(tx *gorm.DB, postId uint64, tagId string) error {
+func AddPostWithTag(tx *gorm.DB, postId uint64, tagId uint64) error {
 	if tx == nil {
 		tx = db
 	}
@@ -35,7 +34,7 @@ func AddPostWithTag(tx *gorm.DB, postId uint64, tagId string) error {
 	}
 	err := tx.Create(&PostTag{
 		PostId: postId,
-		TagId:  util.AsUint(tagId),
+		TagId:  tagId,
 	}).Error
 	return err
 }
