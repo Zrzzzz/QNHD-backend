@@ -442,6 +442,10 @@ func EditPostType(postId string, typeId string) error {
 	if post.Type == util.AsInt(typeId) {
 		return fmt.Errorf("不能修改为同类型")
 	}
+	// 如果要修改为校务类型，禁止操作
+	if util.AsInt(typeId) == int(POST_SCHOOL_TYPE) {
+		return fmt.Errorf("不能修改为校务类型")
+	}
 	// 如果是校务类型，需要去掉部门
 	if post.Type == POST_SCHOOL_TYPE {
 		return EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0})
