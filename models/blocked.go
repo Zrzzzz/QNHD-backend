@@ -75,7 +75,7 @@ func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 		overtime = carbon.Parse(ban.ExpiredAt, "Asia/Shanghai")
 
 		remain := uint64(overtime.Timestamp() - nowtime.Timestamp())
-		return true, &BlockedDetail{
+		return remain > 0, &BlockedDetail{
 			Starttime: ban.CreatedAt,
 			Overtime:  ban.ExpiredAt,
 			Remain:    remain,
