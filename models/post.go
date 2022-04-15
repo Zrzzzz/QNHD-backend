@@ -98,6 +98,7 @@ type PostResponse struct {
 	CommentCount int             `json:"comment_count"`
 	ImageUrls    []string        `json:"image_urls"`
 	Department   *Department     `json:"department"`
+	IsDeleted    bool            `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -111,15 +112,16 @@ type PostResponseUser struct {
 	ImageUrls    []string            `json:"image_urls"`
 	Department   *Department         `json:"department"`
 
-	IsLike  bool `json:"is_like"`
-	IsDis   bool `json:"is_dis"`
-	IsFav   bool `json:"is_fav"`
-	IsOwner bool `json:"is_owner"`
+	IsLike    bool `json:"is_like"`
+	IsDis     bool `json:"is_dis"`
+	IsFav     bool `json:"is_fav"`
+	IsOwner   bool `json:"is_owner"`
+	IsDeleted bool `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
 
-func (p *Post) geneResponse() PostResponse {
+func (p *Post) geneResponse(unscoped bool) PostResponse {
 	var pr PostResponse
 
 	// frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
@@ -133,9 +135,8 @@ func (p *Post) geneResponse() PostResponse {
 		return pr
 	}
 	pr = PostResponse{
-		Post: *p,
-		// Floors:       frs,
-		CommentCount: GetCommentCount(p.Id, true),
+		Post:         *p,
+		CommentCount: GetCommentCount(p.Id, true, unscoped),
 		ImageUrls:    imgs,
 	}
 
@@ -152,6 +153,7 @@ func (p *Post) geneResponse() PostResponse {
 		pr.Tag = tag
 	}
 	pr.Error = err
+	pr.IsDeleted = pr.DeletedAt.Valid
 	return pr
 }
 
@@ -177,12 +179,12 @@ func (p PostResponse) searchByUid(uid string) PostResponseUser {
 	return pr
 }
 
-// 将post数组转化为返回结果
+// 将post数组转化为返回结果，后台使用
 func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
 	var prs = []PostResponse{}
 	var err error
 	for _, p := range *posts {
-		pr := p.geneResponse()
+		pr := p.geneResponse(true)
 		if pr.Error != nil {
 			err = giterrors.Wrap(err, pr.Error.Error())
 		} else {
@@ -192,12 +194,12 @@ func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
 	return prs, err
 }
 
-// 将post数组转化为用户返回结果
+// 将post数组转化为用户返回结果， 前端使用
 func transPostsToResponsesWithUid(posts *[]Post, uid string) ([]PostResponseUser, error) {
 	var prs = []PostResponseUser{}
 	var err error
 	for _, p := range *posts {
-		pr := p.geneResponse().searchByUid(uid)
+		pr := p.geneResponse(false).searchByUid(uid)
 		if pr.Error != nil {
 			err = giterrors.Wrap(err, pr.Error.Error())
 		} else {
@@ -213,16 +215,19 @@ func GetPost(postId string) (Post, error) {
 	return post, err
 }
 
+// 后台使用
 func GetPostResponse(postId string) (PostResponse, error) {
+	var p Post
 	var pr PostResponse
-	p, err := GetPost(postId)
+	err := db.Unscoped().Where("id = ?", postId).First(&p).Error
 	if err != nil {
 		return pr, err
 	}
-	pr = p.geneResponse()
+	pr = p.geneResponse(true)
 	return pr, pr.Error
 }
 
+// 前端使用
 func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, error) {
 	var post Post
 	var pr PostResponseUser
@@ -232,14 +237,16 @@ func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, e
 	if err := AddVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
-	ret := post.geneResponse().searchByUid(uid)
+	ret := post.geneResponse(false).searchByUid(uid)
 	return ret, ret.Error
 }
 
-func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post, int, error) {
+// front表示是否为前端请求
+func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) {
 	var (
 		posts []Post
 		cnt   int64
+		err   error
 	)
 	content := maps["content"].(string)
 	postType := maps["type"].(int)
@@ -248,8 +255,13 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
 	valueMode := maps["value_mode"].(PostValueModeType)
+	front := maps["front"].(bool)
 
 	var d = db.Model(&Post{})
+	// 如果是前端
+	if !front {
+		d = d.Unscoped()
+	}
 	// 加精帖搜索
 	if valueMode == VALUE_DEFAULT {
 		d = d.Order("value DESC")
@@ -293,16 +305,18 @@ func getPosts(c *gin.Context, taglog bool, maps map[string]interface{}) ([]Post,
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
 	}
-	if err := d.Count(&cnt).Error; err != nil {
+	if err = d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
-	err := d.Scopes(util.Paginate(c)).Find(&posts).Error
+
+	err = d.Scopes(util.Paginate(c)).Find(&posts).Error
 	return posts, int(cnt), err
 }
 
-// 获取帖子返回数据
+// 获取帖子返回数据，后台使用
 func GetPostResponses(c *gin.Context, maps map[string]interface{}) ([]PostResponse, int, error) {
-	posts, cnt, err := getPosts(c, false, maps)
+	maps["front"] = false
+	posts, cnt, err := getPosts(c, maps)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -310,9 +324,10 @@ func GetPostResponses(c *gin.Context, maps map[string]interface{}) ([]PostRespon
 	return ret, cnt, err
 }
 
-// 获取帖子返回数据带uid
+// 获取帖子返回数据带uid，前端使用
 func GetPostResponsesWithUid(c *gin.Context, uid string, maps map[string]interface{}) ([]PostResponseUser, error) {
-	posts, _, err := getPosts(c, true, maps)
+	maps["front"] = true
+	posts, _, err := getPosts(c, maps)
 	if err != nil {
 		return nil, err
 	}

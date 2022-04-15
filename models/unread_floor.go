@@ -44,7 +44,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 
 	// 对每个楼层分析
 	for _, f := range floors {
-		var r = UnreadFloorResponse{Floor: f.geneResponse(false)}
+		var r = UnreadFloorResponse{Floor: f.geneResponse(false, false)}
 		for _, log := range logFloors {
 			if log.FloorId == f.Id {
 				r.IsRead = log.IsRead
@@ -58,7 +58,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 				break
 			}
 			r.Type = 1
-			tofr := tof.geneResponse(false)
+			tofr := tof.geneResponse(false, false)
 			r.ToFloor = &tofr
 		} else {
 			r.Type = 0
@@ -69,7 +69,7 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 			err = e
 			break
 		}
-		r.Post = p.geneResponse()
+		r.Post = p.geneResponse(false)
 		ret = append(ret, r)
 	}
 	if err != gorm.ErrRecordNotFound {

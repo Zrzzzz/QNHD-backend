@@ -21,7 +21,7 @@ func GetFloor(c *gin.Context) {
 	valid := validation.Validation{}
 	valid.Required(floorId, "floor_id")
 	valid.Numeric(floorId, "floor_id")
-	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
+	ok, verr := r.ErrorValid(&valid, "Get floor")
 	if !ok {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
@@ -60,7 +60,7 @@ func GetFloors(c *gin.Context) {
 
 	data := make(map[string]interface{})
 	data["list"] = list
-	data["total"] = models.GetCommentCount(util.AsUint(postId), false)
+	data["total"] = models.GetCommentCount(util.AsUint(postId), false, true)
 	r.OK(c, e.SUCCESS, data)
 }
 
