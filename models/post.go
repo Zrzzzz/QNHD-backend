@@ -408,7 +408,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			// 如果有tag_id
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
-				if err := AddPostWithTag(post.Id, tagId); err != nil {
+				if err := AddPostWithTag(tx, post.Id, util.AsUint(tagId)); err != nil {
 					return err
 				}
 				// 对帖子的tag增加记录
@@ -456,6 +456,10 @@ func EditPostType(postId string, typeId string) error {
 	// 如果类型相同
 	if post.Type == util.AsInt(typeId) {
 		return fmt.Errorf("不能修改为同类型")
+	}
+	// 如果要修改为校务类型，禁止操作
+	if util.AsInt(typeId) == int(POST_SCHOOL_TYPE) {
+		return fmt.Errorf("不能修改为校务类型")
 	}
 	// 如果是校务类型，需要去掉部门
 	if post.Type == POST_SCHOOL_TYPE {

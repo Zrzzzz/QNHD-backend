@@ -139,6 +139,33 @@ func EditPostValue(c *gin.Context) {
 	r.OK(c, e.SUCCESS, nil)
 }
 
+// @method [post]
+// @way [formdata]
+// @param post_id, tag_id
+// @return
+// @route /b/post_tag
+func AddPostTag(c *gin.Context) {
+	postId := c.Query("post_id")
+	tagId := c.PostForm("tag_id")
+	valid := validation.Validation{}
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	valid.Required(tagId, "post_id")
+	valid.Numeric(tagId, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Add post tag")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	err := models.AddPostWithTag(nil, util.AsUint(postId), util.AsUint(tagId))
+	if err != nil {
+		logging.Error("Add post tag error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [delete]
 // @way [query]
 // @param id
@@ -186,6 +213,30 @@ func RecoverPost(c *gin.Context) {
 	err := models.RecoverPost(postId)
 	if err != nil {
 		logging.Error("Recover post error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [get]
+// @way [query]
+// @param post_id
+// @return
+// @route /b/post_tag/delete
+func DeletePostTag(c *gin.Context) {
+	id := c.Query("post_id")
+	valid := validation.Validation{}
+	valid.Required(id, "post_id")
+	valid.Numeric(id, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Delete post tag")
+	if !ok {
+		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		return
+	}
+	err := models.DeleteTagInPost(nil, util.AsUint(id))
+	if err != nil {
+		logging.Error("Delete post tag error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
