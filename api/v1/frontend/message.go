@@ -109,7 +109,7 @@ func ReadNotice(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Read notice")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.ReadNotice(util.AsUint(uid), util.AsUint(id))
@@ -134,7 +134,7 @@ func ReadFloor(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Read floor")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.ReadFloor(util.AsUint(uid), util.AsUint(id))
@@ -159,7 +159,7 @@ func ReadReply(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Read reply")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.ReadPostReply(util.AsUint(uid), util.AsUint(id))
@@ -187,14 +187,14 @@ func ReadLike(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Read like")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	typeint := util.AsInt(likeType)
 	valid.Range(typeint, 0, 1, "type")
 	ok, verr = r.ErrorValid(&valid, "Read like")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.ReadLike(util.AsUint(uid), models.LikeType(typeint), util.AsUint(id))

@@ -23,7 +23,7 @@ func GetBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Get blocked")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -62,7 +62,7 @@ func AddBlocked(c *gin.Context) {
 	valid.Numeric(last, "last")
 	ok, verr := r.ErrorValid(&valid, "Add blocked")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	reason := c.PostForm("reason")
@@ -99,7 +99,7 @@ func DeleteBlocked(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Delete blocked")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	intuid := util.AsUint(uid)

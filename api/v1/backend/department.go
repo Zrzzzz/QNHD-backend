@@ -45,7 +45,7 @@ func AddDepartment(c *gin.Context) {
 	valid.Required(name, "name")
 	ok, verr := r.ErrorValid(&valid, "Add department")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	exist, err := models.ExistDepartmentByName(name)
@@ -87,7 +87,7 @@ func EditDepartment(c *gin.Context) {
 	valid.Numeric(departmentId, "department_id")
 	ok, verr := r.ErrorValid(&valid, "Edit department")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	// 校管或者超管
@@ -121,7 +121,7 @@ func DeleteDepartment(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Delete department")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

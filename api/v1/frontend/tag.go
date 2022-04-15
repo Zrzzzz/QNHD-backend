@@ -94,12 +94,12 @@ func AddTag(c *gin.Context) {
 	valid.MaxSize(name, 15, "name")
 	ok, verr := r.ErrorValid(&valid, "Add tag")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	ok, s := filter.Validate(name)
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": fmt.Sprintf("Tag触发敏感词%s", s)})
+		r.Error(c, e.INVALID_PARAMS, fmt.Sprintf("Tag触发敏感词%s", s))
 		return
 	}
 	exist, err := models.ExistTagByName(name)
@@ -137,7 +137,7 @@ func DeleteTag(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Delete tag")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

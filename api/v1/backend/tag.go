@@ -106,7 +106,7 @@ func DeleteTag(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Delete tag")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

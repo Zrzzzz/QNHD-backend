@@ -154,7 +154,7 @@ func AddPostTag(c *gin.Context) {
 	valid.Numeric(tagId, "post_id")
 	ok, verr := r.ErrorValid(&valid, "Add post tag")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.AddPostWithTag(nil, util.AsUint(postId), util.AsUint(tagId))
@@ -180,7 +180,7 @@ func DeletePost(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "Delete post")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -205,7 +205,7 @@ func DeletePostTag(c *gin.Context) {
 	valid.Numeric(id, "post_id")
 	ok, verr := r.ErrorValid(&valid, "Delete post tag")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	err := models.DeleteTagInPost(nil, util.AsUint(id))

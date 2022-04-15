@@ -27,7 +27,7 @@ func GetBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Get banned")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -64,7 +64,7 @@ func AddBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Add banned")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	reason := c.PostForm("reason")
@@ -106,7 +106,7 @@ func DeleteBanned(c *gin.Context) {
 	valid.Numeric(uid, "uid")
 	ok, verr := r.ErrorValid(&valid, "Delete banned")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	intuid := util.AsUint(uid)

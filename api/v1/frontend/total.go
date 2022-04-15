@@ -143,6 +143,6 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/posttypes", GetPostTypes)
 	case Banner:
 		// 获取游戏列表
-		g.GET("/banner", GetNewestBanner)
+		g.GET("/banners", GetBanners)
 	}
 }

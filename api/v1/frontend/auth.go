@@ -25,7 +25,7 @@ func GetAuthToken(c *gin.Context) {
 	valid.Required(token, "token")
 	ok, verr := r.ErrorValid(&valid, "get auth")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -56,7 +56,7 @@ func GetAuthPasswd(c *gin.Context) {
 	valid.Required(password, "password")
 	ok, verr := r.ErrorValid(&valid, "get auth")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -117,7 +117,7 @@ func RefreshToken(c *gin.Context) {
 	valid.Required(token, "token")
 	ok, verr := r.ErrorValid(&valid, "Refresh Token")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

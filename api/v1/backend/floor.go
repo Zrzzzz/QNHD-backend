@@ -23,7 +23,7 @@ func GetFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floor_id")
 	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	floor, err := models.GetFloorResponse(floorId)
@@ -47,7 +47,7 @@ func GetFloors(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -76,7 +76,7 @@ func GetFloorReplys(c *gin.Context) {
 	valid.Numeric(floorId, "floor_id")
 	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -106,7 +106,7 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

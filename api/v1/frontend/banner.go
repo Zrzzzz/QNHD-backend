@@ -12,12 +12,15 @@ import (
 // @way [query]
 // @param
 // @return
-// @route /b/banner
-func GetNewestBanner(c *gin.Context) {
-	banner, err := models.GetNewestBanner()
+// @route /b/banners
+func GetBanners(c *gin.Context) {
+	list, err := models.GetBanners()
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	r.OK(c, e.SUCCESS, map[string]interface{}{"content": banner.Content})
+	data := make(map[string]interface{})
+	data["list"] = list
+	data["total"] = len(list)
+	r.OK(c, e.SUCCESS, data)
 }

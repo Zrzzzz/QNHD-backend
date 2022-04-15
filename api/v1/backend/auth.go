@@ -25,7 +25,7 @@ func GetAuth(c *gin.Context) {
 	valid.Required(password, "password")
 	ok, verr := r.ErrorValid(&valid, "Auth")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	user, err := chainAuth(

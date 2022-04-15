@@ -23,7 +23,7 @@ func GetPostReplys(c *gin.Context) {
 	valid.Numeric(postId, "post_id")
 	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	list, err := models.GetPostReplyResponses(postId)
@@ -53,7 +53,7 @@ func AddPostReply(c *gin.Context) {
 	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Get post replys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	// 校验有无权限回复
@@ -65,7 +65,7 @@ func AddPostReply(c *gin.Context) {
 
 	// 限制无文字时必须有图
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
+		r.Error(c, e.INVALID_PARAMS, "缺失图片或内容")
 		return
 	}
 	// 添加回复
