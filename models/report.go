@@ -15,18 +15,22 @@ const (
 
 type Report struct {
 	Model
-	Uid     uint64 `json:"uid"`
-	Type    int    `json:"type"`
-	PostId  uint64 `json:"post_id"`
-	FloorId uint64 `json:"floor_id"`
-	Reason  string `json:"reason"`
-	Solved  bool   `json:"solved"`
+	Uid       uint64 `json:"uid"`
+	Type      int    `json:"type"`
+	PostId    uint64 `json:"post_id"`
+	FloorId   uint64 `json:"floor_id"`
+	Reason    string `json:"reason"`
+	Solved    bool   `json:"solved" gorm:"-"`
+	IsDeleted bool   `json:"is_deleted" gorm:"-"`
 }
 
 func GetReports(rType ReportType) ([]Report, error) {
 	var reports []Report
-	if err := db.Where("type = ? AND solved = false", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
+	if err := db.Unscoped().Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
 		return nil, err
+	}
+	for i := range reports {
+		reports[i].IsDeleted = reports[i].DeletedAt.Valid
 	}
 	return reports, nil
 }

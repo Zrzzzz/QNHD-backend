@@ -52,7 +52,7 @@ func GetUnreadPostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, err
 			err = e
 			break
 		}
-		u.Post = p.geneResponse()
+		u.Post = p.geneResponse(false)
 		// 加上未读
 		for _, l := range logPrs {
 			if l.ReplyId == r.Id {

@@ -1,8 +1,6 @@
 package models
 
 import (
-	"errors"
-
 	"gorm.io/gorm"
 )
 
@@ -15,11 +13,7 @@ func GetImageInPost(postId uint64) ([]string, error) {
 	var imageUrls = []string{}
 	var ret = []PostImage{}
 	if err := db.Where("post_id = ?", postId).Find(&ret).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return imageUrls, nil
-		} else {
-			return imageUrls, err
-		}
+		return imageUrls, err
 	}
 	for _, r := range ret {
 		imageUrls = append(imageUrls, r.ImageUrl)

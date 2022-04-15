@@ -43,6 +43,7 @@ type FloorResponse struct {
 	Floor
 	SubFloors   []FloorResponse `json:"sub_floors"`
 	SubFloorCnt int             `json:"sub_floor_cnt"`
+	IsDeleted   bool            `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
@@ -55,26 +56,28 @@ type FloorResponseUser struct {
 	IsLike      bool                `json:"is_like"`
 	IsDis       bool                `json:"is_dis"`
 	IsOwner     bool                `json:"is_owner"`
+	IsDeleted   bool                `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
 
-func (f *Floor) geneResponse(searchSubFloors bool) FloorResponse {
+func (f *Floor) geneResponse(searchSubFloors bool, unscoped bool) FloorResponse {
 	var fr = FloorResponse{
 		Floor:     *f,
 		SubFloors: []FloorResponse{},
 	}
 	if searchSubFloors {
 		// 处理回复本条楼层的楼层
-		rps, err := getHighlikeSubfloors(util.AsStrU(f.Id))
+		rps, err := getHighlikeSubfloors(util.AsStrU(f.Id), unscoped)
 		if err != nil {
 			fr.Error = err
 			return fr
 		}
 		fr.SubFloors = rps
 		// 获取子楼层总数
-		fr.SubFloorCnt = getFloorSubFloorCount(util.AsStrU(f.Id))
+		fr.SubFloorCnt = getFloorSubFloorCount(util.AsStrU(f.Id), unscoped)
 	}
+	fr.IsDeleted = fr.DeletedAt.Valid
 	return fr
 }
 
@@ -104,7 +107,7 @@ func transFloorsToResponses(floor *[]Floor, searchSubFloors bool) ([]FloorRespon
 	var frs = []FloorResponse{}
 	var err error
 	for _, f := range *floor {
-		fr := f.geneResponse(searchSubFloors)
+		fr := f.geneResponse(searchSubFloors, true)
 		if fr.Error != nil {
 			err = errors.Wrap(err, fr.Error.Error())
 		} else {
@@ -119,7 +122,7 @@ func transFloorsToResponsesWithUid(floor *[]Floor, uid string, searchSubFloors b
 	var frs = []FloorResponseUser{}
 	var err error
 	for _, f := range *floor {
-		fr := f.geneResponse(searchSubFloors).searchWithUid(uid, searchSubFloors)
+		fr := f.geneResponse(searchSubFloors, false).searchWithUid(uid, searchSubFloors)
 		if fr.Error != nil {
 			err = errors.Wrap(err, fr.Error.Error())
 		} else {
@@ -153,11 +156,12 @@ func GetFloor(floorId string) (Floor, error) {
 // 返回单个楼层带Response
 func GetFloorResponse(floorId string) (FloorResponse, error) {
 	var ret FloorResponse
-	floor, err := GetFloor(floorId)
+	var floor Floor
+	err := db.Unscoped().Where("id = ?", floorId).First(&floor).Error
 	if err != nil {
 		return ret, err
 	}
-	fr := floor.geneResponse(true)
+	fr := floor.geneResponse(true, true)
 	return fr, fr.Error
 }
 
@@ -168,32 +172,32 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 	if err != nil {
 		return ret, err
 	}
-	fr := floor.geneResponse(true).searchWithUid(uid, true)
+	fr := floor.geneResponse(true, false).searchWithUid(uid, true)
 	return fr, fr.Error
 }
 
-// 缩略返回帖子内楼层，即返回5条
-func getShortFloorResponsesInPost(postId string) ([]FloorResponse, error) {
-	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
-		return nil, err
-	}
-	return transFloorsToResponses(&floors, true)
-}
+// // 缩略返回帖子内楼层，即返回5条
+// func getShortFloorResponsesInPost(postId string) ([]FloorResponse, error) {
+// 	var floors []Floor
+// 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return transFloorsToResponses(&floors, true)
+// }
 
-// 缩略返回帖子内楼层，即返回5条 含用户id
-func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUser, error) {
-	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
-		return nil, err
-	}
-	return transFloorsToResponsesWithUid(&floors, uid, true)
-}
+// // 缩略返回帖子内楼层，即返回5条 含用户id
+// func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUser, error) {
+// 	var floors []Floor
+// 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return transFloorsToResponsesWithUid(&floors, uid, true)
+// }
 
 // 分页返回帖子里的楼层
 func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponses(&floors, true)
@@ -209,10 +213,18 @@ func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorRespon
 }
 
 // 返回楼层内最高赞的5条楼层
-func getHighlikeSubfloors(floorId string) ([]FloorResponse, error) {
-	var floors []Floor
+func getHighlikeSubfloors(floorId string, unscoped bool) ([]FloorResponse, error) {
+	var (
+		floors []Floor
+		err    error
+	)
 	// 按照点赞降序，创建时间降序
-	err := db.Where("sub_to = ?", floorId).Order("like_count DESC, created_at DESC").Limit(5).Find(&floors).Error
+	if unscoped {
+		err = db.Unscoped().Where("sub_to = ?", floorId).Order("like_count DESC, created_at DESC").Limit(5).Find(&floors).Error
+	} else {
+		err = db.Where("sub_to = ?", floorId).Order("like_count DESC, created_at DESC").Limit(5).Find(&floors).Error
+	}
+
 	if err != nil {
 		return []FloorResponse{}, err
 	}
@@ -230,19 +242,26 @@ func getHighlikeSubfloorsWithUid(floorId, uid string) ([]FloorResponseUser, erro
 	return transFloorsToResponsesWithUid(&floors, uid, false)
 }
 
-func getFloorSubFloorCount(floorId string) int {
+func getFloorSubFloorCount(floorId string, unscoped bool) int {
 	var ret int64
-	db.Model(&Floor{}).Where("sub_to = ?", floorId).Count(&ret)
+	if unscoped {
+		db.Model(&Floor{}).Unscoped().Where("sub_to = ?", floorId).Count(&ret)
+	} else {
+		db.Model(&Floor{}).Where("sub_to = ?", floorId).Count(&ret)
+	}
 	return int(ret)
 }
 
-func GetCommentCount(postId uint64, withSubfloors bool) int {
+func GetCommentCount(postId uint64, withSubfloors bool, unscoped bool) int {
 	var ret int64
-	a := db.Model(&Floor{}).Where("post_id = ?", postId)
+	a := db.Model(&Floor{})
+	if unscoped {
+		a = a.Unscoped()
+	}
 	if !withSubfloors {
 		a = a.Where("sub_to = 0")
 	}
-	a.Count(&ret)
+	a.Where("post_id = ?", postId).Count(&ret)
 	return int(ret)
 }
 
