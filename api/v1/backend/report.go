@@ -64,7 +64,7 @@ func SolveReport(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	if err := models.SolveReports(reportType, id); err != nil {
+	if err := models.SolveReport(reportType, id); err != nil {
 		logging.Error("Delete report error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
