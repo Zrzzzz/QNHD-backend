@@ -8,10 +8,11 @@ import (
 )
 
 type LogUnreadFloor struct {
-	Uid       uint64 `json:"uid"`
-	FloorId   uint64 `json:"floor_id"`
-	IsRead    bool   `json:"is_read"`
-	CreatedAt string `json:"created_at" gorm:"default:null;"`
+	Uid       uint64         `json:"uid"`
+	FloorId   uint64         `json:"floor_id"`
+	IsRead    bool           `json:"is_read"`
+	CreatedAt string         `json:"created_at" gorm:"default:null;"`
+	DeletedAt gorm.DeletedAt `json:"-"`
 }
 
 type UnreadFloorResponse struct {
