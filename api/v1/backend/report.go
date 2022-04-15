@@ -23,14 +23,14 @@ func GetReports(c *gin.Context) {
 	valid.Numeric(rType, "type")
 	ok, verr := r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	rTypeint := util.AsInt(rType)
 	valid.Range(rTypeint, 1, 2, "type")
 	ok, verr = r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -61,7 +61,7 @@ func SolveReport(c *gin.Context) {
 	valid.Numeric(id, "id")
 	ok, verr := r.ErrorValid(&valid, "delete report")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	if err := models.SolveReport(reportType, id); err != nil {

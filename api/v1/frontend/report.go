@@ -32,7 +32,7 @@ func AddReport(c *gin.Context) {
 	}
 	ok, verr := r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -40,7 +40,7 @@ func AddReport(c *gin.Context) {
 	valid.Range(rTypeint, 1, 2, "type")
 	ok, verr = r.ErrorValid(&valid, "Add report")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	var floorIdint uint64 = 0
@@ -48,7 +48,7 @@ func AddReport(c *gin.Context) {
 		floorIdint = util.AsUint(floorId)
 	}
 	if rTypeint == 2 && floorIdint == 0 {
-		r.OK(c, e.INVALID_PARAMS, nil)
+		r.Error(c, e.INVALID_PARAMS, "")
 		return
 	}
 	maps := map[string]interface{}{

@@ -195,8 +195,12 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/posttype", permission.RightDemand(models.UserRight{Super: true}), AddPostType)
 	case Banner:
 		// 获取轮播图列表
-		g.GET("/banner", GetNewestBanner)
+		g.GET("/banners", GetBanners)
 		// 更新轮播图列表
-		g.POST("/banner", permission.RightDemand(models.UserRight{Super: true}), AddNewBanner)
+		g.POST("/banner", AddBanner)
+		// 更新轮播图顺序
+		g.POST("/banner/order", UpdateBannerOrder)
+		// 删除轮播图
+		g.GET("/banner/delete", DeleteBanner)
 	}
 }

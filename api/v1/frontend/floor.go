@@ -25,7 +25,7 @@ func GetFloors(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -55,7 +55,7 @@ func GetFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floor_id")
 	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	floor, err := models.GetFloorResponseWithUid(floorId, uid)
@@ -79,7 +79,7 @@ func GetFloorReplys(c *gin.Context) {
 	valid.Numeric(floorId, "floor_id")
 	ok, verr := r.ErrorValid(&valid, "Get floorreplys")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -114,12 +114,12 @@ func AddFloor(c *gin.Context) {
 	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Add floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
+		r.Error(c, e.INVALID_PARAMS, "缺失图片或内容")
 		return
 	}
 
@@ -165,12 +165,12 @@ func ReplyFloor(c *gin.Context) {
 	valid.MaxSize(imageURLs, 1, "images")
 	ok, verr := r.ErrorValid(&valid, "Reply floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
+		r.Error(c, e.INVALID_PARAMS, "缺失图片或内容")
 		return
 	}
 	intuid := util.AsUint(uid)
@@ -211,7 +211,7 @@ func DeleteFloor(c *gin.Context) {
 	valid.Numeric(floorId, "floorId")
 	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -240,7 +240,7 @@ func LikeOrUnlikeFloor(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.ErrorValid(&valid, "like or unlike floor")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -276,7 +276,7 @@ func DisOrUndisFloor(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.ErrorValid(&valid, "dis or undis floor")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

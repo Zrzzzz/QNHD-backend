@@ -207,7 +207,7 @@ func AddUser(c *gin.Context) {
 	valid.Required(phoneNumber, "phoneNumber")
 	ok, verr := r.ErrorValid(&valid, "Add backend user")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	uid, err := models.ExistUser(nickname, "")
@@ -351,7 +351,7 @@ func EditUserRight(c *gin.Context) {
 	valid.Numeric(stuAdmin, "stuAdmin")
 	ok, verr := r.ErrorValid(&valid, "Edit user right")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -361,7 +361,7 @@ func EditUserRight(c *gin.Context) {
 	valid.Range(int(schi), 0, 1, "schAdmin")
 	ok, verr = r.ErrorValid(&valid, "Edit user right")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -392,7 +392,7 @@ func EditUserDepartment(c *gin.Context) {
 	valid.Numeric(departmentId, "departmentId")
 	ok, verr := r.ErrorValid(&valid, "Edit user right Error")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -416,7 +416,7 @@ func DeleteManager(c *gin.Context) {
 	valid.Numeric(userId, "user_id")
 	ok, verr := r.ErrorValid(&valid, "Delete manager Error")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	if err := models.DeleteUser(util.AsUint(userId)); err != nil {

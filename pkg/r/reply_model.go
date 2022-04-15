@@ -41,7 +41,7 @@ func ErrorValid(valid *validation.Validation, errorPhase string) (bool, error) {
 	return !valid.HasErrors(), fmt.Errorf(s)
 }
 
-func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
+func r(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
 	c.JSON(httpCode, gin.H{
 		"code": code,
 		"msg":  e.GetMsg(code),
@@ -50,9 +50,9 @@ func R(c *gin.Context, httpCode int, code int, data map[string]interface{}) {
 }
 
 func OK(c *gin.Context, code int, data map[string]interface{}) {
-	R(c, http.StatusOK, code, data)
+	r(c, http.StatusOK, code, data)
 }
 
 func Error(c *gin.Context, code int, err string) {
-	R(c, http.StatusOK, code, map[string]interface{}{"error": err})
+	r(c, http.StatusOK, code, map[string]interface{}{"error": err})
 }

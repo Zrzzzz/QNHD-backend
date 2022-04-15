@@ -42,7 +42,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		valid.Numeric(valueMode, "value_mode")
 		ok, verr := r.ErrorValid(&valid, "Get posts")
 		if !ok {
-			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			r.Error(c, e.INVALID_PARAMS, verr.Error())
 			return
 		}
 		valid.Numeric(solved, "solved")
@@ -57,7 +57,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		}
 		ok, verr = r.ErrorValid(&valid, "Get posts")
 		if !ok {
-			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			r.Error(c, e.INVALID_PARAMS, verr.Error())
 			return
 		}
 
@@ -175,7 +175,7 @@ func GetPost(front bool) gin.HandlerFunc {
 
 		ok, verr := r.ErrorValid(&valid, "Get Posts")
 		if !ok {
-			r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+			r.Error(c, e.INVALID_PARAMS, verr.Error())
 			return
 		}
 		data := make(map[string]interface{})
@@ -226,7 +226,7 @@ func AddPost(c *gin.Context) {
 	valid.MaxSize(imageURLs, 3, "images")
 	ok, verr := r.ErrorValid(&valid, "Add posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	campusint := util.AsInt(campus)
@@ -234,7 +234,7 @@ func AddPost(c *gin.Context) {
 	postTypeint := util.AsInt(postType)
 	ok, verr = r.ErrorValid(&valid, "Add posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	// 需要根据类型判断返回类型
@@ -251,13 +251,13 @@ func AddPost(c *gin.Context) {
 	}
 	ok, verr = r.ErrorValid(&valid, "Add posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
 	// 限制无文字时必须有图
 	if content == "" && len(imageURLs) == 0 {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": "缺失图片或内容"})
+		r.Error(c, e.INVALID_PARAMS, "缺失图片或内容")
 		return
 	}
 	intuid := util.AsUint(uid)
@@ -304,7 +304,7 @@ func VisitPost(c *gin.Context) {
 	valid.Numeric(postId, "post_id")
 	ok, verr := r.ErrorValid(&valid, "add post visit")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	if err := models.AddVisitHistory(uid, postId); err != nil {
@@ -330,14 +330,14 @@ func EditPostSolved(c *gin.Context) {
 	valid.Numeric(rating, "rating")
 	ok, verr := r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	// 限制评分范围
 	valid.Range(util.AsInt(rating), 1, 10, "rating")
 	ok, verr = r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	// 判断是否为发帖人
@@ -371,7 +371,7 @@ func DeletePost(c *gin.Context) {
 	valid.Numeric(postId, "postId")
 	ok, verr := r.ErrorValid(&valid, "Delete posts")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -400,7 +400,7 @@ func FavOrUnfavPost(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.ErrorValid(&valid, "fav or unfav post")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -435,7 +435,7 @@ func LikeOrUnlikePost(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.ErrorValid(&valid, "like or unlike post")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
@@ -470,7 +470,7 @@ func DisOrUndisPost(c *gin.Context) {
 	valid.Numeric(op, "op")
 	ok, verr := r.ErrorValid(&valid, "dis or undis post")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 

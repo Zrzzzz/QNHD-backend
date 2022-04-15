@@ -24,7 +24,7 @@ func AddPostType(c *gin.Context) {
 	valid.MaxSize(name, 10, "name")
 	ok, verr := r.ErrorValid(&valid, "Add posttype")
 	if !ok {
-		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 
