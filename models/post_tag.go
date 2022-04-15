@@ -24,20 +24,23 @@ func GetTagInPost(postId string) (*Tag, error) {
 	return tag, nil
 }
 
-func AddPostWithTag(postId uint64, tagId string) error {
+func AddPostWithTag(tx *gorm.DB, postId uint64, tagId string) error {
+	if tx == nil {
+		tx = db
+	}
 	// 先查询是否有tag
 	var tag Tag
-	if err := db.Where("id = ?", tagId).First(&tag).Error; err != nil {
+	if err := tx.Where("id = ?", tagId).First(&tag).Error; err != nil {
 		return err
 	}
-	err := db.Create(&PostTag{
+	err := tx.Create(&PostTag{
 		PostId: postId,
 		TagId:  util.AsUint(tagId),
 	}).Error
 	return err
 }
 
-func deleteTagInPost(tx *gorm.DB, postId uint64) error {
+func DeleteTagInPost(tx *gorm.DB, postId uint64) error {
 	if tx == nil {
 		tx = db
 	}

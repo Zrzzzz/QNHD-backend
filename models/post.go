@@ -393,7 +393,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			// 如果有tag_id
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
-				if err := AddPostWithTag(post.Id, tagId); err != nil {
+				if err := AddPostWithTag(tx, post.Id, tagId); err != nil {
 					return err
 				}
 				// 对帖子的tag增加记录
@@ -482,7 +482,7 @@ func deletePost(post *Post) error {
 		floors
 	*/
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := deleteTagInPost(tx, post.Id); err != nil {
+		if err := DeleteTagInPost(tx, post.Id); err != nil {
 			return err
 		}
 		if err := deleteReports(tx, map[string]interface{}{"post_id": post.Id}); err != nil {
