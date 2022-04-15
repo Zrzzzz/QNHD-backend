@@ -26,7 +26,7 @@ type Report struct {
 
 func GetReports(rType ReportType) ([]Report, error) {
 	var reports []Report
-	if err := db.Unscoped().Where("type = ? AND solved = false", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
+	if err := db.Unscoped().Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
 		return nil, err
 	}
 	for i := range reports {
