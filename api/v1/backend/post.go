@@ -145,7 +145,7 @@ func EditPostValue(c *gin.Context) {
 // @return
 // @route /b/post_tag
 func AddPostTag(c *gin.Context) {
-	postId := c.Query("post_id")
+	postId := c.PostForm("post_id")
 	tagId := c.PostForm("tag_id")
 	valid := validation.Validation{}
 	valid.Required(postId, "post_id")
