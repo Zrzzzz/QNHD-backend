@@ -13,3 +13,4 @@ cert/
 vendor/
 request/
 /pages/
+/crypto/
