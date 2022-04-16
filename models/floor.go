@@ -526,6 +526,26 @@ func deleteFloor(floor *Floor) error {
 
 // 恢复单个楼层
 func RecoverFloor(floorId string) error {
+	// 需要先判断是否帖子已经被删除，否则返回错误
+	var (
+		floor Floor
+		post  Post
+	)
+	if err := db.Unscoped().Where("id = ?", floorId).Find(&floor).Error; err != nil {
+		return err
+	}
+	if floor.Id == 0 {
+		return fmt.Errorf("未找到楼层")
+	}
+	if err := db.Unscoped().Where("id = ?", floor.PostId).Find(&post).Error; err != nil {
+		return err
+	}
+	if post.Id == 0 {
+		return fmt.Errorf("未找到帖子")
+	}
+	if post.DeletedAt.Valid {
+		return fmt.Errorf("帖子已被删除，无法直接恢复帖子。")
+	}
 	/*
 		删除楼层逻辑
 		subto的帖子, reply_to的帖子
@@ -535,16 +555,11 @@ func RecoverFloor(floorId string) error {
 
 		// 先找到所有楼层
 		var (
-			floor         Floor
 			floors        = map[uint64]bool{}
 			ids           []uint64
 			subToFloors   []Floor
 			replyToFloors []Floor
 		)
-
-		if err := tx.Unscoped().Where("id = ?", floorId).Find(&floor).Error; err != nil {
-			return err
-		}
 
 		if err := tx.Unscoped().Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
 			return err
