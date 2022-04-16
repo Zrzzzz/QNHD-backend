@@ -70,17 +70,10 @@ func AddBlocked(c *gin.Context) {
 	intuid := util.AsUint(uid)
 	intlast := util.AsUint(last)
 	code := e.SUCCESS
-	ifBlocked := models.IsBlockedByUid(intuid)
-	var id uint64
-	var err error
-	if !ifBlocked {
-		id, err = models.AddBlockedByUid(intuid, doer, reason, uint8(intlast))
-		if err != nil {
-			logging.Error("Add blocked error: %v", err)
-			code = e.ERROR_DATABASE
-		}
-	} else {
-		code = e.ERROR_BLOCKED_USER
+	id, err := models.AddBlockedByUid(intuid, doer, reason, uint8(intlast))
+	if err != nil {
+		logging.Error("Add blocked error: %v", err)
+		code = e.ERROR_DATABASE
 	}
 	data := make(map[string]interface{})
 	data["id"] = id
