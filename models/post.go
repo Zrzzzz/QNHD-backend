@@ -308,8 +308,13 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	if err = d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
-
-	err = d.Scopes(util.Paginate(c)).Find(&posts).Error
+	// 分页
+	d = d.Scopes(util.Paginate(c))
+	// 这里还得加一次，上面的是子查询的
+	if !front {
+		d = d.Unscoped()
+	}
+	err = d.Find(&posts).Error
 	return posts, int(cnt), err
 }
 
