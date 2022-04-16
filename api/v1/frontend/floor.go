@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"qnhd/crypto"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -35,6 +36,13 @@ func GetFloors(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
+	// 对楼层uid加密
+	for i := range list {
+		list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].PostId)
+		for j := range list[i].SubFloors {
+			list[i].SubFloors[j].Uid = crypto.Encrypt(list[i].SubFloors[j].Uid, list[i].SubFloors[j].PostId)
+		}
+	}
 
 	data := make(map[string]interface{})
 	data["list"] = list
@@ -63,6 +71,11 @@ func GetFloor(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
+	// 对楼层uid加密
+	floor.Uid = crypto.Encrypt(floor.Uid, floor.PostId)
+	for j := range floor.SubFloors {
+		floor.SubFloors[j].Uid = crypto.Encrypt(floor.SubFloors[j].Uid, floor.SubFloors[j].PostId)
+	}
 	r.OK(c, e.SUCCESS, map[string]interface{}{"floor": floor})
 }
 
@@ -89,7 +102,10 @@ func GetFloorReplys(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-
+	// 对楼层uid加密
+	for i := range list {
+		list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].PostId)
+	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
