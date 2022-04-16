@@ -172,28 +172,28 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 	return fr, fr.Error
 }
 
-// 缩略返回帖子内楼层，即返回5条
-func getShortFloorResponsesInPost(postId string) ([]FloorResponse, error) {
-	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
-		return nil, err
-	}
-	return transFloorsToResponses(&floors, true)
-}
+// // 缩略返回帖子内楼层，即返回5条
+// func getShortFloorResponsesInPost(postId string) ([]FloorResponse, error) {
+// 	var floors []Floor
+// 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return transFloorsToResponses(&floors, true)
+// }
 
-// 缩略返回帖子内楼层，即返回5条 含用户id
-func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUser, error) {
-	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
-		return nil, err
-	}
-	return transFloorsToResponsesWithUid(&floors, uid, true)
-}
+// // 缩略返回帖子内楼层，即返回5条 含用户id
+// func getShortFloorResponsesInPostWithUid(postId, uid string) ([]FloorResponseUser, error) {
+// 	var floors []Floor
+// 	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Limit(5).Find(&floors).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return transFloorsToResponsesWithUid(&floors, uid, true)
+// }
 
 // 分页返回帖子里的楼层
 func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponses(&floors, true)
@@ -202,7 +202,7 @@ func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
 // 分页返回帖子里的楼层，带uid
 func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponsesWithUid(&floors, uid, true)
