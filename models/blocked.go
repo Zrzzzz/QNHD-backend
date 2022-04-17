@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"qnhd/pkg/enums/NoticeType"
 	"time"
 
 	"github.com/golang-module/carbon/v2"
@@ -39,6 +40,8 @@ func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64
 	if err := db.Select("Uid", "Doer", "Reason", "ExpiredAt", "LastTime").Create(&blocked).Error; err != nil {
 		return 0, err
 	}
+
+	addNoticeWithTemplate(NoticeType.BEEN_BLOCKED, []uint64{uid}, []string{reason})
 
 	return blocked.Id, nil
 }

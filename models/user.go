@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"math"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -197,9 +198,13 @@ func AddUsers(users []NewUserData) error {
 		newUsers = append(newUsers, new)
 	}
 	// 一次插入2个参数，只要少于65535就ok
-	insertCount := 50
-	for i := 0; i < len(newUsers)/insertCount; i++ {
-		if e := db.Create(newUsers[i*insertCount : (i+1)*insertCount]).Error; e != nil {
+	insertCount := 250
+	for i := 0; i < int(math.Ceil(float64(len(newUsers))/float64(insertCount))); i++ {
+		min := (i + 1) * insertCount
+		if len(newUsers) < min {
+			min = len(newUsers)
+		}
+		if e := db.Create(newUsers[i*insertCount : min]).Error; e != nil {
 			err = giterrors.Wrap(err, e.Error())
 		}
 	}

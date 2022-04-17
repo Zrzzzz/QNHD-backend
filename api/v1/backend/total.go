@@ -79,8 +79,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		noticeGroup.GET("/notices", GetNotices)
 		// 新建公告
 		noticeGroup.POST("/notice", AddNotice)
+		// 新建公告模板
+		noticeGroup.POST("/notice/template", AddNoticeTemplate)
 		// 修改公告
-		noticeGroup.POST("/notice/modify", EditNotice)
+		noticeGroup.POST("/notice/modify", EditNoticeTemplate)
 		// 删除指定公告
 		noticeGroup.GET("/notice/delete", DeleteNotice)
 	case User:
@@ -128,8 +130,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 删除指定帖子
-		g.GET("/post/delete", DeletePost)
-
+		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
 		// 添加帖子标签
 		g.POST("/post_tag", AddPostTag)
 		// 删除帖子的标签
@@ -147,7 +148,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层
-		g.GET("/floor/delete", DeleteFloor)
+		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteFloor)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
