@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"qnhd/crypto"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -79,6 +80,9 @@ func GetPosts(front bool) gin.HandlerFunc {
 				r.Error(c, e.ERROR_DATABASE, err.Error())
 				return
 			}
+			for i := range list {
+				list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].Id)
+			}
 			data["list"] = list
 			data["total"] = len(list)
 		} else {
@@ -110,7 +114,9 @@ func GetUserPosts(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-
+	for i := range list {
+		list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].Id)
+	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
@@ -130,6 +136,9 @@ func GetFavPosts(c *gin.Context) {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
+	}
+	for i := range list {
+		list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].Id)
 	}
 	data := make(map[string]interface{})
 	data["list"] = list
@@ -152,7 +161,9 @@ func GetHistoryPosts(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-
+	for i := range list {
+		list[i].Uid = crypto.Encrypt(list[i].Uid, list[i].Id)
+	}
 	data := make(map[string]interface{})
 	data["list"] = list
 	data["total"] = len(list)
@@ -187,6 +198,7 @@ func GetPost(front bool) gin.HandlerFunc {
 				r.Error(c, e.ERROR_DATABASE, err.Error())
 				return
 			}
+			pr.Uid = crypto.Encrypt(pr.Uid, pr.Id)
 			data["post"] = pr
 		} else {
 			pr, err := models.GetPostResponse(id)
