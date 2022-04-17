@@ -65,11 +65,6 @@ func GetUnreadPostReplys(c *gin.Context, uid string) ([]UnreadReplyResponse, err
 	return ret, err
 }
 
-// 已读通知
-func ReadNotice(uid, noticeId uint64) error {
-	return db.Where("uid = ? AND notice_id = ?", uid, noticeId).Delete(&LogUnreadNotice{}).Error
-}
-
 // 添加回复通知
 func AddUnreadPostReply(postId, replyId uint64) error {
 	var (

@@ -78,8 +78,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		noticeGroup.GET("/notices", GetNotices)
 		// 新建公告
 		noticeGroup.POST("/notice", AddNotice)
+		// 新建公告模板
+		noticeGroup.POST("/notice/template", AddNoticeTemplate)
 		// 修改公告
-		noticeGroup.POST("/notice/modify", EditNotice)
+		noticeGroup.POST("/notice/modify", EditNoticeTemplate)
 		// 删除指定公告
 		noticeGroup.GET("/notice/delete", DeleteNotice)
 	case User:
@@ -151,6 +153,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floor/delete", DeleteFloor)
 		// 恢复指定楼层
 		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
+		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteFloor)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)

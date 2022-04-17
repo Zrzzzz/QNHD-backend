@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"qnhd/pkg/enums/NoticeType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
@@ -438,28 +439,61 @@ func EditPost(postId string, maps map[string]interface{}) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Updates(maps).Error
 }
 
-func EditPostDepartment(postId string, departmentId string) error {
-	// 判断是否存在部门
-	var depart Department
-	if err := db.First(&depart, departmentId).Error; err != nil {
+func EditPostValue(postId string, value int) error {
+	var post Post
+	if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
 		return err
 	}
-
-	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
+	// 加精
+	if post.Value == 0 && value > 0 {
+		addNoticeWithTemplate(NoticeType.POST_VALUED, []uint64{post.Uid}, []string{post.Title})
+	}
+	return EditPost(postId, map[string]interface{}{"value": value})
 }
 
-func EditPostType(postId string, typeId string) error {
-	// 判断是否存在类型
-	var pt PostType
-	if err := db.First(&pt, typeId).Error; err != nil {
+func EditPostDepartment(postId string, departmentId string) error {
+	// 判断是否存在部门
+	var (
+		newType Department
+		rawType Department
+	)
+	if err := db.First(&newType, departmentId).Error; err != nil {
 		return err
 	}
 	post, err := GetPost(postId)
 	if err != nil {
 		return err
 	}
+	if err := db.First(&rawType, post.DepartmentId).Error; err != nil {
+		return err
+	}
 	// 如果类型相同
-	if post.Type == util.AsInt(typeId) {
+	if rawType.Id == newType.Id {
+		return fmt.Errorf("不能修改为同类型")
+	}
+	// 通知帖子用户
+	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
+	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
+}
+
+func EditPostType(postId string, typeId string) error {
+	// 判断是否存在类型
+	var (
+		newType PostType
+		rawType PostType
+	)
+	if err := db.First(&newType, typeId).Error; err != nil {
+		return err
+	}
+	post, err := GetPost(postId)
+	if err != nil {
+		return err
+	}
+	if err := db.First(&rawType, post.Type).Error; err != nil {
+		return err
+	}
+	// 如果类型相同
+	if rawType.Id == newType.Id {
 		return fmt.Errorf("不能修改为同类型")
 	}
 	// 如果要修改为校务类型，禁止操作
@@ -470,6 +504,8 @@ func EditPostType(postId string, typeId string) error {
 	if post.Type == POST_SCHOOL_TYPE {
 		return EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0})
 	}
+	// 通知帖子用户
+	addNoticeWithTemplate(NoticeType.POST_TYPE_TRANSFER, []uint64{post.Uid}, []string{rawType.Name, post.Title, newType.Name})
 	return EditPost(postId, map[string]interface{}{"type": typeId})
 }
 
@@ -482,10 +518,19 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 	return post.Id, err
 }
 
-func DeletePostsAdmin(uid, postId string) (uint64, error) {
+func DeletePostAdmin(uid, postId string) (uint64, error) {
 	var post, _ = GetPost(postId)
 	err := deletePost(&post)
-	return post.Id, err
+	if err != nil {
+		return 0, err
+	}
+	// 找到举报过帖子的所有用户
+	var uids []uint64
+	db.Model(&Report{}).Select("uid").Where("type = ? AND post_id = ?", ReportTypePost, post.Id).Find(&uids)
+	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
+	// 通知被删除的用户
+	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
+	return post.Id, nil
 }
 
 // 删除帖子记录

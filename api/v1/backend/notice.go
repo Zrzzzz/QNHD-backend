@@ -15,9 +15,9 @@ import (
 // @way [query]
 // @param
 // @return
-// @route /b/notice
+// @route /b/notices
 func GetNotices(c *gin.Context) {
-	list, err := models.GetNotices()
+	list, err := models.GetNoticeTemplates()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -30,38 +30,74 @@ func GetNotices(c *gin.Context) {
 	r.OK(c, e.SUCCESS, data)
 }
 
-// @method [get]
-// @way [query]
-// @param content
+// @method [post]
+// @way [formdata]
+// @param sender, title, content, pub_at
 // @return
 // @route /b/notice
 func AddNotice(c *gin.Context) {
 	sender := c.PostForm("sender")
 	title := c.PostForm("title")
 	content := c.PostForm("content")
-	url := c.PostForm("url")
-
+	pubAt := c.PostForm("pub_at")
 	valid := validation.Validation{}
 	valid.Required(sender, "sender")
 	valid.MaxSize(sender, 30, "sender")
 	valid.Required(title, "title")
 	valid.MaxSize(title, 30, "title")
 	valid.Required(content, "content")
-	valid.MaxSize(content, 1000, "content")
+	valid.MaxSize(content, 2000, "content")
 	ok, verr := r.ErrorValid(&valid, "Add notice")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-
-	id, err := models.AddNotice(map[string]interface{}{
+	err := models.AddNoticeToAllUsers(map[string]interface{}{
 		"sender":  sender,
 		"title":   title,
 		"content": content,
-		"url":     url,
+		"pub_at":  pubAt,
 	})
 	if err != nil {
-		logging.Error("Add notices error: %v", err)
+		logging.Error("Add notice error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param sender, title, content, pub_at
+// @return
+// @route /b/notice/template
+func AddNoticeTemplate(c *gin.Context) {
+	sender := c.PostForm("sender")
+	title := c.PostForm("title")
+	content := c.PostForm("content")
+	symbol := c.PostForm("symbol")
+	valid := validation.Validation{}
+	valid.Required(sender, "sender")
+	valid.MaxSize(sender, 30, "sender")
+	valid.Required(title, "title")
+	valid.MaxSize(title, 30, "title")
+	valid.Required(content, "content")
+	valid.MaxSize(content, 2000, "content")
+	valid.Required(symbol, "symbol")
+	valid.MaxSize(symbol, 50, "symbol")
+	ok, verr := r.ErrorValid(&valid, "Add notice template")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	id, err := models.AddNoticeTemplate(map[string]interface{}{
+		"sender":  sender,
+		"title":   title,
+		"content": content,
+		"symbol":  symbol,
+	})
+	if err != nil {
+		logging.Error("Add notice template error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
@@ -74,18 +110,17 @@ func AddNotice(c *gin.Context) {
 // @way [formdata]
 // @param id, content
 // @return
-// @route /b/notice
-func EditNotice(c *gin.Context) {
+// @route /b/notice/modify
+func EditNoticeTemplate(c *gin.Context) {
 	id := c.PostForm("id")
 	sender := c.PostForm("sender")
 	title := c.PostForm("title")
 	content := c.PostForm("content")
-	url := c.PostForm("url")
 
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
-	ok, verr := r.ErrorValid(&valid, "Edit notices")
+	ok, verr := r.ErrorValid(&valid, "Edit notice")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
@@ -93,11 +128,10 @@ func EditNotice(c *gin.Context) {
 
 	intid := util.AsUint(id)
 
-	err := models.EditNotice(intid, map[string]interface{}{
+	err := models.EditNoticeTemplate(intid, map[string]interface{}{
 		"sender":  sender,
 		"title":   title,
 		"content": content,
-		"url":     url,
 	})
 	if err != nil {
 		logging.Error("Edit notices error: %v", err)
@@ -111,7 +145,7 @@ func EditNotice(c *gin.Context) {
 // @way [query]
 // @param id
 // @return
-// @route /b/notice
+// @route /b/notice/delete
 func DeleteNotice(c *gin.Context) {
 	id := c.Query("id")
 
@@ -124,7 +158,7 @@ func DeleteNotice(c *gin.Context) {
 		return
 	}
 	intid := util.AsUint(id)
-	_, err := models.DeleteNotice(intid)
+	_, err := models.DeleteNoticeTemplate(intid)
 	if err != nil {
 		logging.Error("Delete notices error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

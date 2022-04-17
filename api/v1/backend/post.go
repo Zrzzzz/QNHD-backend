@@ -130,7 +130,7 @@ func EditPostValue(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	err := models.EditPost(postId, map[string]interface{}{"value": value})
+	err := models.EditPostValue(postId, util.AsInt(value))
 	if err != nil {
 		logging.Error("edit post value error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -184,7 +184,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeletePostsAdmin(uid, id)
+	_, err := models.DeletePostAdmin(uid, id)
 	if err != nil {
 		logging.Error("Delete post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

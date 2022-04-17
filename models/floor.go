@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"qnhd/pkg/enums/NoticeType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
@@ -197,7 +198,7 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 // 分页返回帖子里的楼层
 func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
 	var floors []Floor
-	if err := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponses(&floors, true)
@@ -206,7 +207,7 @@ func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
 // 分页返回帖子里的楼层，带uid
 func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponsesWithUid(&floors, uid, true)
@@ -435,14 +436,13 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 }
 
 func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
-	var floor = Floor{}
-
+	var floor Floor
+	var post Post
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
 		return 0, err
 	}
-	// 如果能删，要么是超管 要么是湖底管理员
-	if !RequireRight(uid, UserRight{Super: true, StuAdmin: true}) {
-		return 0, fmt.Errorf("无权删除")
+	if err := db.Where("id = ?", floor.PostId).Find(&post).Error; err != nil {
+		return 0, err
 	}
 
 	if err := deleteFloor(&floor); err != nil {
@@ -450,7 +450,12 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	}
 
 	updatePostTime(floor.PostId)
-
+	// 通知举报过楼层的所有用户
+	var uids []uint64
+	db.Model(&Report{}).Select("uid").Where("type = ? AND floor_id = ?", ReportTypeFloor, floor.Id).Find(&uids)
+	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
+	// 通知被删除的用户
+	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
 	return floor.Id, nil
 }
 

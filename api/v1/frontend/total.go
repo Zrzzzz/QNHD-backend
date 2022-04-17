@@ -127,6 +127,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/message/count", GetMessageCount)
 		// 已读通知
 		g.POST("/message/notice/read", ReadNotice)
+		// 删除通知记录
+		g.GET("/message/notices/delete", DeleteMessageNotices)
 		// 已读楼层
 		g.POST("/message/floor/read", ReadFloor)
 		// 已读回复

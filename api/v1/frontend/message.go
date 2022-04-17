@@ -121,6 +121,23 @@ func ReadNotice(c *gin.Context) {
 	r.OK(c, e.SUCCESS, nil)
 }
 
+// @method [delete]
+// @way [query]
+// @param ids
+// @return
+// @route /f/message/notice/delete
+func DeleteMessageNotices(c *gin.Context) {
+	uid := r.GetUid(c)
+	ids := c.QueryArray("ids")
+	err := models.DeleteMessageNotices(uid, ids)
+	if err != nil {
+		logging.Error("Delete notices error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [post]
 // @way [formdata]
 // @param id
