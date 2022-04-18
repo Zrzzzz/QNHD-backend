@@ -150,10 +150,9 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层
-		g.GET("/floor/delete", DeleteFloor)
+		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteFloor)
 		// 恢复指定楼层
 		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
-		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteFloor)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
