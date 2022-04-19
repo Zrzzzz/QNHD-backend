@@ -269,7 +269,7 @@ func GetCommentCount(postId uint64, withSubfloors bool, unscoped bool) int {
 // 分页返回楼层内的回复
 func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, error) {
 	var floors []Floor
-	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	err := db.Unscoped().Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
 		return []FloorResponse{}, err
 	}
