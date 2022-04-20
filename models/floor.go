@@ -492,6 +492,8 @@ func deleteFloor(floor *Floor) error {
 		for k := range floors {
 			ids = append(ids, k)
 		}
+		// 加上自己
+		ids = append(ids, floor.Id)
 		// 删除log
 		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorLike{}).Error; err != nil {
 			return err
@@ -499,14 +501,14 @@ func deleteFloor(floor *Floor) error {
 		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogFloorDis{}).Error; err != nil {
 			return err
 		}
+		// 删除reports
 		if err := tx.Where("id IN (?) AND type = ?", ids, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
 			return err
 		}
-		if err := deleteReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
+		if err := deleteReports(tx, "floor_id IN (?)", ids); err != nil {
 			return err
 		}
-		// 加上自己
-		ids = append(ids, floor.Id)
+
 		return db.Delete(&Floor{}, ids).Error
 	})
 

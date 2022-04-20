@@ -530,7 +530,7 @@ func deletePost(post *Post) error {
 		if err := DeleteTagInPost(tx, post.Id); err != nil {
 			return err
 		}
-		if err := deleteReports(tx, map[string]interface{}{"post_id": post.Id}); err != nil {
+		if err := deleteReports(tx, "post_id = ?", post.Id); err != nil {
 			return err
 		}
 		// 删除log

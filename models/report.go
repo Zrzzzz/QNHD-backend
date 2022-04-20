@@ -44,18 +44,18 @@ func AddReport(maps map[string]interface{}) error {
 
 func DeleteReports(t string, id string) error {
 	if t == "1" {
-		return deleteReports(nil, map[string]interface{}{"type": "1", "post_id": id})
+		return deleteReports(nil, "type = ? AND post_id = ?", t, id)
 	} else if t == "2" {
-		return deleteReports(nil, map[string]interface{}{"type": "2", "floor_id": id})
+		return deleteReports(nil, "type = ? AND floor_id = ?", t, id)
 	} else {
 		return fmt.Errorf("举报类型错误")
 	}
 }
 
 // 删除举报
-func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
+func deleteReports(tx *gorm.DB, query interface{}, args ...interface{}) error {
 	if tx == nil {
 		tx = db
 	}
-	return tx.Where(maps).Delete(&Report{}).Error
+	return tx.Where(query, args...).Delete(&Report{}).Error
 }
