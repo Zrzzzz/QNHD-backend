@@ -4,6 +4,7 @@ type PostType struct {
 	Id        uint64 `gorm:"primaryKey;autoIncrement;" json:"id"`
 	Shortname string `json:"shortname"`
 	Name      string `json:"name"`
+	Ord       int    `json:"-" gorm:"default:null"`
 }
 
 func IsValidPostType(t int) bool {
@@ -21,7 +22,7 @@ func IsValidPostType(t int) bool {
 
 func GetPostTypes() ([]PostType, error) {
 	var ret []PostType
-	err := db.Order("id").Find(&ret).Error
+	err := db.Order("ord DESC").Order("id").Find(&ret).Error
 	return ret, err
 }
 
