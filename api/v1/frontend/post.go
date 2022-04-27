@@ -108,7 +108,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 func GetUserPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetUserPostResponseUsers(c, uid)
+	list, err := models.GetUserPostResponseWithUid(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -131,7 +131,7 @@ func GetUserPosts(c *gin.Context) {
 // @route /f/posts/fav
 func GetFavPosts(c *gin.Context) {
 	uid := r.GetUid(c)
-	list, err := models.GetFavPostResponseUsers(c, uid)
+	list, err := models.GetFavPostResponseWithUid(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -155,7 +155,7 @@ func GetFavPosts(c *gin.Context) {
 func GetHistoryPosts(c *gin.Context) {
 	uid := r.GetUid(c)
 
-	list, err := models.GetHistoryPostResponseUsers(c, uid)
+	list, err := models.GetHistoryPostResponseWithUid(c, uid)
 	if err != nil {
 		logging.Error("Get posts error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

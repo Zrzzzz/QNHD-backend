@@ -213,6 +213,15 @@ func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorRespon
 	return transFloorsToResponsesWithUid(&floors, uid, true)
 }
 
+// 分页返回用户发过的评论
+func GetUserFloorResponses(c *gin.Context, uid string) ([]FloorResponse, error) {
+	var floors []Floor
+	if err := db.Unscoped().Where("uid = ?", uid).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	return transFloorsToResponses(&floors, true)
+}
+
 // 返回楼层内最高赞的5条楼层
 func getHighlikeSubfloors(floorId string, unscoped bool) ([]FloorResponse, error) {
 	var (

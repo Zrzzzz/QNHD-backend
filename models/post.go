@@ -340,7 +340,7 @@ func GetPostResponsesWithUid(c *gin.Context, uid string, maps map[string]interfa
 	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetUserPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
+func GetUserPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	if err := db.Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
 		return nil, err
@@ -348,7 +348,15 @@ func GetUserPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, e
 	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
+func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
+	var posts []Post
+	if err := db.Unscoped().Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return transPostsToResponses(&posts)
+}
+
+func GetFavPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	if err := db.Joins(`JOIN qnhd.log_post_fav
 	ON qnhd.post.id = qnhd.log_post_fav.post_id
@@ -358,7 +366,7 @@ func GetFavPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, er
 	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetHistoryPostResponseUsers(c *gin.Context, uid string) ([]PostResponseUser, error) {
+func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	var ids []string
 	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Order("created_at DESC").Distinct("post_id").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
