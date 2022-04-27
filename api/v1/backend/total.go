@@ -117,6 +117,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 	case Post:
 		// 获取帖子列表
 		g.GET("/posts", frontend.GetPosts(false))
+		// 获取用户帖子
+		g.GET("/posts/user", GetUserPosts)
 		// 获取帖子
 		g.GET("/post", frontend.GetPost(false))
 		// 获取帖子回复
@@ -145,6 +147,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floor", GetFloor)
 		// 查询楼层内回复
 		g.GET("/floor/replys", GetFloorReplys)
+		// 获取用户楼层
+		g.GET("/floors/user", GetUserFloors)
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层

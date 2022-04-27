@@ -66,6 +66,32 @@ func GetFloors(c *gin.Context) {
 
 // @method [get]
 // @way [query]
+// @param uid
+// @return
+// @route /b/floors/user
+func GetUserFloors(c *gin.Context) {
+	uid := c.Query("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "Get user history")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	data := make(map[string]interface{})
+	list, err := models.GetUserPostResponses(c, uid)
+	if err != nil {
+		logging.Error("get user history error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	data["list"] = list
+	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
 // @param page, page_size, floor_id
 // @return floorlist
 // @route /b/floor/replys

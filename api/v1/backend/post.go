@@ -12,6 +12,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @method [get]
+// @way [query]
+// @param uid
+// @return
+// @route /b/posts/user
+func GetUserPosts(c *gin.Context) {
+	uid := c.Query("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "Get user history")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	data := make(map[string]interface{})
+	list, err := models.GetUserPostResponses(c, uid)
+	if err != nil {
+		logging.Error("get user history error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	data["list"] = list
+	r.OK(c, e.SUCCESS, data)
+}
+
 // @method [put]
 // @way [formdata]
 // @param post_id, new_department_id
