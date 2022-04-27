@@ -44,7 +44,9 @@ func initRouter() (r *gin.Engine) {
 	backend.Setup(avb)
 	avf := r.Group("/api/v1/f")
 	frontend.Setup(avf)
-	r.Static("src", "pages")
+	r.Static("src", "pages/jump")
+
+	r.Static("message", "pages/message")
 	return r
 }
 

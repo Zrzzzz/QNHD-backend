@@ -542,7 +542,10 @@ func deletePost(post *Post) error {
 		floors
 	*/
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := deleteReports(tx, map[string]interface{}{"post_id": post.Id}); err != nil {
+		if err := DeleteTagInPost(tx, post.Id); err != nil {
+			return err
+		}
+		if err := deleteReports(tx, "post_id = ?", post.Id); err != nil {
 			return err
 		}
 		// 删除log

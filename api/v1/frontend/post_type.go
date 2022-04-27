@@ -21,21 +21,10 @@ func GetPostTypes(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	// 把校务放在最后
-	var retList []models.PostType
-	var schType models.PostType
-	for _, t := range list {
-		if t.Id != models.POST_SCHOOL_TYPE {
-			retList = append(retList, t)
-		} else {
-			schType = t
-		}
-	}
-	retList = append(retList, schType)
 
 	data := make(map[string]interface{})
-	data["list"] = retList
-	data["total"] = len(retList)
+	data["list"] = list
+	data["total"] = len(list)
 
 	r.OK(c, e.SUCCESS, data)
 }

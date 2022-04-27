@@ -522,10 +522,12 @@ func deleteFloor(floor *Floor) error {
 		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogUnreadFloor{}).Error; err != nil {
 			return err
 		}
-		if err := deleteReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
+		// 删除reports
+		if err := deleteReports(tx, "floor_id IN (?)", ids); err != nil {
 			return err
 		}
-		return tx.Delete(&Floor{}, ids).Error
+
+		return db.Delete(&Floor{}, ids).Error
 	})
 }
 

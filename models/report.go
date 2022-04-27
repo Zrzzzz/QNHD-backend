@@ -58,11 +58,11 @@ func SolveReport(t string, id string) error {
 }
 
 // 删除举报
-func deleteReports(tx *gorm.DB, maps map[string]interface{}) error {
+func deleteReports(tx *gorm.DB, query interface{}, args ...interface{}) error {
 	if tx == nil {
 		tx = db
 	}
-	return tx.Where(maps).Delete(&Report{}).Error
+	return tx.Where(query, args...).Delete(&Report{}).Error
 }
 
 // 恢复举报
