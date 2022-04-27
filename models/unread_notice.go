@@ -129,7 +129,7 @@ func addUnreadNoticeToUser(uid []uint64, data map[string]interface{}) error {
 
 // 已读通知
 func ReadNotice(uid, noticeId uint64) error {
-	return db.Where("uid = ? AND notice_id = ?", uid, noticeId).Delete(&LogUnreadNotice{}).Error
+	return db.Model(&LogUnreadNotice{}).Where("uid = ? AND id = ?", uid, noticeId).Update("is_read", true).Error
 }
 
 // 删除通知记录
