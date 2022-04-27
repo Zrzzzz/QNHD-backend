@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"qnhd/pkg/enums/NoticeType"
 	"time"
 
@@ -48,10 +47,10 @@ func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64
 
 func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	var blocked = Blocked{}
-	if err := db.Where("uid = ?", uid).First(&blocked).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Last(&blocked).Error; err != nil {
 		return 0, err
 	}
-	if err := db.Delete(&blocked).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Delete(&Blocked{}).Error; err != nil {
 		return 0, err
 	}
 	return blocked.Id, nil
@@ -79,7 +78,6 @@ func IsBlockedByUidDetailed(uid uint64) (bool, *BlockedDetail, error) {
 		overtime = carbon.Parse(ban.ExpiredAt, "Asia/Shanghai")
 
 		remain := int(overtime.Timestamp() - nowtime.Timestamp())
-		fmt.Println(remain)
 		return remain > 0, &BlockedDetail{
 			Starttime: ban.CreatedAt,
 			Overtime:  ban.ExpiredAt,

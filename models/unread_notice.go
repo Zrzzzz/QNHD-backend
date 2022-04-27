@@ -43,7 +43,7 @@ func GetUnreadNotices(c *gin.Context, uid uint64) ([]UnreadNoticeResponse, error
 		ret  = []UnreadNoticeResponse{}
 	)
 	p := db.Model(&LogUnreadNotice{}).Where("uid = ? AND pub_at < ?", uid, gorm.Expr("CURRENT_TIMESTAMP"))
-	if err := db.Debug().Unscoped().Table("(?) as p", p).
+	if err := db.Unscoped().Table("(?) as p", p).
 		Select("p.*, n.*").
 		Joins("JOIN qnhd.notice as n ON n.id = p.notice_id").
 		Order("p.id DESC").
