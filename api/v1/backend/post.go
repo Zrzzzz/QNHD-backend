@@ -19,16 +19,19 @@ import (
 // @route /b/posts/user
 func GetUserPosts(c *gin.Context) {
 	uid := c.Query("uid")
+	t := c.Query("type")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
 	valid.Numeric(uid, "uid")
+	valid.Required(t, "type")
+	valid.Numeric(t, "type")
 	ok, verr := r.ErrorValid(&valid, "Get user history")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
 	data := make(map[string]interface{})
-	list, err := models.GetUserPostResponses(c, uid)
+	list, err := models.GetUserPostResponses(c, uid, t == "1")
 	if err != nil {
 		logging.Error("get user history error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

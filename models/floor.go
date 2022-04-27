@@ -214,10 +214,17 @@ func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorRespon
 }
 
 // 分页返回用户发过的评论
-func GetUserFloorResponses(c *gin.Context, uid string) ([]FloorResponse, error) {
+func GetUserFloorResponses(c *gin.Context, uid string, deleted bool) ([]FloorResponse, error) {
 	var floors []Floor
-	if err := db.Unscoped().Where("uid = ?", uid).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
-		return nil, err
+	d := db.Unscoped().Where("uid = ?", uid).Order("created_at DESC").Scopes(util.Paginate(c))
+	if deleted {
+		if err := d.Where("deleted_at IS NOT NULL").Find(&floors).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := d.Find(&floors).Error; err != nil {
+			return nil, err
+		}
 	}
 	return transFloorsToResponses(&floors, true)
 }

@@ -348,10 +348,17 @@ func GetUserPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser,
 	return transPostsToResponsesWithUid(&posts, uid)
 }
 
-func GetUserPostResponses(c *gin.Context, uid string) ([]PostResponse, error) {
+func GetUserPostResponses(c *gin.Context, uid string, deleted bool) ([]PostResponse, error) {
 	var posts []Post
-	if err := db.Unscoped().Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC").Find(&posts).Error; err != nil {
-		return nil, err
+	d := db.Unscoped().Where("uid = ?", uid).Scopes(util.Paginate(c)).Order("id DESC")
+	if deleted {
+		if err := d.Where("deleted_at IS NOT NULL").Find(&posts).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := d.Find(&posts).Error; err != nil {
+			return nil, err
+		}
 	}
 	return transPostsToResponses(&posts)
 }
