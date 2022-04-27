@@ -257,11 +257,17 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	tagId := maps["tag_id"].(string)
 	valueMode := maps["value_mode"].(PostValueModeType)
 	front := maps["front"].(bool)
+	isDeleted := maps["is_deleted"].(string)
 
 	var d = db.Model(&Post{})
 	// 如果是前端
 	if !front {
 		d = d.Unscoped()
+	}
+	if isDeleted == "1" {
+		d = d.Where("deleted_at IS NOT NULL")
+	} else {
+		d = d.Where("deleted_at IS NULL")
 	}
 	// 加精帖搜索
 	if valueMode == VALUE_DEFAULT {

@@ -30,7 +30,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		solved := c.Query("solved")
 		tagId := c.Query("tag_id")
 		valueMode := c.Query("value_mode")
-
+		isDeleted := c.Query("is_deleted")
 		valid := validation.Validation{}
 		valid.Required(postType, "type")
 		valid.Numeric(postType, "type")
@@ -71,6 +71,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 			"department_id": departmentId,
 			"tag_id":        tagId,
 			"value_mode":    models.PostValueModeType(util.AsInt(valueMode)),
+			"is_deleted":    isDeleted,
 		}
 		if front {
 			uid := r.GetUid(c)
