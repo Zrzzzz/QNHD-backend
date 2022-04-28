@@ -3,7 +3,7 @@ package NoticeType
 type Enum int
 
 const (
-	FLOOR_REPORT_SOLVE = iota
+	FLOOR_REPORT_SOLVE Enum = iota
 	POST_REPORT_SOLVE
 	POST_VALUED
 	BEEN_BLOCKED

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"qnhd/pkg/enums/NoticeType"
+	"qnhd/enums/NoticeType"
 	"qnhd/pkg/template"
 )
 

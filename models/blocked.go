@@ -2,7 +2,7 @@ package models
 
 import (
 	"errors"
-	"qnhd/pkg/enums/NoticeType"
+	"qnhd/enums/NoticeType"
 	"time"
 
 	"github.com/golang-module/carbon/v2"

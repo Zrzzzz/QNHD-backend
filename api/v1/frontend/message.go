@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"qnhd/enums/LikeType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -214,7 +215,7 @@ func ReadLike(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	err := models.ReadLike(util.AsUint(uid), models.LikeType(typeint), util.AsUint(id))
+	err := models.ReadLike(util.AsUint(uid), LikeType.Enum(typeint), util.AsUint(id))
 	if err != nil {
 		logging.Error("Read like error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

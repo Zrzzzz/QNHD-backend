@@ -2,6 +2,10 @@ package frontend
 
 import (
 	"qnhd/crypto"
+	"qnhd/enums/PostCampusType"
+	"qnhd/enums/PostSearchModeType"
+	"qnhd/enums/PostSolveType"
+	"qnhd/enums/PostValueModeType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -65,12 +69,12 @@ func GetPosts(front bool) gin.HandlerFunc {
 		data := make(map[string]interface{})
 		maps := map[string]interface{}{
 			"type":          postTypeint,
-			"search_mode":   models.PostSearchModeType(searchModeint),
+			"search_mode":   PostSearchModeType.Enum(searchModeint),
 			"content":       content,
 			"solved":        solved,
 			"department_id": departmentId,
 			"tag_id":        tagId,
-			"value_mode":    models.PostValueModeType(util.AsInt(valueMode)),
+			"value_mode":    PostValueModeType.Enum(util.AsInt(valueMode)),
 			"is_deleted":    isDeleted,
 		}
 		if front {
@@ -277,7 +281,7 @@ func AddPost(c *gin.Context) {
 	maps := map[string]interface{}{
 		"uid":        intuid,
 		"type":       postTypeint,
-		"campus":     models.PostCampusType(campusint),
+		"campus":     PostCampusType.Enum(campusint),
 		"title":      title,
 		"content":    content,
 		"image_urls": imageURLs,
@@ -361,7 +365,7 @@ func EditPostSolved(c *gin.Context) {
 		return
 	}
 	err = models.EditPost(postId, map[string]interface{}{
-		"solved": models.POST_SOLVED,
+		"solved": PostSolveType.SOLVED,
 		"rating": rating,
 	})
 	if err != nil {

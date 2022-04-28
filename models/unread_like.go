@@ -1,6 +1,7 @@
 package models
 
 import (
+	"qnhd/enums/LikeType"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -8,10 +9,10 @@ import (
 
 type LogUnreadLike struct {
 	// 通知归属
-	Uid       uint64   `json:"uid"`
-	Type      LikeType `json:"type"`
-	Id        uint64   `json:"id"`
-	CreatedAt string   `json:"created_at" gorm:"default:null;"`
+	Uid       uint64        `json:"uid"`
+	Type      LikeType.Enum `json:"type"`
+	Id        uint64        `json:"id"`
+	CreatedAt string        `json:"created_at" gorm:"default:null;"`
 }
 
 type UnreadLikeResponse struct {
@@ -20,13 +21,6 @@ type UnreadLikeResponse struct {
 	Post  PostResponse `json:"post"`
 	Floor Floor        `json:"floor"`
 }
-
-type LikeType int
-
-const (
-	LIKE_POST LikeType = iota
-	LIKE_FLOOR
-)
 
 func GetUnreadLikes(c *gin.Context, uid string) ([]UnreadLikeResponse, error) {
 	var (
@@ -39,13 +33,13 @@ func GetUnreadLikes(c *gin.Context, uid string) ([]UnreadLikeResponse, error) {
 	}
 	// 逐个找floor
 	for _, log := range logs {
-		if log.Type == LIKE_POST {
+		if log.Type == LikeType.POST {
 			p, _ := GetPostResponse(util.AsStrU(log.Id))
 			if p.Id > 0 {
 				r := UnreadLikeResponse{Type: int(log.Type), Post: p}
 				ret = append(ret, r)
 			}
-		} else if log.Type == LIKE_FLOOR {
+		} else if log.Type == LikeType.FLOOR {
 			r := UnreadLikeResponse{Type: int(log.Type)}
 			db.Where("id = ?", log.Id).Find(&r.Floor)
 			if r.Floor.Id > 0 {
@@ -56,11 +50,11 @@ func GetUnreadLikes(c *gin.Context, uid string) ([]UnreadLikeResponse, error) {
 	return ret, nil
 }
 
-func addUnreadLike(to uint64, likeType LikeType, id uint64) error {
+func addUnreadLike(to uint64, likeType LikeType.Enum, id uint64) error {
 	log := LogUnreadLike{Uid: to, Type: likeType, Id: id}
 	return db.FirstOrCreate(&log, log).Error
 }
 
-func ReadLike(uid uint64, likeType LikeType, id uint64) error {
+func ReadLike(uid uint64, likeType LikeType.Enum, id uint64) error {
 	return db.Where("uid = ? AND type = ? AND id = ?", uid, likeType, id).Delete(&LogUnreadLike{}).Error
 }

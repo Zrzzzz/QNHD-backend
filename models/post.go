@@ -3,7 +3,14 @@ package models
 import (
 	"errors"
 	"fmt"
-	"qnhd/pkg/enums/NoticeType"
+	"qnhd/enums/LikeType"
+	"qnhd/enums/NoticeType"
+	"qnhd/enums/PostCampusType"
+	"qnhd/enums/PostSearchModeType"
+	"qnhd/enums/PostSolveType"
+	"qnhd/enums/PostValueModeType"
+	"qnhd/enums/ReportType"
+	"qnhd/enums/TagPointType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
@@ -17,46 +24,15 @@ import (
 
 const POST_ALL = 0
 
-type PostCampusType int
-
-const (
-	CAMPUS_NONE PostCampusType = 0
-	CAMPUS_OLD  PostCampusType = 1
-	CAMPUS_NEW  PostCampusType = 2
-)
-
-type PostSearchModeType int
-
-const (
-	SEARCH_BY_TIME   PostSearchModeType = 0
-	SEARCH_BY_UPDATE PostSearchModeType = 1
-)
-
-type PostValueModeType int
-
-const (
-	VALUE_DEFAULT PostValueModeType = 0
-	VALUE_NONE    PostValueModeType = 1
-	VALUE_ONLY    PostValueModeType = 2
-)
-
-type PostSolveType int
-
-const (
-	POST_UNSOLVED PostSolveType = 0
-	POST_REPLIED  PostSolveType = 1
-	POST_SOLVED   PostSolveType = 2
-)
-
 type Post struct {
 	Model
 	Uid uint64 `json:"uid" gorm:"column:uid"`
 
 	// 帖子分类
-	Type         int            `json:"type"`
-	DepartmentId uint64         `json:"-" gorm:"column:department_id;default:0"`
-	Campus       PostCampusType `json:"campus"`
-	Solved       PostSolveType  `json:"solved" gorm:"default:0"`
+	Type         int                 `json:"type"`
+	DepartmentId uint64              `json:"-" gorm:"column:department_id;default:0"`
+	Campus       PostCampusType.Enum `json:"campus"`
+	Solved       PostSolveType.Enum  `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
 	Title   string `json:"title"`
@@ -251,11 +227,11 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	)
 	content := maps["content"].(string)
 	postType := maps["type"].(int)
-	searchMode := maps["search_mode"].(PostSearchModeType)
+	searchMode := maps["search_mode"].(PostSearchModeType.Enum)
 	departmentId := maps["department_id"].(string)
 	solved := maps["solved"].(string)
 	tagId := maps["tag_id"].(string)
-	valueMode := maps["value_mode"].(PostValueModeType)
+	valueMode := maps["value_mode"].(PostValueModeType.Enum)
 	front := maps["front"].(bool)
 	isDeleted := maps["is_deleted"].(string)
 
@@ -270,11 +246,11 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 		d = d.Where("deleted_at IS NULL")
 	}
 	// 加精帖搜索
-	if valueMode == VALUE_DEFAULT {
+	if valueMode == PostValueModeType.DEFAULT {
 		d = d.Order("value DESC")
-	} else if valueMode == VALUE_ONLY {
+	} else if valueMode == PostValueModeType.ONLY {
 		d = d.Where("value <> 0")
-	} else if valueMode == VALUE_NONE {
+	} else if valueMode == PostValueModeType.NONE {
 		// VALUE_NONE 不做操作
 	}
 
@@ -285,13 +261,13 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	// 排序方式
-	if searchMode == SEARCH_BY_TIME {
+	if searchMode == PostSearchModeType.TIME {
 		d = d.Order("created_at DESC")
-	} else if searchMode == SEARCH_BY_UPDATE {
+	} else if searchMode == PostSearchModeType.UPDATE {
 		d = d.Order("updated_at DESC")
 	}
 
-	// 校区 不为全部时加上区分
+	// 分区 不为全部时加上区分
 	if postType != POST_ALL {
 		d = d.Where("type = ?", postType)
 	}
@@ -397,7 +373,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	var post = &Post{
 		Type:    maps["type"].(int),
 		Uid:     maps["uid"].(uint64),
-		Campus:  maps["campus"].(PostCampusType),
+		Campus:  maps["campus"].(PostCampusType.Enum),
 		Title:   filter.Filter(maps["title"].(string)),
 		Content: filter.Filter(maps["content"].(string)),
 	}
@@ -439,7 +415,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 					return err
 				}
 				// 对帖子的tag增加记录
-				addTagLog(util.AsUint(tagId), TAG_ADD_POST)
+				addTagLog(util.AsUint(tagId), TagPointType.ADD_POST)
 			}
 			return nil
 		})
@@ -547,7 +523,7 @@ func DeletePostAdmin(uid, postId string) (uint64, error) {
 	}
 	// 找到举报过帖子的所有用户
 	var uids []uint64
-	db.Model(&Report{}).Select("uid").Where("type = ? AND post_id = ?", ReportTypePost, post.Id).Find(&uids)
+	db.Model(&Report{}).Select("uid").Where("type = ? AND post_id = ?", ReportType.POST, post.Id).Find(&uids)
 	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
@@ -642,7 +618,7 @@ func FavPost(postId string, uid string) (uint64, error) {
 
 	if uid != util.AsStrU(post.Uid) {
 		updatePostTime(post.Id)
-		addTagLogInPost(post.Id, TAG_FAV_POST)
+		addTagLogInPost(post.Id, TagPointType.FAV_POST)
 	}
 	return post.FavCount, nil
 }
@@ -672,7 +648,7 @@ func UnfavPost(postId string, uid string) (uint64, error) {
 		return 0, err
 	}
 	if uid != util.AsStrU(post.Uid) {
-		addTagLogInPost(post.Id, TAG_UNFAV_POST)
+		addTagLogInPost(post.Id, TagPointType.UNFAV_POST)
 	}
 	return post.FavCount, nil
 }
@@ -705,9 +681,9 @@ func LikePost(postId string, uid string) (uint64, error) {
 
 	if uid != util.AsStrU(post.Uid) {
 		updatePostTime(post.Id)
-		addTagLogInPost(post.Id, TAG_LIKE_POST)
+		addTagLogInPost(post.Id, TagPointType.LIKE_POST)
 	}
-	addUnreadLike(post.Uid, LIKE_POST, post.Id)
+	addUnreadLike(post.Uid, LikeType.POST, post.Id)
 	UnDisPost(postId, uid)
 	return post.LikeCount, nil
 }
@@ -738,7 +714,7 @@ func UnLikePost(postId string, uid string) (uint64, error) {
 		return 0, err
 	}
 	if uid != util.AsStrU(post.Uid) {
-		addTagLogInPost(post.Id, TAG_UNLIKE_POST)
+		addTagLogInPost(post.Id, TagPointType.UNLIKE_POST)
 	}
 	return post.LikeCount, nil
 }
@@ -769,7 +745,7 @@ func DisPost(postId string, uid string) (uint64, error) {
 	}
 	if uid != util.AsStrU(post.Uid) {
 		updatePostTime(post.Id)
-		addTagLogInPost(post.Id, TAG_DIS_POST)
+		addTagLogInPost(post.Id, TagPointType.DIS_POST)
 	}
 	UnLikePost(postId, uid)
 	return post.DisCount, nil
@@ -800,7 +776,7 @@ func UnDisPost(postId string, uid string) (uint64, error) {
 		return 0, err
 	}
 	if uid != util.AsStrU(post.Uid) {
-		addTagLogInPost(post.Id, TAG_UNDIS_POST)
+		addTagLogInPost(post.Id, TagPointType.UNDIS_POST)
 	}
 	return post.DisCount, nil
 }

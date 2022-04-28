@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"qnhd/enums/IdentityType"
 	"qnhd/middleware/jwt"
 	"qnhd/middleware/permission"
 
@@ -41,7 +42,7 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/token", GetAuthToken)
 	g.GET("/auth/:token", RefreshToken)
 	g.Use(jwt.JWT())
-	g.Use(permission.IdentityDemand(permission.USER))
+	g.Use(permission.IdentityDemand(IdentityType.USER))
 	// 封号的话不能访问
 	g.Use(permission.ValidBanned())
 	for _, t := range FrontTypes {

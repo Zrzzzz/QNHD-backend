@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"qnhd/enums/PostReplyType"
+	"qnhd/enums/PostSolveType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -52,7 +54,7 @@ func AddPostReply(c *gin.Context) {
 	// 添加回复
 	id, err := models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
-		"sender":  models.PostReplyFromSchool,
+		"sender":  PostReplyType.SCHOOL,
 		"content": content,
 		"urls":    imageURLs,
 	})
@@ -60,7 +62,7 @@ func AddPostReply(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	if err := models.EditPost(postId, map[string]interface{}{"solved": models.POST_REPLIED}); err != nil {
+	if err := models.EditPost(postId, map[string]interface{}{"solved": PostSolveType.REPLIED}); err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

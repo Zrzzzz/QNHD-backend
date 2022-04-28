@@ -2,15 +2,9 @@ package models
 
 import (
 	"fmt"
+	"qnhd/enums/ReportType"
 
 	"gorm.io/gorm"
-)
-
-type ReportType int
-
-const (
-	ReportTypePost ReportType = iota
-	ReportTypeFloor
 )
 
 type Report struct {
@@ -24,7 +18,7 @@ type Report struct {
 	IsDeleted bool   `json:"is_deleted" gorm:"-"`
 }
 
-func GetReports(rType ReportType) ([]Report, error) {
+func GetReports(rType ReportType.Enum) ([]Report, error) {
 	var reports []Report
 	if err := db.Unscoped().Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
 		return nil, err

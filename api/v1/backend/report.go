@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"qnhd/enums/ReportType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -34,7 +35,7 @@ func GetReports(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetReports(models.ReportType(rTypeint))
+	list, err := models.GetReports(ReportType.Enum(rTypeint))
 	if err != nil {
 		logging.Error("Get report error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

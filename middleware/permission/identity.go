@@ -1,6 +1,7 @@
 package permission
 
 import (
+	"qnhd/enums/IdentityType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -8,19 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type IdentityType int
-
-const (
-	ADMIN IdentityType = iota
-	USER
-)
-
-func IdentityDemand(must IdentityType) gin.HandlerFunc {
+func IdentityDemand(must IdentityType.Enum) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := r.GetUid(c)
 		var err error
 
-		if must == ADMIN {
+		if must == IdentityType.ADMIN {
 			// 管理员验证
 			err = models.RequireAdmin(uid)
 

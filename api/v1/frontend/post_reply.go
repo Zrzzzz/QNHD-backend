@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"qnhd/enums/PostReplyType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -71,7 +72,7 @@ func AddPostReply(c *gin.Context) {
 	// 添加回复
 	_, err = models.AddPostReply(map[string]interface{}{
 		"post_id": util.AsUint(postId),
-		"sender":  models.PostReplyFromUser,
+		"sender":  PostReplyType.USER,
 		"content": content,
 		"urls":    imageURLs,
 	})

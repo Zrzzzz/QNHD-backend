@@ -2,7 +2,10 @@ package models
 
 import (
 	"fmt"
-	"qnhd/pkg/enums/NoticeType"
+	"qnhd/enums/LikeType"
+	"qnhd/enums/NoticeType"
+	"qnhd/enums/ReportType"
+	"qnhd/enums/TagPointType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
@@ -354,7 +357,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	}
 	// 对帖子的tag增加记录, 当不是校务才会有
 	if post.Type != POST_SCHOOL_TYPE {
-		addTagLogInPost(post.Id, TAG_ADD_FLOOR)
+		addTagLogInPost(post.Id, TagPointType.ADD_FLOOR)
 	}
 	updatePostTime(post.Id)
 	return newFloor.Id, nil
@@ -443,7 +446,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 
 	// 对帖子的tag增加记录, 当不是校务才会有
 	if post.Type != POST_SCHOOL_TYPE {
-		addTagLogInPost(post.Id, TAG_ADD_FLOOR)
+		addTagLogInPost(post.Id, TagPointType.ADD_FLOOR)
 	}
 
 	updatePostTime(post.Id)
@@ -468,7 +471,7 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	updatePostTime(floor.PostId)
 	// 通知举报过楼层的所有用户
 	var uids []uint64
-	db.Model(&Report{}).Select("uid").Where("type = ? AND floor_id = ?", ReportTypeFloor, floor.Id).Find(&uids)
+	db.Model(&Report{}).Select("uid").Where("type = ? AND floor_id = ?", ReportType.FLOOR, floor.Id).Find(&uids)
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
@@ -532,7 +535,7 @@ func deleteFloor(floor *Floor) error {
 		// 加上自己
 		ids = append(ids, floor.Id)
 		// 删除log
-		if err := tx.Where("id IN (?) AND type = ?", ids, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
+		if err := tx.Where("id IN (?) AND type = ?", ids, LikeType.FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("floor_id IN (?)", ids).Delete(&LogUnreadFloor{}).Error; err != nil {
@@ -631,7 +634,7 @@ func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 		return err
 	}
 	// 楼层点赞记录
-	if err := tx.Where("id IN (?) AND type = ?", floorIds, LIKE_FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
+	if err := tx.Where("id IN (?) AND type = ?", floorIds, LikeType.FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
 		return err
 	}
 	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
@@ -687,9 +690,9 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	}
 
 	updatePostTime(floor.PostId)
-	addUnreadLike(floor.Uid, LIKE_FLOOR, floor.Id)
+	addUnreadLike(floor.Uid, LikeType.FLOOR, floor.Id)
 	UndisFloor(floorId, uid)
-	addTagLogInPost(floor.PostId, TAG_LIKE_FLOOR)
+	addTagLogInPost(floor.PostId, TagPointType.LIKE_FLOOR)
 	return floor.LikeCount, nil
 }
 
@@ -719,7 +722,7 @@ func UnlikeFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount-1).Error; err != nil {
 		return 0, err
 	}
-	addTagLogInPost(floor.PostId, TAG_UNLIKE_FLOOR)
+	addTagLogInPost(floor.PostId, TagPointType.UNLIKE_FLOOR)
 	return floor.LikeCount, nil
 }
 
@@ -750,7 +753,7 @@ func DisFloor(floorId string, uid string) (uint64, error) {
 		return 0, err
 	}
 	UnlikeFloor(floorId, uid)
-	addTagLogInPost(floor.PostId, TAG_DIS_FLOOR)
+	addTagLogInPost(floor.PostId, TagPointType.DIS_FLOOR)
 	return floor.DisCount, nil
 }
 
@@ -778,7 +781,7 @@ func UndisFloor(floorId string, uid string) (uint64, error) {
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount-1).Error; err != nil {
 		return 0, err
 	}
-	addTagLogInPost(floor.PostId, TAG_UNDIS_FLOOR)
+	addTagLogInPost(floor.PostId, TagPointType.UNDIS_FLOOR)
 	return floor.DisCount, nil
 }
 

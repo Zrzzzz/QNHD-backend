@@ -2,6 +2,7 @@ package backend
 
 import (
 	"qnhd/api/v1/frontend"
+	"qnhd/enums/IdentityType"
 	"qnhd/middleware/jwt"
 	"qnhd/middleware/permission"
 	"qnhd/models"
@@ -48,7 +49,7 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", frontend.RefreshToken)
 	g.Use(jwt.JWT())
-	g.Use(permission.IdentityDemand(permission.ADMIN))
+	g.Use(permission.IdentityDemand(IdentityType.ADMIN))
 	for _, t := range BackendTypes {
 		initType(g, t)
 	}

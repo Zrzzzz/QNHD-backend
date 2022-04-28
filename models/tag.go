@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"math/rand"
+	"qnhd/enums/TagPointType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
@@ -20,9 +21,9 @@ type Tag struct {
 }
 
 type LogTag struct {
-	TagId     uint64    `json:"tag_id"`
-	Point     TAG_POINT `json:"point"`
-	CreatedAt string    `json:"created_at" gorm:"default:null;"`
+	TagId     uint64            `json:"tag_id"`
+	Point     TagPointType.Enum `json:"point"`
+	CreatedAt string            `json:"created_at" gorm:"default:null;"`
 }
 
 type HotTagResult struct {
@@ -30,27 +31,6 @@ type HotTagResult struct {
 	Point int    `json:"point"`
 	Name  string `json:"name"`
 }
-
-type TAG_POINT int64
-
-const (
-	TAG_ADD_POST  TAG_POINT = 20
-	TAG_ADD_FLOOR TAG_POINT = 10
-
-	TAG_LIKE_POST TAG_POINT = 4
-	TAG_FAV_POST  TAG_POINT = 3
-	TAG_DIS_POST  TAG_POINT = 4
-
-	TAG_UNLIKE_POST TAG_POINT = -4
-	TAG_UNFAV_POST  TAG_POINT = -3
-	TAG_UNDIS_POST  TAG_POINT = -4
-
-	TAG_LIKE_FLOOR TAG_POINT = 1
-	TAG_DIS_FLOOR  TAG_POINT = 1
-
-	TAG_UNLIKE_FLOOR TAG_POINT = -1
-	TAG_UNDIS_FLOOR  TAG_POINT = -1
-)
 
 func ExistTagByName(name string) (bool, error) {
 	var tag Tag
@@ -165,7 +145,7 @@ func deleteTag(id uint64) error {
 	})
 }
 
-func addTagLogInPost(postId uint64, point TAG_POINT) error {
+func addTagLogInPost(postId uint64, point TagPointType.Enum) error {
 	var pt PostTag
 	if err := db.Where("post_id = ?", postId).Find(&pt).Error; err != nil {
 		return err
@@ -177,7 +157,7 @@ func addTagLogInPost(postId uint64, point TAG_POINT) error {
 }
 
 // 增加Tag访问记录
-func addTagLog(id uint64, point TAG_POINT) {
+func addTagLog(id uint64, point TagPointType.Enum) {
 	var log = LogTag{TagId: id, Point: point}
 	if err := db.Create(&log).Error; err != nil {
 		logging.Error("add tag log error: %v", log)
@@ -186,7 +166,7 @@ func addTagLog(id uint64, point TAG_POINT) {
 
 // 给tag加热度
 func AddTagLog(id uint64, point int64) error {
-	var log = LogTag{TagId: id, Point: TAG_POINT(point)}
+	var log = LogTag{TagId: id, Point: TagPointType.Enum(point)}
 	return db.Create(&log).Error
 }
 

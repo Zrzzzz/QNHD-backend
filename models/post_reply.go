@@ -1,24 +1,18 @@
 package models
 
 import (
+	"qnhd/enums/PostReplyType"
 	"qnhd/pkg/filter"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
-type PostReplyType int
-
-const (
-	PostReplyFromUser PostReplyType = iota
-	PostReplyFromSchool
-)
-
 type PostReply struct {
 	Model
-	PostId  uint64        `json:"post_id"`
-	Sender  PostReplyType `json:"sender"`
-	Content string        `json:"content"`
+	PostId  uint64             `json:"post_id"`
+	Sender  PostReplyType.Enum `json:"sender"`
+	Content string             `json:"content"`
 }
 
 type PostReplyResponse struct {
@@ -80,7 +74,7 @@ func GetPostReplyResponses(postId string) ([]PostReplyResponse, error) {
 func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	var pr = PostReply{
 		PostId:  maps["post_id"].(uint64),
-		Sender:  maps["sender"].(PostReplyType),
+		Sender:  maps["sender"].(PostReplyType.Enum),
 		Content: filter.Filter(maps["content"].(string)),
 	}
 	urls := maps["urls"].([]string)
