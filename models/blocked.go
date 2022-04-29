@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"qnhd/enums/NoticeType"
 	"time"
 
@@ -40,7 +41,7 @@ func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64
 		return 0, err
 	}
 
-	addNoticeWithTemplate(NoticeType.BEEN_BLOCKED, []uint64{uid}, []string{reason})
+	addNoticeWithTemplate(NoticeType.BEEN_BLOCKED, []uint64{uid}, []string{reason, fmt.Sprintf("%d", last)})
 
 	return blocked.Id, nil
 }
