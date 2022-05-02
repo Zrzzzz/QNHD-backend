@@ -14,7 +14,7 @@ type Notice struct {
 
 func GetNotices() ([]Notice, error) {
 	var notices []Notice
-	err := db.Where("symbol <> 'public'").Order("id").Find(&notices).Error
+	err := db.Where("symbol = 'public'").Order("id").Find(&notices).Error
 	return notices, err
 }
 
