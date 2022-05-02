@@ -41,17 +41,23 @@ func GetFloor(c *gin.Context) {
 // @route /b/floors
 func GetFloors(c *gin.Context) {
 	postId := c.Query("post_id")
-
+	order := c.Query("order")
+	onlyOwner := c.Query("only_owner")
 	valid := validation.Validation{}
 	valid.Required(postId, "postId")
 	valid.Numeric(postId, "postId")
+	valid.Numeric(order, "order")
+	valid.Numeric(onlyOwner, "only_owner")
 	ok, verr := r.ErrorValid(&valid, "Get floors")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
+	args := make(map[string]interface{})
+	args["order"] = order
+	args["only_owner"] = onlyOwner
 
-	list, err := models.GetFloorResponses(c, postId)
+	list, err := models.GetFloorResponses(c, postId, args)
 	if err != nil {
 		logging.Error("Get floors error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

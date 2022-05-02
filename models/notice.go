@@ -12,9 +12,9 @@ type Notice struct {
 	Symbol  string `json:"symbol"`
 }
 
-func GetNoticeTemplates() ([]Notice, error) {
+func GetNotices() ([]Notice, error) {
 	var notices []Notice
-	err := db.Order("id").Find(&notices).Error
+	err := db.Where("symbol <> 'public'").Order("id").Find(&notices).Error
 	return notices, err
 }
 

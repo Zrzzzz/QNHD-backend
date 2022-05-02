@@ -17,7 +17,7 @@ import (
 // @return
 // @route /b/notices
 func GetNotices(c *gin.Context) {
-	list, err := models.GetNoticeTemplates()
+	list, err := models.GetNotices()
 	if err != nil {
 		logging.Error("Get notices error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

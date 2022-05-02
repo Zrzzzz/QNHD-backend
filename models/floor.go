@@ -199,18 +199,44 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 // }
 
 // 分页返回帖子里的楼层
-func GetFloorResponses(c *gin.Context, postId string) ([]FloorResponse, error) {
+func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{}) ([]FloorResponse, error) {
 	var floors []Floor
-	if err := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	d := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+	if args["order"].(string) == "1" {
+		d = d.Order("created_at")
+	} else {
+		d = d.Order("created_at DESC")
+	}
+	if args["only_owner"].(string) == "1" {
+		var post Post
+		if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
+			return nil, err
+		}
+		d = d.Where("uid = ?", post.Uid)
+	}
+	if err := d.Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponses(&floors, true)
 }
 
 // 分页返回帖子里的楼层，带uid
-func GetFloorResponsesWithUid(c *gin.Context, postId, uid string) ([]FloorResponseUser, error) {
+func GetFloorResponsesWithUid(c *gin.Context, postId, uid string, args map[string]interface{}) ([]FloorResponseUser, error) {
 	var floors []Floor
-	if err := db.Where("post_id = ? AND reply_to = 0", postId).Order("created_at DESC").Scopes(util.Paginate(c)).Find(&floors).Error; err != nil {
+	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+	if args["order"].(string) == "1" {
+		d = d.Order("created_at")
+	} else {
+		d = d.Order("created_at DESC")
+	}
+	if args["only_owner"].(string) == "1" {
+		var post Post
+		if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
+			return nil, err
+		}
+		d = d.Where("uid = ?", post.Uid)
+	}
+	if err := d.Find(&floors).Error; err != nil {
 		return nil, err
 	}
 	return transFloorsToResponsesWithUid(&floors, uid, true)
