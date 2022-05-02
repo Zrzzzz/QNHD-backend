@@ -60,9 +60,9 @@ func deleteReports(tx *gorm.DB, query interface{}, args ...interface{}) error {
 }
 
 // 恢复举报
-func recoverReports(tx *gorm.DB, maps map[string]interface{}) error {
+func recoverReports(tx *gorm.DB, query interface{}, args ...interface{}) error {
 	if tx == nil {
 		tx = db
 	}
-	return tx.Unscoped().Model(&Report{}).Where(maps).Update("deleted_at", gorm.Expr("NULL")).Error
+	return tx.Unscoped().Model(&Report{}).Where(query, args...).Update("deleted_at", gorm.Expr("NULL")).Error
 }

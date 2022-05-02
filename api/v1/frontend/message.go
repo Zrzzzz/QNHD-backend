@@ -126,7 +126,7 @@ func ReadNotice(c *gin.Context) {
 // @way [query]
 // @param ids
 // @return
-// @route /f/message/notice/delete
+// @route /f/message/notices/delete
 func DeleteMessageNotices(c *gin.Context) {
 	uid := r.GetUid(c)
 	ids := c.QueryArray("ids")

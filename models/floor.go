@@ -463,15 +463,15 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	if err := db.Where("id = ?", floor.PostId).Find(&post).Error; err != nil {
 		return 0, err
 	}
+	// 通知举报过楼层的所有用户
+	var uids []uint64
+	db.Model(&Report{}).Select("uid").Where("type = ? AND floor_id = ?", ReportType.FLOOR, floor.Id).Find(&uids)
 
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
 
 	updatePostTime(floor.PostId)
-	// 通知举报过楼层的所有用户
-	var uids []uint64
-	db.Model(&Report{}).Select("uid").Where("type = ? AND floor_id = ?", ReportType.FLOOR, floor.Id).Find(&uids)
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
@@ -611,7 +611,7 @@ func RecoverFloor(floorId string) error {
 		}
 		// 加上自己
 		ids = append(ids, floor.Id)
-		if err := recoverReports(tx, map[string]interface{}{"floor_id": floor.Id}); err != nil {
+		if err := recoverReports(tx, "floor_id = ?", floor.Id); err != nil {
 			return err
 		}
 		if err := tx.Unscoped().Model(&LogUnreadFloor{}).Where("floor_id IN (?)", ids).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
@@ -637,6 +637,10 @@ func DeleteFloorsInPost(tx *gorm.DB, postId uint64) error {
 	if err := tx.Where("id IN (?) AND type = ?", floorIds, LikeType.FLOOR).Delete(&LogUnreadLike{}).Error; err != nil {
 		return err
 	}
+	// 楼层举报记录
+	if err := deleteReports(tx, "floor_id IN (?)", floorIds); err != nil {
+		return err
+	}
 	if err := tx.Where("post_id = ?", postId).Delete(&Floor{}).Error; err != nil {
 		return err
 	}
@@ -654,6 +658,10 @@ func RecoverFloorsInPost(tx *gorm.DB, postId uint64) error {
 	// 楼层回复记录
 	if err := tx.Unscoped().Model(&LogUnreadFloor{}).
 		Where("floor_id IN (?)", floorIds).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {
+		return err
+	}
+	// 举报
+	if err := recoverReports(tx, "floor_id IN (?)", floorIds); err != nil {
 		return err
 	}
 	if err := tx.Unscoped().Model(&Floor{}).Where("post_id = ?", postId).Update("deleted_at", gorm.Expr("NULL")).Error; err != nil {

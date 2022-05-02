@@ -517,13 +517,14 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 
 func DeletePostAdmin(uid, postId string) (uint64, error) {
 	var post, _ = GetPost(postId)
+	// 找到举报过帖子的所有用户
+	var uids []uint64
+	db.Model(&Report{}).Select("uid").Where("type = ? AND post_id = ?", ReportType.POST, post.Id).Find(&uids)
+
 	err := deletePost(&post)
 	if err != nil {
 		return 0, err
 	}
-	// 找到举报过帖子的所有用户
-	var uids []uint64
-	db.Model(&Report{}).Select("uid").Where("type = ? AND post_id = ?", ReportType.POST, post.Id).Find(&uids)
 	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
@@ -573,7 +574,7 @@ func RecoverPost(postId string) error {
 		if err := tx.Unscoped().Where("id = ?", postId).Find(&post).Error; err != nil {
 			return err
 		}
-		if err := recoverReports(tx, map[string]interface{}{"post_id": post.Id}); err != nil {
+		if err := recoverReports(tx, "post_id = ?", post.Id); err != nil {
 			return err
 		}
 		// 删除log
