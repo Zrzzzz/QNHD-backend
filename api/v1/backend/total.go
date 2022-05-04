@@ -26,6 +26,7 @@ const (
 	Sensitive
 	PostType
 	Banner
+	Statistic
 )
 
 var BackendTypes = [...]BackendType{
@@ -42,6 +43,7 @@ var BackendTypes = [...]BackendType{
 	Sensitive,
 	PostType,
 	Banner,
+	Statistic,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -209,5 +211,12 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/banner/order", UpdateBannerOrder)
 		// 删除轮播图
 		g.GET("/banner/delete", DeleteBanner)
+	case Statistic:
+		// 获取帖子数量
+		g.GET("/statistic/posts/count", GetPostCount)
+		// 获取楼层数量
+		g.GET("/statistic/floors/count", GetFloorCount)
+		// 获取帖子浏览数量
+		g.GET("/statistic/posts/visit/count", GetVisitPostCount)
 	}
 }
