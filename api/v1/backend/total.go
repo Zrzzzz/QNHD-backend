@@ -137,11 +137,12 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
 		// 恢复指定帖子
 		g.POST("/post/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverPost)
-
 		// 添加帖子标签
 		g.POST("/post_tag", AddPostTag)
 		// 删除帖子的标签
 		g.GET("/post_tag/delete", DeletePostTag)
+		// 删除帖子的图片
+		g.GET("/post_image/delete", DeletePostImages)
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
