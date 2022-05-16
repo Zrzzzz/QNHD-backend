@@ -66,9 +66,6 @@ func RequireAdmin(uid string) error {
 		}
 		return err
 	}
-	if user.IsUser {
-		return fmt.Errorf("非管理员身份")
-	}
 	if !user.IsSuper && !user.IsSchAdmin && !user.IsStuAdmin {
 		return fmt.Errorf("无管理员权限")
 	}
