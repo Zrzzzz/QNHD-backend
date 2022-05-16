@@ -3,7 +3,9 @@ package models
 import (
 	"fmt"
 	"qnhd/enums/ReportType"
+	"qnhd/pkg/util"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -18,9 +20,9 @@ type Report struct {
 	IsDeleted bool   `json:"is_deleted" gorm:"-"`
 }
 
-func GetReports(rType ReportType.Enum) ([]Report, error) {
+func GetReports(c *gin.Context, rType ReportType.Enum) ([]Report, error) {
 	var reports []Report
-	if err := db.Unscoped().Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
+	if err := db.Unscoped().Scopes(util.Paginate(c)).Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
 		return nil, err
 	}
 	for i := range reports {

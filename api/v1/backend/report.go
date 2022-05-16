@@ -35,7 +35,7 @@ func GetReports(c *gin.Context) {
 		return
 	}
 
-	list, err := models.GetReports(ReportType.Enum(rTypeint))
+	list, err := models.GetReports(c, ReportType.Enum(rTypeint))
 	if err != nil {
 		logging.Error("Get report error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
