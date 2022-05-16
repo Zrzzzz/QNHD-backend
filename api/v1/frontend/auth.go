@@ -96,6 +96,8 @@ func auth(result twtservice.TwTAuthResult, c *gin.Context) {
 		return
 	}
 
+	user, _ := models.GetUser(map[string]interface{}{"id": uid})
+
 	token, err := util.GenerateToken(fmt.Sprintf("%d", uid))
 	if err != nil {
 		logging.Error("auth error: %v", err)
@@ -104,6 +106,7 @@ func auth(result twtservice.TwTAuthResult, c *gin.Context) {
 	}
 	data["token"] = token
 	data["uid"] = uid
+	data["user"] = user
 	r.OK(c, e.SUCCESS, data)
 }
 
