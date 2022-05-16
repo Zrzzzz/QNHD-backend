@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"qnhd/api/v1/common"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -82,4 +83,13 @@ func auth(c *gin.Context, user models.User) {
 		code = e.ERROR_AUTH
 	}
 	r.OK(c, code, data)
+}
+
+// @method [get]
+// @way [query]
+// @param token
+// @return token
+// @route /b/auth/:token
+func RefreshToken(c *gin.Context) {
+	common.RefreshToken(c)
 }

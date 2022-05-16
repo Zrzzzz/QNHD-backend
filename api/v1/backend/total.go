@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"qnhd/api/v1/frontend"
 	"qnhd/enums/IdentityType"
 	"qnhd/middleware/jwt"
 	"qnhd/middleware/permission"
@@ -49,7 +48,7 @@ var BackendTypes = [...]BackendType{
 func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
-	g.GET("/auth/:token", frontend.RefreshToken)
+	g.GET("/auth/:token", RefreshToken)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(IdentityType.ADMIN))
 	for _, t := range BackendTypes {
@@ -118,13 +117,13 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/user/update", permission.RightDemand(models.UserRight{Super: true}), ForceTokenUpdate)
 	case Post:
 		// 获取帖子列表
-		g.GET("/posts", frontend.GetPosts(false))
+		g.GET("/posts", GetPosts())
 		// 获取用户帖子
 		g.GET("/posts/user", GetUserPosts)
 		// 获取帖子
-		g.GET("/post", frontend.GetPost(false))
+		g.GET("/post", GetPost())
 		// 获取帖子回复
-		g.GET("/post/replys", frontend.GetPostReplys)
+		g.GET("/post/replys", GetPostReplys)
 		// 帖子回复校方回应
 		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
 		// 帖子转移部门
@@ -200,7 +199,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		sGroup.POST("/sensitive/words", AddWordsToSensitiveFile)
 	case PostType:
 		// 获取帖子类型
-		g.GET("/posttypes", frontend.GetPostTypes)
+		g.GET("/posttypes", GetPostTypes)
 		// 增加帖子类型
 		g.POST("/posttype", permission.RightDemand(models.UserRight{Super: true}), AddPostType)
 	case Banner:

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"qnhd/api/v1/common"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -34,4 +35,13 @@ func AddPostType(c *gin.Context) {
 		return
 	}
 	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /b/posttypes
+func GetPostTypes(c *gin.Context) {
+	common.GetPostTypes(c)
 }

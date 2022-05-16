@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"qnhd/api/v1/common"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -11,6 +12,24 @@ import (
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
+
+// @method [get]
+// @way [query]
+// @param content page page_size
+// @return postList
+// @route /b/posts
+func GetPosts() gin.HandlerFunc {
+	return common.GetPosts(false)
+}
+
+// @method [post]
+// @way [formdata]
+// @param id
+// @return post
+// @route /b/post
+func GetPost() gin.HandlerFunc {
+	return common.GetPost(false)
+}
 
 // @method [get]
 // @way [query]

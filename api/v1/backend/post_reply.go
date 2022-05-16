@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"qnhd/api/v1/common"
 	"qnhd/enums/PostReplyType"
 	"qnhd/enums/PostSolveType"
 	"qnhd/models"
@@ -12,6 +13,15 @@ import (
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 )
+
+// @method [get]
+// @way [query]
+// @param post_id
+// @return
+// @route /b/post/replys
+func GetPostReplys(c *gin.Context) {
+	common.GetPostReplys(c)
+}
 
 // @method [post]
 // @way [formdata]

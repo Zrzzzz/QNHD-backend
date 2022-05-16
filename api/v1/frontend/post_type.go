@@ -1,10 +1,7 @@
 package frontend
 
 import (
-	"qnhd/models"
-	"qnhd/pkg/e"
-	"qnhd/pkg/logging"
-	"qnhd/pkg/r"
+	"qnhd/api/v1/common"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,18 +10,7 @@ import (
 // @way [query]
 // @param
 // @return
-// @route /b/posttypes
+// @route /f/posttypes
 func GetPostTypes(c *gin.Context) {
-	list, err := models.GetPostTypes()
-	if err != nil {
-		logging.Error("Get posttypes error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
-
-	data := make(map[string]interface{})
-	data["list"] = list
-	data["total"] = len(list)
-
-	r.OK(c, e.SUCCESS, data)
+	common.GetPostTypes(c)
 }
