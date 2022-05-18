@@ -19,9 +19,11 @@ import (
 // @route /b/reports
 func GetReports(c *gin.Context) {
 	rType := c.Query("type")
+	isDeleted := c.Query("is_deleted")
 	valid := validation.Validation{}
 	valid.Required(rType, "type")
 	valid.Numeric(rType, "type")
+	valid.Numeric(isDeleted, "is_deleted")
 	ok, verr := r.ErrorValid(&valid, "Add report")
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
@@ -34,16 +36,26 @@ func GetReports(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-
-	list, err := models.GetReports(c, ReportType.Enum(rTypeint))
-	if err != nil {
-		logging.Error("Get report error: %v", err)
-		r.Error(c, e.ERROR_DATABASE, err.Error())
-		return
-	}
 	data := make(map[string]interface{})
-	data["list"] = list
-	data["total"] = len(list)
+	if ReportType.Enum(util.AsInt(rType)) == ReportType.POST {
+		list, err := models.GetPostReports(c, isDeleted == "1")
+		if err != nil {
+			logging.Error("Get report error: %v", err)
+			r.Error(c, e.ERROR_DATABASE, err.Error())
+			return
+		}
+		data["list"] = list
+		data["total"] = len(list)
+	} else {
+		list, err := models.GetFloorReports(c, isDeleted == "1")
+		if err != nil {
+			logging.Error("Get report error: %v", err)
+			r.Error(c, e.ERROR_DATABASE, err.Error())
+			return
+		}
+		data["list"] = list
+		data["total"] = len(list)
+	}
 	r.OK(c, e.SUCCESS, data)
 }
 

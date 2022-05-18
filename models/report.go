@@ -20,15 +20,71 @@ type Report struct {
 	IsDeleted bool   `json:"is_deleted" gorm:"-"`
 }
 
-func GetReports(c *gin.Context, rType ReportType.Enum) ([]Report, error) {
-	var reports []Report
-	if err := db.Unscoped().Scopes(util.Paginate(c)).Where("type = ?", rType).Order("created_at DESC").Find(&reports).Error; err != nil {
+type PostReportResponse struct {
+	P       PostResponse `json:"post"`
+	Reports []Report     `json:"reports"`
+}
+
+type FloorReportResponse struct {
+	F       FloorResponse `json:"floor"`
+	Reports []Report      `json:"reports"`
+}
+
+func GetPostReports(c *gin.Context, isDeleted bool) ([]PostReportResponse, error) {
+	var posts []Post
+	var ret []PostReportResponse
+	ids := db.Unscoped().Model(&Report{}).Select("post_id", "count(*) as cnt").Where("type = ?", ReportType.POST).Group("post_id").Order("cnt DESC")
+	d := db.Unscoped().Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.post p ON p.id = a.post_id").
+		Scopes(util.Paginate(c))
+
+	if isDeleted {
+		d = d.Where("deleted_at IS NOT NULL")
+	} else {
+		d = d.Where("deleted_at IS NULL")
+	}
+	if err := d.Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	for i := range reports {
-		reports[i].IsDeleted = reports[i].DeletedAt.Valid
+	for _, i := range posts {
+		var r PostReportResponse
+		r.P = i.geneResponse(true)
+		r.Reports = getReports(ReportType.POST, i.Id)
+		ret = append(ret, r)
 	}
-	return reports, nil
+	return ret, nil
+}
+
+func GetFloorReports(c *gin.Context, isDeleted bool) ([]FloorReportResponse, error) {
+	var floors []Floor
+	var ret []FloorReportResponse
+	ids := db.Unscoped().Model(&Report{}).Select("floor_id", "count(*) as cnt").Where("type = ?", ReportType.FLOOR).Group("floor_id").Order("cnt DESC")
+	d := db.Unscoped().Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.floor p ON p.id = a.floor_id").
+		Scopes(util.Paginate(c))
+
+	if isDeleted {
+		d = d.Where("deleted_at IS NOT NULL")
+	} else {
+		d = d.Where("deleted_at IS NULL")
+	}
+	if err := d.Find(&floors).Error; err != nil {
+		return nil, err
+	}
+	for _, i := range floors {
+		var r FloorReportResponse
+		r.F = i.geneResponse(false, true)
+		r.Reports = getReports(ReportType.FLOOR, i.Id)
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func getReports(rType ReportType.Enum, id uint64) (reports []Report) {
+	if rType == ReportType.POST {
+		db.Unscoped().Where("type = ? AND post_id = ?", rType, id).Order("created_at").Order("solved").Order("deleted_at DESC").Find(&reports)
+	} else {
+		db.Unscoped().Where("type = ? AND floor_id = ?", rType, id).Order("created_at").Order("solved").Order("deleted_at DESC").Find(&reports)
+	}
+	return
 }
 
 func AddReport(maps map[string]interface{}) error {
