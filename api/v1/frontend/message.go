@@ -166,6 +166,31 @@ func ReadFloor(c *gin.Context) {
 
 // @method [post]
 // @way [formdata]
+// @param
+// @return
+// @route /f/message/floor/read_in_post
+func ReadFloorInPost(c *gin.Context) {
+	uid := r.GetUid(c)
+	postId := c.PostForm("post_id")
+	valid := validation.Validation{}
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Read floor in post")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.ReadFloorInPost(util.AsUint(uid), util.AsUint(postId))
+	if err != nil {
+		logging.Error("Read floor in post error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
 // @param postId, id
 // @return
 // @route /f/message/reply/read

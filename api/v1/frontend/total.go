@@ -132,6 +132,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/message/notices/delete", DeleteMessageNotices)
 		// 已读楼层
 		g.POST("/message/floor/read", ReadFloor)
+		// 已读评论内楼层
+		g.POST("/message/floor/read_in_post", ReadFloorInPost)
 		// 已读回复
 		g.POST("/message/reply/read", ReadReply)
 		// 已读点赞
