@@ -89,11 +89,12 @@ type PostResponseUser struct {
 	ImageUrls    []string            `json:"image_urls"`
 	Department   *Department         `json:"department"`
 
-	IsLike    bool `json:"is_like"`
-	IsDis     bool `json:"is_dis"`
-	IsFav     bool `json:"is_fav"`
-	IsOwner   bool `json:"is_owner"`
-	IsDeleted bool `json:"is_deleted"`
+	IsLike     bool `json:"is_like"`
+	IsDis      bool `json:"is_dis"`
+	IsFav      bool `json:"is_fav"`
+	IsOwner    bool `json:"is_owner"`
+	IsDeleted  bool `json:"is_deleted"`
+	VisitCount int  `json:"visit_count"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -145,6 +146,7 @@ func (p PostResponse) searchByUid(uid string) PostResponseUser {
 		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
 		IsOwner:      IsOwnPostByUid(uid, util.AsStrU(p.Id)),
+		VisitCount:   GetPostVisitCount(util.AsStrU(p.Id)),
 	}
 
 	// frs, err := getShortFloorResponsesInPostWithUid(util.AsStrU(p.Id), uid)
@@ -186,6 +188,12 @@ func transPostsToResponsesWithUid(posts *[]Post, uid string) ([]PostResponseUser
 	return prs, err
 }
 
+func GetPostVisitCount(postId string) int {
+	var cnt int64
+	db.Model(&LogVisitHistory{}).Where("post_id = ?", postId).Count(&cnt)
+	return int(cnt)
+}
+
 func GetPost(postId string) (Post, error) {
 	var post Post
 	err := db.Where("id = ?", postId).First(&post).Error
@@ -205,13 +213,10 @@ func GetPostResponse(postId string) (PostResponse, error) {
 }
 
 // 前端使用
-func GetPostResponseUserAndVisit(postId string, uid string) (PostResponseUser, error) {
+func GetPostResponseUser(postId string, uid string) (PostResponseUser, error) {
 	var post Post
 	var pr PostResponseUser
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		return pr, err
-	}
-	if err := AddVisitHistory(uid, postId); err != nil {
 		return pr, err
 	}
 	ret := post.geneResponse(false).searchByUid(uid)

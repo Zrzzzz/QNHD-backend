@@ -110,7 +110,7 @@ func GetPost(front bool) gin.HandlerFunc {
 		data := make(map[string]interface{})
 		if front {
 			uid := r.GetUid(c)
-			pr, err := models.GetPostResponseUserAndVisit(id, uid)
+			pr, err := models.GetPostResponseUser(id, uid)
 			if err != nil {
 				logging.Error("Get post error: %v", err)
 				r.Error(c, e.ERROR_DATABASE, err.Error())
