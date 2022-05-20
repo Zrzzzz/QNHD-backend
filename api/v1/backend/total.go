@@ -132,6 +132,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/post/transfer/type", TransferPostType)
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
+		// 修改帖子额外标签
+		g.POST("/post/etag", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostEtag)
 		// 删除指定帖子
 		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
 		// 恢复指定帖子

@@ -6,6 +6,7 @@ import (
 	"qnhd/enums/LikeType"
 	"qnhd/enums/NoticeType"
 	"qnhd/enums/PostCampusType"
+	"qnhd/enums/PostEtagType"
 	"qnhd/enums/PostSearchModeType"
 	"qnhd/enums/PostSolveType"
 	"qnhd/enums/PostValueModeType"
@@ -52,6 +53,9 @@ type Post struct {
 	Tokens string `json:"-"`
 
 	UpdatedAt string `json:"-" gorm:"default:null;"`
+
+	// etag
+	Etag string `json:"e_tag" gorm:"column:extra_tag;"`
 }
 
 type LogPostFav struct {
@@ -450,7 +454,17 @@ func EditPostValue(postId string, value int) error {
 	if post.Value == 0 && value > 0 {
 		addNoticeWithTemplate(NoticeType.POST_VALUED, []uint64{post.Uid}, []string{post.Title})
 	}
+	// 这里对标签进行操作 如果置为0，则置为none，否则设置为top
+	if value > 0 {
+		EditPostEtag(postId, PostEtagType.TOP)
+	} else {
+		EditPostEtag(postId, PostEtagType.NONE)
+	}
 	return EditPost(postId, map[string]interface{}{"value": value})
+}
+
+func EditPostEtag(postId string, t PostEtagType.Enum) error {
+	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", PostEtagType.GetSymbol(t)).Error
 }
 
 func EditPostDepartment(postId string, departmentId string) error {

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"qnhd/api/v1/common"
+	"qnhd/enums/PostEtagType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -181,6 +182,39 @@ func EditPostValue(c *gin.Context) {
 	err := models.EditPostValue(postId, util.AsInt(value))
 	if err != nil {
 		logging.Error("edit post value error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param
+// @return
+// @route /b/post/etag
+func EditPostEtag(c *gin.Context) {
+	postId := c.PostForm("post_id")
+	value := c.PostForm("value")
+	valid := validation.Validation{}
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	valid.Required(value, "value")
+	valid.Numeric(value, "value")
+	ok, verr := r.ErrorValid(&valid, "edit post etag")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	valid.Range(util.AsInt(value), 0, 2, "value")
+	ok, verr = r.ErrorValid(&valid, "edit post etag")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditPostEtag(postId, PostEtagType.Enum(util.AsInt(value)))
+	if err != nil {
+		logging.Error("edit post etag error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
