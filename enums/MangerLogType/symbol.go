@@ -25,9 +25,13 @@ var msgSymbol = map[Enum]string{
 
 	NOTICE_NEW:    "notice_new",
 	NOTICE_DELETE: "notice_delete",
-	NOTICE_CHANGE: "notice_change",
+	NOTICE_EDIT:   "notice_edit",
 
 	USER_DETAIL: "user_detail",
+
+	TAG_POINT_ADD:   "tag_point_add",
+	TAG_POINT_CLEAR: "tag_point_clear",
+	TAG_DELETE:      "tag_delete",
 }
 
 func (code Enum) GetSymbol() string {
