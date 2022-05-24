@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"math"
-	"qnhd/pkg/logging"
 	"qnhd/pkg/template"
 	"qnhd/pkg/util"
 	"qnhd/request/twtservice"
@@ -92,9 +91,7 @@ func addUnreadNoticeToAllUser(noticeId uint64, pubAt string) error {
 		}
 		db.Create(logs[i*insertCount : min])
 	}
-	if err := twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...); err != nil {
-		logging.Error(err.Error())
-	}
+	twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...)
 	return nil
 }
 
@@ -122,9 +119,7 @@ func addUnreadNoticeToUser(uid []uint64, data map[string]interface{}) error {
 		}
 		db.Create(logs[i*insertCount : min])
 	}
-	if err := twtservice.NotifyNotice(notice.Sender, notice.Title, uidStrs...); err != nil {
-		logging.Error(err.Error())
-	}
+	twtservice.NotifyNotice(notice.Sender, notice.Title, uidStrs...)
 	return nil
 }
 

@@ -373,15 +373,27 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 	// 如果不是回复自己的帖子，通知帖子主人
+	var toNotifyIds []uint64
+
 	if post.Uid != uid {
-		addUnreadFloor(post.Uid, newFloor.Id)
-		var user User
-		if err := db.Where("id = ?", post.Uid).Find(&user).Error; err == nil {
-			if err := twtservice.NotifyPost(post.Title, user.Number); err != nil {
-				logging.Error(err.Error())
-			}
-		}
+		toNotifyIds = append(toNotifyIds, post.Uid)
 	}
+
+	// 收藏的人的id
+	var favUserIds []uint64
+	db.Model(&LogPostFav{}).Select("uid").Where("post_id = ? AND uid != ?", post.Id, uid).Find(&favUserIds)
+	toNotifyIds = append(toNotifyIds, favUserIds...)
+	// 去重
+	toNotifyIds = util.SetUint64(toNotifyIds)
+
+	// 添加未读记录
+	addUnreadFloor(newFloor.Id, toNotifyIds...)
+	// 发送通知
+	var numbers []string
+	if err := db.Model(&User{}).Select("number").Where("id IN (?)", toNotifyIds).Find(&numbers).Error; err == nil {
+		twtservice.NotifyPost(post.Title, numbers...)
+	}
+
 	// 对帖子的tag增加记录, 当不是校务才会有
 	if post.Type != POST_SCHOOL_TYPE {
 		addTagLogInPost(post.Id, TagPointType.ADD_FLOOR)
@@ -427,27 +439,47 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 
+	var toNotifyIds []uint64
+	var toNotifyPostIds []uint64
+	var toNotifyFloorIds []uint64
 	// 如果不是回复自己的帖子，通知帖子主人
 	if post.Uid != uid {
-		addUnreadFloor(post.Uid, newFloor.Id)
+		toNotifyPostIds = append(toNotifyPostIds, post.Uid)
 	}
 	// 如果回复的楼层不是子楼层，通知回复的楼层的主人，这里开始避免重复
 	if toFloor.Uid != uid && toFloor.Uid != post.Uid {
-		addUnreadFloor(toFloor.Uid, newFloor.Id)
-		var user User
-		if err := db.Where("id = ?", toFloor.Uid).Find(&user).Error; err == nil {
-
-			if err := twtservice.NotifyFloor(toFloor.Content, user.Number); err != nil {
-				logging.Error(err.Error())
-			}
-		}
+		toNotifyFloorIds = append(toNotifyFloorIds, toFloor.Uid)
+		user, _ := GetUser(map[string]interface{}{"id": toFloor.Uid})
+		twtservice.NotifyFloor(toFloor.Content, user.Number)
 	}
 	// 如果回复的帖子是子楼层，通知层主
 	if toFloor.SubTo != 0 {
 		subToFloor, _ := GetFloor(util.AsStrU(newFloor.SubTo))
 		if subToFloor.Uid != uid && subToFloor.Uid != toFloor.Uid && subToFloor.Uid != post.Uid {
-			addUnreadFloor(subToFloor.Uid, newFloor.Id)
+			toNotifyFloorIds = append(toNotifyFloorIds, subToFloor.Uid)
+			user, _ := GetUser(map[string]interface{}{"id": subToFloor.Uid})
+			twtservice.NotifyFloor(subToFloor.Content, user.Number)
 		}
+	}
+
+	// 收藏的人的id
+	var favUserIds []uint64
+	db.Model(&LogPostFav{}).Select("uid").Where("post_id = ? AND uid != ?", post.Id, uid).Find(&favUserIds)
+	toNotifyIds = append(toNotifyIds, toNotifyPostIds...)
+	toNotifyIds = append(toNotifyIds, favUserIds...)
+	toNotifyIds = append(toNotifyIds, toNotifyFloorIds...)
+	// 去重
+	toNotifyIds = util.SetUint64(toNotifyIds)
+
+	// 添加未读记录
+	addUnreadFloor(newFloor.Id, toNotifyIds...)
+
+	// 发送通知
+	toNotifyPostIds = append(toNotifyPostIds, favUserIds...)
+	// 发送通知
+	var numbers []string
+	if err := db.Model(&User{}).Select("number").Where("id IN (?)", toNotifyPostIds).Find(&numbers).Error; err == nil {
+		twtservice.NotifyPost(post.Content, numbers...)
 	}
 
 	// 对帖子的tag增加记录, 当不是校务才会有

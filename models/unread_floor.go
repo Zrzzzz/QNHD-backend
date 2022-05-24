@@ -1,6 +1,7 @@
 package models
 
 import (
+	"math"
 	"qnhd/pkg/util"
 
 	"github.com/gin-gonic/gin"
@@ -80,11 +81,21 @@ func GetUnreadFloors(c *gin.Context, uid string) ([]UnreadFloorResponse, error) 
 }
 
 // 添加评论通知
-func addUnreadFloor(uid, floorId uint64) error {
-	return db.Create(&LogUnreadFloor{
-		Uid:     uid,
-		FloorId: floorId,
-	}).Error
+func addUnreadFloor(floorId uint64, uids ...uint64) error {
+	var logs []LogUnreadFloor
+	for _, u := range uids {
+		logs = append(logs, LogUnreadFloor{Uid: u, FloorId: floorId})
+	}
+	// 一次插入2个参数，只要少于65535就ok，经测试250效率较高
+	insertCount := 250
+	for i := 0; i < int(math.Ceil(float64(len(logs))/float64(insertCount))); i++ {
+		min := (i + 1) * insertCount
+		if len(logs) < min {
+			min = len(logs)
+		}
+		db.Create(logs[i*insertCount : min])
+	}
+	return nil
 }
 
 // 已读评论
