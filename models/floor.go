@@ -479,7 +479,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	// 发送通知
 	var numbers []string
 	if err := db.Model(&User{}).Select("number").Where("id IN (?)", toNotifyPostIds).Find(&numbers).Error; err == nil {
-		twtservice.NotifyPost(post.Content, numbers...)
+		twtservice.NotifyPost(post.Title, numbers...)
 	}
 
 	// 对帖子的tag增加记录, 当不是校务才会有
