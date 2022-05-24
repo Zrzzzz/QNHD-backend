@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"qnhd/enums/LikeType"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/NoticeType"
 	"qnhd/enums/ReportType"
 	"qnhd/enums/TagPointType"
@@ -513,6 +514,7 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
+	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_DELETE)
 	return floor.Id, nil
 }
 

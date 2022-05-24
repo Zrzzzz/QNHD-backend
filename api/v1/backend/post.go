@@ -67,6 +67,7 @@ func GetUserPosts(c *gin.Context) {
 // @return
 // @route /b/post/transfer/department
 func TransferPostDepartment(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	newDepartmentId := c.PostForm("new_department_id")
 	valid := validation.Validation{}
@@ -79,7 +80,6 @@ func TransferPostDepartment(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	uid := r.GetUid(c)
 	post, err := models.GetPost(postId)
 	if err != nil {
 		logging.Error("transfer department error: %v", err)
@@ -96,7 +96,7 @@ func TransferPostDepartment(c *gin.Context) {
 		r.Error(c, e.ERROR_RIGHT, "")
 		return
 	}
-	err = models.EditPostDepartment(postId, newDepartmentId)
+	err = models.EditPostDepartment(uid, postId, newDepartmentId)
 	if err != nil {
 		logging.Error("transfer department error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -119,6 +119,7 @@ func TransferPostDepartment(c *gin.Context) {
 // @return
 // @route /b/post/transfer/type
 func TransferPostType(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	newTypeId := c.PostForm("new_type_id")
 	valid := validation.Validation{}
@@ -141,13 +142,12 @@ func TransferPostType(c *gin.Context) {
 		r.Error(c, e.ERROR_POST_TYPE, "")
 		return
 	}
-	err = models.EditPostType(postId, newTypeId)
+	err = models.EditPostType(uid, postId, newTypeId)
 	if err != nil {
 		logging.Error("transfer type error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	uid := r.GetUid(c)
 	// 记录历史
 	if err := models.AddPostTypeTransferLog(util.AsUint(uid), post.Id, post.Type, util.AsInt(newTypeId)); err != nil {
 		logging.Error(err.Error())
@@ -161,6 +161,7 @@ func TransferPostType(c *gin.Context) {
 // @return
 // @route /b/post/value
 func EditPostValue(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	value := c.PostForm("value")
 	valid := validation.Validation{}
@@ -179,7 +180,7 @@ func EditPostValue(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	err := models.EditPostValue(postId, util.AsInt(value))
+	err := models.EditPostValue(uid, postId, util.AsInt(value))
 	if err != nil {
 		logging.Error("edit post value error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -194,6 +195,7 @@ func EditPostValue(c *gin.Context) {
 // @return
 // @route /b/post/etag
 func EditPostEtag(c *gin.Context) {
+	uid := r.GetUid(c)
 	postId := c.PostForm("post_id")
 	value := c.PostForm("value")
 	valid := validation.Validation{}
@@ -212,7 +214,7 @@ func EditPostEtag(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	err := models.EditPostEtag(postId, PostEtagType.Enum(util.AsInt(value)))
+	err := models.EditPostEtag(uid, postId, PostEtagType.Enum(util.AsInt(value)))
 	if err != nil {
 		logging.Error("edit post etag error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

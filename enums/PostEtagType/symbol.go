@@ -7,6 +7,6 @@ var msgSymbol = map[Enum]string{
 	TOP:       "top",
 }
 
-func GetSymbol(code Enum) string {
+func (code Enum) GetSymbol() string {
 	return msgSymbol[code]
 }

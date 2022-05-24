@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/NoticeType"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 type Blocked struct {
 	Model
 	Uid       uint64 `json:"uid"`
-	Doer      string `json:"doer"`
+	Doer      uint64 `json:"doer"`
 	Reason    string `json:"reason"`
 	ExpiredAt string `json:"expired_at"`
 	LastTime  uint8  `json:"last_time"`
@@ -34,7 +35,7 @@ func GetBlocked(maps interface{}) ([]Blocked, error) {
 	return blocked, nil
 }
 
-func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64, error) {
+func AddBlockedByUid(uid uint64, doer uint64, reason string, last uint8) (uint64, error) {
 	expired_at := time.Now().Add(time.Hour * 24 * time.Duration(last)).Format("2006-01-02 15:04:05")
 	var blocked = Blocked{Uid: uid, Doer: doer, Reason: reason, ExpiredAt: expired_at, LastTime: last}
 	if err := db.Select("Uid", "Doer", "Reason", "ExpiredAt", "LastTime").Create(&blocked).Error; err != nil {
@@ -42,6 +43,7 @@ func AddBlockedByUid(uid uint64, doer string, reason string, last uint8) (uint64
 	}
 
 	addNoticeWithTemplate(NoticeType.BEEN_BLOCKED, []uint64{uid}, []string{reason, fmt.Sprintf("%d", last)})
+	addManagerLogWithDetail(doer, uid, ManagerLogType.USER_BLOCK, fmt.Sprintf("reason: %s, day: %d", reason, last))
 
 	return blocked.Id, nil
 }
@@ -54,6 +56,8 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	if err := db.Where("uid = ?", uid).Delete(&Blocked{}).Error; err != nil {
 		return 0, err
 	}
+	addManagerLog(blocked.Doer, uid, ManagerLogType.USER_UNBLOCK)
+
 	return blocked.Id, nil
 }
 

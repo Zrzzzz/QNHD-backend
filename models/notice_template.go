@@ -10,8 +10,8 @@ func addNoticeWithTemplate(t NoticeType.Enum, uid []uint64, args []string) error
 		return nil
 	}
 	data := make(map[string]interface{})
-	data["symbol"] = NoticeType.GetSymbol(t)
-	list := NoticeType.GetArgs(t)
+	data["symbol"] = t.GetSymbol()
+	list := t.GetArgs()
 	data["args"] = template.GeneArgs(list, args)
 	return addUnreadNoticeToUser(uid, data)
 }
