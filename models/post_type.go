@@ -5,6 +5,7 @@ type PostType struct {
 	Shortname string `json:"shortname"`
 	Name      string `json:"name"`
 	Ord       int    `json:"-" gorm:"default:null"`
+	Hidden    bool   `json:"hidden" gorm:"default:false"`
 }
 
 func IsValidPostType(t int) bool {
@@ -22,7 +23,7 @@ func IsValidPostType(t int) bool {
 
 func GetPostTypes() ([]PostType, error) {
 	var ret []PostType
-	err := db.Order("ord DESC").Order("id").Find(&ret).Error
+	err := db.Where("hidden = false").Order("ord DESC").Order("id").Find(&ret).Error
 	return ret, err
 }
 
