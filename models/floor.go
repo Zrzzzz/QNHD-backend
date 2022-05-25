@@ -379,6 +379,8 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		toNotifyIds = append(toNotifyIds, post.Uid)
 	}
 
+	addUnreadFloor(newFloor.Id, toNotifyIds...)
+
 	// 收藏的人的id
 	var favUserIds []uint64
 	db.Model(&LogPostFav{}).Select("uid").Where("post_id = ? AND uid != ?", post.Id, uid).Find(&favUserIds)
@@ -387,7 +389,6 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	toNotifyIds = util.SetUint64(toNotifyIds)
 
 	// 添加未读记录
-	addUnreadFloor(newFloor.Id, toNotifyIds...)
 	// 发送通知
 	var numbers []string
 	if err := db.Model(&User{}).Select("number").Where("id IN (?)", toNotifyIds).Find(&numbers).Error; err == nil {
@@ -439,7 +440,6 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 
-	var toNotifyIds []uint64
 	var toNotifyPostIds []uint64
 	var toNotifyFloorIds []uint64
 	// 如果不是回复自己的帖子，通知帖子主人
@@ -462,17 +462,14 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		}
 	}
 
+	toNotifyFloorIds = append(toNotifyFloorIds, toNotifyPostIds...)
+	addUnreadFloor(newFloor.Id, toNotifyFloorIds...)
+
 	// 收藏的人的id
 	var favUserIds []uint64
 	db.Model(&LogPostFav{}).Select("uid").Where("post_id = ? AND uid != ?", post.Id, uid).Find(&favUserIds)
-	toNotifyIds = append(toNotifyIds, toNotifyPostIds...)
-	toNotifyIds = append(toNotifyIds, favUserIds...)
-	toNotifyIds = append(toNotifyIds, toNotifyFloorIds...)
-	// 去重
-	toNotifyIds = util.SetUint64(toNotifyIds)
 
 	// 添加未读记录
-	addUnreadFloor(newFloor.Id, toNotifyIds...)
 
 	// 发送通知
 	toNotifyPostIds = append(toNotifyPostIds, favUserIds...)
