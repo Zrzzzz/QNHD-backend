@@ -108,7 +108,7 @@ func ReadFloor(uid, floorId uint64) error {
 // 已读帖子内的评论
 func ReadFloorInPost(uid, postId uint64) error {
 	var floors []uint64
-	if err := db.Model(&Floor{}).Select("id").Where("post_id = ?").Find(&floors).Error; err != nil {
+	if err := db.Model(&Floor{}).Select("id").Where("post_id = ?", postId).Find(&floors).Error; err != nil {
 		return err
 	}
 	return db.Model(&LogUnreadFloor{}).
