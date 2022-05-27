@@ -12,17 +12,18 @@ import (
 )
 
 type User struct {
-	Uid         uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Nickname    string `json:"nickname" gorm:"default:''"`
-	Number      string `json:"-" gorm:"default:''"`
-	Password    string `json:"-" gorm:"column:password;"`
-	PhoneNumber string `json:"phone_number"`
-	IsSuper     bool   `json:"is_super" gorm:"default:false"`
-	IsSchAdmin  bool   `json:"is_sch_admin" gorm:"default:false"`
-	IsStuAdmin  bool   `json:"is_stu_admin" gorm:"default:false"`
-	IsUser      bool   `json:"is_user" gorm:"default:false"`
-	Active      bool   `json:"active" gorm:"default:true"`
-	CreatedAt   string `json:"-" gorm:"autoCreateTime;default:null;"`
+	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
+	Nickname             string `json:"nickname" gorm:"default:''"`
+	Number               string `json:"-" gorm:"default:''"`
+	Password             string `json:"-" gorm:"column:password;"`
+	PhoneNumber          string `json:"phone_number"`
+	IsSuper              bool   `json:"is_super" gorm:"default:false;column:super_admin"`
+	IsSchAdmin           bool   `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
+	IsStuAdmin           bool   `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
+	IsStuDistributeAdmin bool   `json:"is_stu_dis_admin" gorm:"default:false;column:school_distribute_admin"`
+	IsUser               bool   `json:"is_user" gorm:"default:false;"`
+	Active               bool   `json:"active" gorm:"default:true"`
+	CreatedAt            string `json:"-" gorm:"autoCreateTime;default:null;"`
 }
 
 type NewUserData struct {
@@ -36,9 +37,10 @@ type NewUserData struct {
 }
 
 type UserRight struct {
-	Super    bool
-	SchAdmin bool
-	StuAdmin bool
+	Super              bool
+	SchAdmin           bool
+	SchDistributeAdmin bool
+	StuAdmin           bool
 }
 
 func RequireRight(uid string, right UserRight) bool {
@@ -53,6 +55,9 @@ func RequireRight(uid string, right UserRight) bool {
 	}
 	if right.StuAdmin {
 		b = b || user.IsStuAdmin
+	}
+	if right.SchDistributeAdmin {
+		b = b || user.IsStuDistributeAdmin
 	}
 	return b
 }

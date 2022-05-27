@@ -204,6 +204,17 @@ func GetPost(postId string) (Post, error) {
 	return post, err
 }
 
+// 获取未被分发的帖子
+func GetUndistributedPosts(c *gin.Context) ([]PostResponse, error) {
+	var posts = []Post{}
+	err := db.Scopes(util.Paginate(c)).Where("type = 1 AND solved = 0").Order("created_at DESC").Find(&posts).Error
+	if err != nil {
+		return nil, err
+	}
+	ret, err := transPostsToResponses(&posts)
+	return ret, err
+}
+
 // 后台使用
 func GetPostResponse(postId string) (PostResponse, error) {
 	var p Post
@@ -490,6 +501,32 @@ func EditPostDepartment(postId string, departmentId string) error {
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
+}
+
+// 分发帖子
+func DistributePost(postId string, departmentId string) error {
+	// 判断是否存在部门
+	var (
+		newType Department
+		rawType Department
+	)
+	if err := db.First(&newType, departmentId).Error; err != nil {
+		return err
+	}
+	post, err := GetPost(postId)
+	if err != nil {
+		return err
+	}
+	if err := db.First(&rawType, post.DepartmentId).Error; err != nil {
+		return err
+	}
+	// 如果类型相同
+	if rawType.Id == newType.Id {
+		return fmt.Errorf("不能修改为同类型")
+	}
+	// 通知帖子用户
+	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
+	return EditPost(postId, map[string]interface{}{"department_id": departmentId, "solved": PostSolveType.DISTRIBUTED})
 }
 
 func EditPostType(postId string, typeId string) error {

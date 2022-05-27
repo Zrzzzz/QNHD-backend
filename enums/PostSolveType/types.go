@@ -3,7 +3,8 @@ package PostSolveType
 type Enum int
 
 const (
-	UNSOLVED Enum = iota
+	UNDISTRIBUTED Enum = iota
 	REPLIED
 	SOLVED
+	DISTRIBUTED
 )

@@ -23,13 +23,30 @@ func GetPosts() gin.HandlerFunc {
 	return common.GetPosts(false)
 }
 
-// @method [post]
-// @way [formdata]
+// @method [get]
+// @way [query]
 // @param id
 // @return post
 // @route /b/post
 func GetPost() gin.HandlerFunc {
 	return common.GetPost(false)
+}
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /b/posts/undistributed
+func GetUndistributedPosts(c *gin.Context) {
+	data := make(map[string]interface{})
+	list, err := models.GetUndistributedPosts(c)
+	if err != nil {
+		logging.Error("get undistributed posts error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	data["list"] = list
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -97,6 +114,53 @@ func TransferPostDepartment(c *gin.Context) {
 		return
 	}
 	err = models.EditPostDepartment(postId, newDepartmentId)
+	if err != nil {
+		logging.Error("transfer department error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	// 向新的部门的管理员发通知
+	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
+		logging.Error(err.Error())
+	}
+	// 记录历史
+	if err := models.AddPostDepartmentTransferLog(util.AsUint(uid), post.Id, post.DepartmentId, util.AsUint(newDepartmentId)); err != nil {
+		logging.Error(err.Error())
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [put]
+// @way [formdata]
+// @param post_id, new_department_id
+// @return
+// @route /b/post/distribute
+func DistributePost(c *gin.Context) {
+	postId := c.PostForm("post_id")
+	newDepartmentId := c.PostForm("new_department_id")
+	valid := validation.Validation{}
+	valid.Required(postId, "post_id")
+	valid.Numeric(postId, "post_id")
+	valid.Required(newDepartmentId, "new_department_id")
+	valid.Numeric(newDepartmentId, "new_department_id")
+	ok, verr := r.ErrorValid(&valid, "transfer post")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	uid := r.GetUid(c)
+	post, err := models.GetPost(postId)
+	if err != nil {
+		logging.Error("transfer department error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	// 判断是否为校务帖子
+	if post.Type != models.POST_SCHOOL_TYPE {
+		r.Error(c, e.ERROR_POST_TYPE, "")
+		return
+	}
+	err = models.DistributePost(postId, newDepartmentId)
 	if err != nil {
 		logging.Error("transfer department error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
