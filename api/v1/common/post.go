@@ -47,7 +47,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		valid.Range(searchModeint, 0, 1, "search_mode")
 		if solved != "" {
 			solvedint := util.AsInt(solved)
-			valid.Range(solvedint, 0, 2, "solved")
+			valid.Range(solvedint, 0, 3, "solved")
 		}
 		ok, verr = r.ErrorValid(&valid, "Get posts")
 		if !ok {
