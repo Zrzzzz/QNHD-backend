@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	ManagerLogType "qnhd/enums/MangerLogType"
 
 	"gorm.io/gorm"
 )
@@ -10,7 +11,7 @@ import (
 type Banned struct {
 	Model
 	Uid    uint64 `json:"uid"`
-	Doer   string `json:"doer"`
+	Doer   uint64 `json:"doer"`
 	Reason string `json:"reason"`
 }
 
@@ -22,7 +23,7 @@ func GetBanned(maps interface{}) ([]Banned, error) {
 	return bans, nil
 }
 
-func AddBannedByUid(uid uint64, doer string, reason string) (uint64, error) {
+func AddBannedByUid(uid uint64, doer uint64, reason string) (uint64, error) {
 	var ban = Banned{Uid: uid, Doer: doer, Reason: reason}
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&ban).Error; err != nil {
@@ -36,6 +37,8 @@ func AddBannedByUid(uid uint64, doer string, reason string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	addManagerLog(doer, uid, ManagerLogType.USER_BAN)
 
 	return ban.Id, nil
 }
@@ -54,6 +57,9 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 		}
 		return nil
 	})
+
+	addManagerLog(ban.Doer, uid, ManagerLogType.USER_UNBAN)
+
 	return ban.Id, err
 }
 

@@ -1,8 +1,10 @@
 package models
 
 import (
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/PostReplyType"
 	"qnhd/pkg/filter"
+	"qnhd/pkg/util"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -72,9 +74,10 @@ func GetPostReplyResponses(postId string) ([]PostReplyResponse, error) {
 
 // 添加帖子的回复
 func AddPostReply(maps map[string]interface{}) (uint64, error) {
+	sender := maps["sender"].(PostReplyType.Enum)
 	var pr = PostReply{
 		PostId:  maps["post_id"].(uint64),
-		Sender:  maps["sender"].(PostReplyType.Enum),
+		Sender:  sender,
 		Content: filter.Filter(maps["content"].(string)),
 	}
 	urls := maps["urls"].([]string)
@@ -89,6 +92,10 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 		}
 		return nil
 	})
+	if sender == PostReplyType.SCHOOL {
+		uid := maps["uid"].(string)
+		addManagerLog(util.AsUint(uid), pr.Id, ManagerLogType.POST_REPLY)
+	}
 	return pr.Id, err
 }
 

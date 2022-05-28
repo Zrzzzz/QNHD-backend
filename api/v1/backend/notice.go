@@ -36,6 +36,7 @@ func GetNotices(c *gin.Context) {
 // @return
 // @route /b/notice
 func AddNotice(c *gin.Context) {
+	uid := r.GetUid(c)
 	sender := c.PostForm("sender")
 	title := c.PostForm("title")
 	content := c.PostForm("content")
@@ -52,7 +53,7 @@ func AddNotice(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	err := models.AddNoticeToAllUsers(map[string]interface{}{
+	err := models.AddNoticeToAllUsers(uid, map[string]interface{}{
 		"sender":  sender,
 		"title":   title,
 		"content": content,
@@ -112,6 +113,7 @@ func AddNoticeTemplate(c *gin.Context) {
 // @return
 // @route /b/notice/modify
 func EditNoticeTemplate(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.PostForm("id")
 	sender := c.PostForm("sender")
 	title := c.PostForm("title")
@@ -128,7 +130,7 @@ func EditNoticeTemplate(c *gin.Context) {
 
 	intid := util.AsUint(id)
 
-	err := models.EditNoticeTemplate(intid, map[string]interface{}{
+	err := models.EditNoticeTemplate(uid, intid, map[string]interface{}{
 		"sender":  sender,
 		"title":   title,
 		"content": content,
@@ -147,6 +149,7 @@ func EditNoticeTemplate(c *gin.Context) {
 // @return
 // @route /b/notice/delete
 func DeleteNotice(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -158,7 +161,7 @@ func DeleteNotice(c *gin.Context) {
 		return
 	}
 	intid := util.AsUint(id)
-	_, err := models.DeleteNoticeTemplate(intid)
+	_, err := models.DeleteNoticeTemplate(uid, intid)
 	if err != nil {
 		logging.Error("Delete notices error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

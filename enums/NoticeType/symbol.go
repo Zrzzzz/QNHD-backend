@@ -11,6 +11,6 @@ var msgSymbol = map[Enum]string{
 	POST_DEPARTMENT_TRANSFER: "post_department_transfer",
 }
 
-func GetSymbol(code Enum) string {
+func (code Enum) GetSymbol() string {
 	return msgSymbol[code]
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"qnhd/enums/LikeType"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/NoticeType"
 	"qnhd/enums/PostCampusType"
 	"qnhd/enums/PostEtagType"
@@ -456,7 +457,7 @@ func EditPost(postId string, maps map[string]interface{}) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Updates(maps).Error
 }
 
-func EditPostValue(postId string, value int) error {
+func EditPostValue(uid, postId string, value int) error {
 	var post Post
 	if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
 		return err
@@ -467,18 +468,27 @@ func EditPostValue(postId string, value int) error {
 	}
 	// 这里对标签进行操作 如果置为0，则置为none，否则设置为top
 	if value > 0 {
-		EditPostEtag(postId, PostEtagType.TOP)
+		EditPostEtag(uid, postId, PostEtagType.TOP)
+		addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_TOP)
 	} else {
-		EditPostEtag(postId, PostEtagType.NONE)
+		EditPostEtag(uid, postId, PostEtagType.NONE)
+		addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_UNTOP)
+
 	}
 	return EditPost(postId, map[string]interface{}{"value": value})
 }
 
-func EditPostEtag(postId string, t PostEtagType.Enum) error {
-	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", PostEtagType.GetSymbol(t)).Error
+func EditPostEtag(uid, postId string, t PostEtagType.Enum) error {
+	if t == PostEtagType.NONE {
+		addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_UNETAG)
+	} else {
+		addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_ETAG,
+			fmt.Sprintf("to: %s", t.GetSymbol()))
+	}
+	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", t.GetSymbol()).Error
 }
 
-func EditPostDepartment(postId string, departmentId string) error {
+func EditPostDepartment(uid, postId string, departmentId string) error {
 	// 判断是否存在部门
 	var (
 		newType Department
@@ -500,6 +510,9 @@ func EditPostDepartment(postId string, departmentId string) error {
 	}
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
+	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DEPARTMENT_TRANSFER,
+		fmt.Sprintf("from: %s, to: %s", rawType.Name, newType.Name))
+
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
 }
 
@@ -559,6 +572,9 @@ func EditPostType(postId string, typeId string) error {
 	}
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_TYPE_TRANSFER, []uint64{post.Uid}, []string{rawType.Name, post.Title, newType.Name})
+	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_TPYE_TRANSFER,
+		fmt.Sprintf("from: %s, to: %s", rawType.Name, newType.Name))
+
 	return EditPost(postId, map[string]interface{}{"type": typeId})
 }
 
@@ -584,6 +600,7 @@ func DeletePostAdmin(uid, postId string) (uint64, error) {
 	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
+	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DELETE)
 	return post.Id, nil
 }
 

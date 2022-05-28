@@ -80,7 +80,7 @@ func AddBanned(c *gin.Context) {
 	}
 	var id uint64
 	if !ifBanned {
-		id, err = models.AddBannedByUid(intuid, doer, reason)
+		id, err = models.AddBannedByUid(intuid, util.AsUint(doer), reason)
 		if err != nil {
 			logging.Error("Add banned error: %v", err)
 			r.Error(c, e.ERROR_DATABASE, err.Error())

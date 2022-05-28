@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -28,20 +29,13 @@ type userInfo struct {
 	Department models.Department `json:"department"`
 }
 
-func ForceTokenUpdate(c *gin.Context) {
-	if err := twtservice.SaveToken(); err != nil {
-		r.Error(c, e.ERROR_SERVER, err.Error())
-		return
-	}
-	r.OK(c, e.SUCCESS, nil)
-}
-
 // @method [get]
 // @way [query]
 // @param uid
 // @return
 // @route /b/user/detail
 func GetUserDetail(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.Query("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
@@ -63,6 +57,7 @@ func GetUserDetail(c *gin.Context) {
 		r.Error(c, e.ERROR_SERVER, err.Error())
 		return
 	}
+	models.AddManagerLogWithDetail(util.AsUint(doer), u.Uid, ManagerLogType.USER_DETAIL, "")
 	r.OK(c, e.SUCCESS, map[string]interface{}{"detail": detail})
 }
 

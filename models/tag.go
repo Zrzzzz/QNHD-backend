@@ -2,7 +2,9 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/TagPointType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
@@ -112,9 +114,17 @@ func AddTag(name, uid string) (uint64, error) {
 	return tag.Id, nil
 }
 
-func DeleteTagAdmin(id uint64) (uint64, error) {
+func DeleteTagAdmin(uid string, id uint64) (uint64, error) {
 	var tag Tag
-	err := deleteTag(id)
+	var err error
+	if err = db.Where("id = ?", id).Find(&tag).Error; err != nil {
+		return 0, err
+	}
+	if tag.Id > 0 {
+		err = deleteTag(id)
+	}
+	addManagerLogWithDetail(util.AsUint(uid), id, ManagerLogType.TAG_DELETE,
+		fmt.Sprintf("name: %s, creator: %v", tag.Name, tag.Uid))
 	return tag.Id, err
 }
 
@@ -165,12 +175,14 @@ func addTagLog(id uint64, point TagPointType.Enum) {
 }
 
 // 给tag加热度
-func AddTagLog(id uint64, point int64) error {
+func AddTagLog(uid string, id uint64, point int64) error {
 	var log = LogTag{TagId: id, Point: TagPointType.Enum(point)}
+	addManagerLogWithDetail(util.AsUint(uid), id, ManagerLogType.TAG_POINT_ADD, fmt.Sprintf("add: %d", point))
 	return db.Create(&log).Error
 }
 
 // 清空tag热度
-func ClearTagLog(id uint64) error {
+func ClearTagLog(uid string, id uint64) error {
+	addManagerLog(util.AsUint(uid), id, ManagerLogType.TAG_POINT_CLEAR)
 	return db.Where("tag_id = ?", id).Delete(&LogTag{}).Error
 }

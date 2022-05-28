@@ -1,6 +1,7 @@
 package backend
 
 import (
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/logging"
@@ -38,6 +39,7 @@ func GetTags(c *gin.Context) {
 // @return
 // @route /b/tag/detail
 func GetTagDetail(c *gin.Context) {
+	doer := r.GetUid(c)
 	id := c.Query("id")
 	valid := validation.Validation{}
 	valid.Required(id, "id")
@@ -69,6 +71,8 @@ func GetTagDetail(c *gin.Context) {
 		r.Error(c, e.ERROR_SERVER, err.Error())
 		return
 	}
+	models.AddManagerLogWithDetail(util.AsUint(doer), u.Uid, ManagerLogType.USER_DETAIL, "")
+
 	r.OK(c, e.SUCCESS, map[string]interface{}{"detail": detail})
 }
 
@@ -96,8 +100,8 @@ func GetHotTag(c *gin.Context) {
 // @return
 // @route /b/tag
 func DeleteTag(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.Query("id")
-
 	valid := validation.Validation{}
 	valid.Required(id, "id")
 	valid.Numeric(id, "id")
@@ -108,7 +112,7 @@ func DeleteTag(c *gin.Context) {
 	}
 
 	intid := util.AsUint(id)
-	_, err := models.DeleteTagAdmin(intid)
+	_, err := models.DeleteTagAdmin(uid, intid)
 	if err != nil {
 		logging.Error("Delete tags error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -123,6 +127,7 @@ func DeleteTag(c *gin.Context) {
 // @return
 // @route /b/tag/point
 func AddTagPoint(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.PostForm("id")
 	point := c.PostForm("point")
 	valid := validation.Validation{}
@@ -141,7 +146,7 @@ func AddTagPoint(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	err := models.AddTagLog(util.AsUint(id), int64(util.AsInt(point)))
+	err := models.AddTagLog(uid, util.AsUint(id), int64(util.AsInt(point)))
 	if err != nil {
 		logging.Error("Add tag point error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -156,6 +161,7 @@ func AddTagPoint(c *gin.Context) {
 // @return
 // @route /b/tag/clear
 func ClearTagPoint(c *gin.Context) {
+	uid := r.GetUid(c)
 	id := c.Query("id")
 
 	valid := validation.Validation{}
@@ -166,7 +172,7 @@ func ClearTagPoint(c *gin.Context) {
 		r.OK(c, e.INVALID_PARAMS, map[string]interface{}{"error": verr.Error()})
 		return
 	}
-	err := models.ClearTagLog(util.AsUint(id))
+	err := models.ClearTagLog(uid, util.AsUint(id))
 	if err != nil {
 		logging.Error("Clear tag point error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

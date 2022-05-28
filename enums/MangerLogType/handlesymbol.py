@@ -1,0 +1,33 @@
+a = """USER_BAN
+	USER_UNBAN
+
+	USER_BLOCK
+	USER_UNBLOCK
+
+	POST_DELETE
+	FLOOR_DELETE
+
+	POST_ETAG
+	POST_UNETAG
+
+	POST_TOP
+	POST_UNTOP
+
+	POST_REPLY
+	POST_DEPARTMENT_TRANSFER
+	POST_TPYE_TRANSFER
+
+	USER_ADD
+	USER_PERMISSION_CHANGE
+
+	NOTICE_NEW
+	NOTICE_DELETE
+	NOTICE_CHANGE
+
+	USER_DETAIL"""
+
+for i in a.split('\n'):
+	if i:
+		print(f'{i.strip()}: "{i.lower().strip()}",')
+	else:
+		print()

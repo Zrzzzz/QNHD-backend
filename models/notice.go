@@ -1,6 +1,9 @@
 package models
 
 import (
+	ManagerLogType "qnhd/enums/MangerLogType"
+	"qnhd/pkg/util"
+
 	"gorm.io/gorm"
 )
 
@@ -19,7 +22,7 @@ func GetNotices() ([]Notice, error) {
 }
 
 // 向所有用户添加通知
-func AddNoticeToAllUsers(data map[string]interface{}) error {
+func AddNoticeToAllUsers(uid string, data map[string]interface{}) error {
 	data["symbol"] = "public"
 	id, err := AddNoticeTemplate(data)
 	if err != nil {
@@ -29,6 +32,8 @@ func AddNoticeToAllUsers(data map[string]interface{}) error {
 	if err := addUnreadNoticeToAllUser(id, data["pub_at"].(string)); err != nil {
 		return err
 	}
+
+	addManagerLog(util.AsUint(uid), id, ManagerLogType.NOTICE_NEW)
 	return nil
 }
 
@@ -44,7 +49,7 @@ func AddNoticeTemplate(data map[string]interface{}) (uint64, error) {
 	return notice.Id, err
 }
 
-func EditNoticeTemplate(id uint64, data map[string]interface{}) error {
+func EditNoticeTemplate(uid string, id uint64, data map[string]interface{}) error {
 	if err := db.Where("id = ?", id).Updates(&Notice{
 		Sender:  data["sender"].(string),
 		Title:   data["title"].(string),
@@ -52,10 +57,11 @@ func EditNoticeTemplate(id uint64, data map[string]interface{}) error {
 	}).Error; err != nil {
 		return err
 	}
+	addManagerLog(util.AsUint(uid), id, ManagerLogType.NOTICE_EDIT)
 	return nil
 }
 
-func DeleteNoticeTemplate(id uint64) (uint64, error) {
+func DeleteNoticeTemplate(uid string, id uint64) (uint64, error) {
 	var notice Notice
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {
@@ -63,5 +69,6 @@ func DeleteNoticeTemplate(id uint64) (uint64, error) {
 		}
 		return db.Where("notice_id = ?", id).Delete(&LogUnreadNotice{}).Error
 	})
+	addManagerLog(util.AsUint(uid), id, ManagerLogType.NOTICE_DELETE)
 	return notice.Id, err
 }

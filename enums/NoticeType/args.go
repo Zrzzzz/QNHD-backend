@@ -11,6 +11,6 @@ var templateArgs = map[Enum][]string{
 	POST_DEPARTMENT_TRANSFER: {"post", "department"},
 }
 
-func GetArgs(code Enum) []string {
+func (code Enum) GetArgs() []string {
 	return templateArgs[code]
 }
