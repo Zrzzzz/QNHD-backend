@@ -542,7 +542,7 @@ func DistributePost(postId string, departmentId string) error {
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId, "solved": PostSolveType.DISTRIBUTED})
 }
 
-func EditPostType(postId string, typeId string) error {
+func EditPostType(uid, postId string, typeId string) error {
 	// 判断是否存在类型
 	var (
 		newType PostType
