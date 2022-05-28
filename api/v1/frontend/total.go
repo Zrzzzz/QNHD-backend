@@ -21,6 +21,7 @@ const (
 	Game
 	PostType
 	Banner
+	User
 )
 
 var FrontTypes = [...]FrontType{
@@ -34,6 +35,7 @@ var FrontTypes = [...]FrontType{
 	Game,
 	PostType,
 	Banner,
+	User,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -149,5 +151,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Banner:
 		// 获取游戏列表
 		g.GET("/banners", GetBanners)
+	case User:
+		// 修改昵称
+		g.POST("/user/name", EditUserName)
 	}
 }

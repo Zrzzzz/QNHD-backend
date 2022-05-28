@@ -14,6 +14,7 @@ import (
 type User struct {
 	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
 	Nickname             string `json:"nickname" gorm:"default:''"`
+	RealName             string `json:"-"`
 	Number               string `json:"-" gorm:"default:''"`
 	Password             string `json:"-" gorm:"column:password;"`
 	PhoneNumber          string `json:"phone_number"`
@@ -224,6 +225,18 @@ func AddUsers(users []NewUserData) error {
 // 修改用户属性
 func EditUser(uid string, maps map[string]interface{}) error {
 	return db.Model(&User{}).Where("id = ?", uid).Updates(maps).Error
+}
+
+// 修改用户名称
+func EditUserName(uid string, name string) error {
+	var user User
+	if err := db.Where("nickname = ?", name).Find(&user).Error; err != nil {
+		return err
+	}
+	if user.Uid > 0 {
+		return fmt.Errorf("存在重复昵称")
+	}
+	return EditUser(uid, map[string]interface{}{"nickname": name})
 }
 
 // 修改密码，要求原密码
