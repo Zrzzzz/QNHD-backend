@@ -123,10 +123,6 @@ func TransferPostDepartment(c *gin.Context) {
 	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
 		logging.Error(err.Error())
 	}
-	// 记录历史
-	if err := models.AddPostDepartmentTransferLog(util.AsUint(uid), post.Id, post.DepartmentId, util.AsUint(newDepartmentId)); err != nil {
-		logging.Error(err.Error())
-	}
 	r.OK(c, e.SUCCESS, nil)
 }
 
@@ -160,7 +156,7 @@ func DistributePost(c *gin.Context) {
 		r.Error(c, e.ERROR_POST_TYPE, "")
 		return
 	}
-	err = models.DistributePost(postId, newDepartmentId)
+	err = models.DistributePost(uid, postId, newDepartmentId)
 	if err != nil {
 		logging.Error("transfer department error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -168,10 +164,6 @@ func DistributePost(c *gin.Context) {
 	}
 	// 向新的部门的管理员发通知
 	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
-		logging.Error(err.Error())
-	}
-	// 记录历史
-	if err := models.AddPostDepartmentTransferLog(util.AsUint(uid), post.Id, post.DepartmentId, util.AsUint(newDepartmentId)); err != nil {
 		logging.Error(err.Error())
 	}
 	r.OK(c, e.SUCCESS, nil)
@@ -212,10 +204,7 @@ func TransferPostType(c *gin.Context) {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}
-	// 记录历史
-	if err := models.AddPostTypeTransferLog(util.AsUint(uid), post.Id, post.Type, util.AsInt(newTypeId)); err != nil {
-		logging.Error(err.Error())
-	}
+
 	r.OK(c, e.SUCCESS, nil)
 }
 

@@ -517,7 +517,7 @@ func EditPostDepartment(uid, postId string, departmentId string) error {
 }
 
 // 分发帖子
-func DistributePost(postId string, departmentId string) error {
+func DistributePost(uid string, postId string, departmentId string) error {
 	// 判断是否存在部门
 	var (
 		newType Department
@@ -539,6 +539,8 @@ func DistributePost(postId string, departmentId string) error {
 	}
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
+	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DEPARTMENT_DISTRIBUTE,
+		fmt.Sprintf("to: %s", newType.Name))
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId, "solved": PostSolveType.DISTRIBUTED})
 }
 
