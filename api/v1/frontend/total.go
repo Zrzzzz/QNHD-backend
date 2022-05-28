@@ -152,6 +152,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		// 获取游戏列表
 		g.GET("/banners", GetBanners)
 	case User:
+		// 获取自己信息
+		g.GET("/user", GetUserInfo)
 		// 修改昵称
 		g.POST("/user/name", EditUserName)
 	}
