@@ -113,9 +113,17 @@ func transFloorsToResponses(floor *[]Floor, searchSubFloors bool) ([]FloorRespon
 	var err error
 	for _, f := range *floor {
 		fr := f.geneResponse(searchSubFloors, true)
+
 		if fr.Error != nil {
 			err = errors.Wrap(err, fr.Error.Error())
 		} else {
+			var post Post
+			db.Unscoped().Where("id = ?", fr.PostId).Find(&post)
+			if post.Type == POST_SCHOOL_TYPE {
+				var user User
+				db.Where("uid = ?", fr.Uid).Find(&user)
+				fr.Nickname = user.realnameFull()
+			}
 			frs = append(frs, fr)
 		}
 	}
@@ -143,35 +151,6 @@ var FLOOR_NAME = []string{
 	"9教", "19教", "23教", "26教", "33教", "44教", "45教", "46教", "47教", "规圆楼", "矩方楼", "天麟广场", "北洋广场", "北洋纪念亭", "求实会堂", "天津大学星", "三问桥", "太雷广场", "北洋纪念林", "鹏翔公寓", "克拉公寓", "留园", "格园", "诚园", "正园", "修园", "治园", "平园", "知园", "梅园餐厅", "兰园餐厅", "桃园餐厅", "棠园餐厅", "竹园餐厅", "留园餐厅", "青园餐厅", "菊园餐厅", "天大美食广场", "校训石", "尚贤石", "敬业湖", "友谊湖", "爱晚湖", "1895行政楼", "郑东图书馆", "科学图书馆", "海棠书屋", "土立方", "大学生活动中心", "体育馆", "游泳馆", "土木馆", "水利馆", "校史馆", "冯骥才艺术研究院", "王学仲艺术研究所", "天南楼", "北洋门诊部", "北洋超市", "罗森便利店", "京东便利店", "小诚食", "菜鸟驿站", "天大四季村", "天津大学幼儿园", "斗兽场", "求实影院", "海小棠", "洗衣房", "天大纪念品店", "理发店", "修车铺", "隔壁南开", "地科院",
 }
 
-func getNickname(cnt int) string {
-	idx := cnt % len(FLOOR_NAME)
-	if cnt/len(FLOOR_NAME) >= 1 {
-		return fmt.Sprintf("%s%d号", FLOOR_NAME[idx], cnt/len(FLOOR_NAME)+1)
-	}
-	return FLOOR_NAME[idx]
-}
-
-func getFloorNickname(uid uint64, post *Post) (nickname string) {
-	// 如果是帖子主人
-	if post.Uid == uid {
-		nickname = OWNER_NAME
-	} else {
-		// 是否已经发过言
-		var floor Floor
-		db.Unscoped().Where("uid = ? AND post_id = ?", uid, post.Id).Find(&floor)
-		// 如果发过言
-		if floor.Id > 0 {
-			nickname = floor.Nickname
-		} else {
-			var cnt int64
-			// 除去owner, 这里加上被删除的楼
-			db.Model(&Floor{}).Unscoped().Where("post_id = ? AND uid <> ?", post.Id, post.Uid).Distinct("uid").Count(&cnt)
-			nickname = getNickname(int(cnt))
-		}
-	}
-	return
-}
-
 // 根据id返回
 func GetFloor(floorId string) (Floor, error) {
 	var floor Floor
@@ -188,6 +167,13 @@ func GetFloorResponse(floorId string) (FloorResponse, error) {
 		return ret, err
 	}
 	fr := floor.geneResponse(true, true)
+	var post Post
+	db.Unscoped().Where("id = ?", fr.PostId).Find(&post)
+	if post.Type == POST_SCHOOL_TYPE {
+		var user User
+		db.Where("uid = ?", fr.Uid).Find(&user)
+		fr.Nickname = user.realnameFull()
+	}
 	return fr, fr.Error
 }
 
@@ -357,6 +343,8 @@ func GetFloorReplyResponsesWithUid(c *gin.Context, floorId, uid string) ([]Floor
 func AddFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	uid := maps["uid"].(uint64)
+	var user User
+	db.Where("id = ?", uid).Find(&user)
 	postId := maps["postId"].(uint64)
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
@@ -367,8 +355,12 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		Uid:      uid,
 		PostId:   postId,
 		Content:  filter.Filter(maps["content"].(string)),
-		Nickname: getFloorNickname(uid, &post),
+		Nickname: user.Nickname,
 		ImageURL: maps["image_url"].(string),
+	}
+	// 如果是校务帖实名
+	if post.Type == POST_SCHOOL_TYPE {
+		newFloor.Nickname = user.realname()
 	}
 	if err := db.Create(&newFloor).Error; err != nil {
 		return 0, err
@@ -408,6 +400,8 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	var post Post
 	uid := maps["uid"].(uint64)
+	var user User
+	db.Where("id = ?", uid).Find(&user)
 	// 判断存在floor
 	floorId := maps["replyToFloor"].(uint64)
 	var toFloor Floor
@@ -424,10 +418,14 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		Uid:         uid,
 		PostId:      toFloor.PostId,
 		Content:     maps["content"].(string),
-		Nickname:    getFloorNickname(uid, &post),
+		Nickname:    user.Nickname,
 		ImageURL:    maps["image_url"].(string),
 		ReplyTo:     toFloor.Id,
 		ReplyToName: toFloor.Nickname,
+	}
+	// 如果是校务帖实名
+	if post.Type == POST_SCHOOL_TYPE {
+		newFloor.Nickname = user.realname()
 	}
 	// 判断子楼层
 	// 如果没有subto，说明回复的不是子楼层

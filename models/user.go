@@ -14,7 +14,7 @@ import (
 type User struct {
 	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
 	Nickname             string `json:"nickname" gorm:"default:''"`
-	RealName             string `json:"-"`
+	Realname             string `json:"-"`
 	Number               string `json:"-" gorm:"default:''"`
 	Password             string `json:"-" gorm:"column:password;"`
 	PhoneNumber          string `json:"phone_number"`
@@ -236,7 +236,17 @@ func EditUserName(uid string, name string) error {
 	if user.Uid > 0 {
 		return fmt.Errorf("存在重复昵称")
 	}
-	return EditUser(uid, map[string]interface{}{"nickname": name})
+	// 修改以往的帖子和楼层
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&Post{}).Where("uid = ?", uid).Update("nickname", name).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&Floor{}).Where("uid = ?", uid).Update("nickname", name).Error; err != nil {
+			return err
+		}
+		return db.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
+	})
+	return err
 }
 
 // 修改密码，要求原密码
@@ -251,4 +261,18 @@ func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 // 删除用户
 func DeleteUser(uid uint64) error {
 	return db.Where("id = ?", uid).Delete(&User{}).Error
+}
+
+func (u *User) realname() string {
+	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+		return u.Nickname
+	}
+	return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
+}
+
+func (u *User) realnameFull() string {
+	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+		return u.Nickname
+	}
+	return fmt.Sprintf("%s %s", u.Number, u.Realname)
 }

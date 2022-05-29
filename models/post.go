@@ -37,8 +37,9 @@ type Post struct {
 	Solved       PostSolveType.Enum  `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	Nickname string `json:"nickname"`
 
 	// 各种数量
 	FavCount  uint64 `json:"fav_count" gorm:"default:0"`
@@ -168,7 +169,14 @@ func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
 	var prs = []PostResponse{}
 	var err error
 	for _, p := range *posts {
+
 		pr := p.geneResponse(true)
+
+		if pr.Type == POST_SCHOOL_TYPE {
+			var user User
+			db.Where("uid = ?", pr.Uid).Find(&user)
+			pr.Nickname = user.realnameFull()
+		}
 		if pr.Error != nil {
 			err = giterrors.Wrap(err, pr.Error.Error())
 		} else {
@@ -225,6 +233,11 @@ func GetPostResponse(postId string) (PostResponse, error) {
 		return pr, err
 	}
 	pr = p.geneResponse(true)
+	if pr.Type == POST_SCHOOL_TYPE {
+		var user User
+		db.Where("uid = ?", pr.Uid).Find(&user)
+		pr.Nickname = user.realnameFull()
+	}
 	return pr, pr.Error
 }
 
@@ -391,12 +404,16 @@ func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUs
 
 func AddPost(maps map[string]interface{}) (uint64, error) {
 	var err error
+	uid := maps["uid"].(uint64)
+	var user User
+	db.Where("id = ?", uid).Find(&user)
 	var post = &Post{
-		Type:    maps["type"].(int),
-		Uid:     maps["uid"].(uint64),
-		Campus:  maps["campus"].(PostCampusType.Enum),
-		Title:   filter.Filter(maps["title"].(string)),
-		Content: filter.Filter(maps["content"].(string)),
+		Type:     maps["type"].(int),
+		Uid:      uid,
+		Nickname: user.Nickname,
+		Campus:   maps["campus"].(PostCampusType.Enum),
+		Title:    filter.Filter(maps["title"].(string)),
+		Content:  filter.Filter(maps["content"].(string)),
 	}
 	if post.Type == POST_SCHOOL_TYPE {
 		// 先对department_id进行查找，不存在要报错
@@ -404,6 +421,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		if err = db.Where("id = ?", departId).First(&Department{}).Error; err != nil {
 			return 0, err
 		}
+		post.Nickname = user.realname()
 		post.DepartmentId = departId
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
@@ -521,21 +539,14 @@ func DistributePost(uid string, postId string, departmentId string) error {
 	// 判断是否存在部门
 	var (
 		newType Department
-		rawType Department
 	)
+	fmt.Println(departmentId)
 	if err := db.First(&newType, departmentId).Error; err != nil {
 		return err
 	}
 	post, err := GetPost(postId)
 	if err != nil {
 		return err
-	}
-	if err := db.First(&rawType, post.DepartmentId).Error; err != nil {
-		return err
-	}
-	// 如果类型相同
-	if rawType.Id == newType.Id {
-		return fmt.Errorf("不能修改为同类型")
 	}
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
