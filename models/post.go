@@ -544,12 +544,6 @@ func DistributePost(uid string, postId string, departmentId string) error {
 	if err := db.First(&newType, departmentId).Error; err != nil {
 		return err
 	}
-	post, err := GetPost(postId)
-	if err != nil {
-		return err
-	}
-	// 通知帖子用户
-	addNoticeWithTemplate(NoticeType.POST_DEPARTMENT_TRANSFER, []uint64{post.Uid}, []string{post.Title, newType.Name})
 	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DEPARTMENT_DISTRIBUTE,
 		fmt.Sprintf("to: %s", newType.Name))
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId, "solved": PostSolveType.DISTRIBUTED})
