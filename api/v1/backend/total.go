@@ -49,6 +49,7 @@ func Setup(g *gin.RouterGroup) {
 	// 获取token
 	g.GET("/auth", GetAuth)
 	g.GET("/auth/:token", RefreshToken)
+	g.GET("/auth/passwd", GetAuthPasswd)
 	g.Use(jwt.JWT())
 	g.Use(permission.IdentityDemand(IdentityType.ADMIN))
 	for _, t := range BackendTypes {
@@ -137,7 +138,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 修改帖子额外标签
 		g.POST("/post/etag", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostEtag)
 		// 删除指定帖子
-		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeletePost)
+		g.GET("/post/delete", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true, StuAdmin: true}), DeletePost)
 		// 恢复指定帖子
 		g.POST("/post/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverPost)
 		// 添加帖子标签
@@ -161,7 +162,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 查询多个楼层
 		g.GET("/floors", GetFloors)
 		// 删除指定楼层
-		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), DeleteFloor)
+		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true, StuAdmin: true}), DeleteFloor)
 		// 恢复指定楼层
 		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
 	case Tag:

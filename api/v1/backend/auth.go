@@ -89,6 +89,24 @@ func auth(c *gin.Context, user models.User) {
 // @way [query]
 // @param token
 // @return token
+// @route /b/auth/token
+func GetAuthToken(c *gin.Context) {
+	common.GetAuthToken(c)
+}
+
+// @method [get]
+// @way [query]
+// @param token
+// @return token
+// @route /b/auth/token
+func GetAuthPasswd(c *gin.Context) {
+	common.GetAuthPasswd(c)
+}
+
+// @method [get]
+// @way [query]
+// @param token
+// @return token
 // @route /b/auth/:token
 func RefreshToken(c *gin.Context) {
 	common.RefreshToken(c)
