@@ -38,7 +38,7 @@ func GetReports(c *gin.Context) {
 	}
 	data := make(map[string]interface{})
 	if ReportType.Enum(util.AsInt(rType)) == ReportType.POST {
-		list, err := models.GetPostReports(c, isDeleted == "1")
+		list, err := models.GetPostReports(c)
 		if err != nil {
 			logging.Error("Get report error: %v", err)
 			r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -47,7 +47,7 @@ func GetReports(c *gin.Context) {
 		data["list"] = list
 		data["total"] = len(list)
 	} else {
-		list, err := models.GetFloorReports(c, isDeleted == "1")
+		list, err := models.GetFloorReports(c)
 		if err != nil {
 			logging.Error("Get report error: %v", err)
 			r.Error(c, e.ERROR_DATABASE, err.Error())
