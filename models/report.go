@@ -32,10 +32,9 @@ type FloorReportResponse struct {
 
 func GetPostReports(c *gin.Context) ([]PostReportResponse, error) {
 	var posts []Post
-	var ret []PostReportResponse
-	ids := db.Model(&Report{}).Select("post_id", "count(*) as cnt").Where("type = ? AND solved = false", ReportType.POST).Group("post_id").Order("cnt DESC")
-	d := db.Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.post p ON p.id = a.post_id").
-		Scopes(util.Paginate(c))
+	var ret = []PostReportResponse{}
+	ids := db.Model(&Report{}).Select("post_id", "count(*) as cnt").Where("type = ? AND solved = false", ReportType.POST).Group("post_id").Order("cnt DESC").Scopes(util.Paginate(c))
+	d := db.Unscoped().Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.post p ON p.id = a.post_id")
 
 	if err := d.Find(&posts).Error; err != nil {
 		return nil, err
@@ -51,10 +50,9 @@ func GetPostReports(c *gin.Context) ([]PostReportResponse, error) {
 
 func GetFloorReports(c *gin.Context) ([]FloorReportResponse, error) {
 	var floors []Floor
-	var ret []FloorReportResponse
-	ids := db.Model(&Report{}).Select("floor_id", "count(*) as cnt").Where("type = ? AND solved = false", ReportType.FLOOR).Group("floor_id").Order("cnt DESC")
-	d := db.Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.floor p ON p.id = a.floor_id").
-		Scopes(util.Paginate(c))
+	var ret = []FloorReportResponse{}
+	ids := db.Model(&Report{}).Select("floor_id", "count(*) as cnt").Where("type = ? AND solved = false", ReportType.FLOOR).Group("floor_id").Order("cnt DESC").Scopes(util.Paginate(c))
+	d := db.Unscoped().Select("p.*").Table("(?) as a", ids).Joins("JOIN qnhd.floor p ON p.id = a.floor_id")
 
 	if err := d.Find(&floors).Error; err != nil {
 		return nil, err
