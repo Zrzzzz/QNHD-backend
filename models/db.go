@@ -3,8 +3,6 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 	"time"
@@ -32,15 +30,15 @@ func Setup(debug bool) {
 	if debug {
 		logLevel = logger.Info
 	} else {
-		logLevel = logger.Silent
+		logLevel = logger.Warn
 	}
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logging.GormLogger(), // io writer
 		logger.Config{
 			SlowThreshold:             time.Second, // Slow SQL threshold
 			LogLevel:                  logLevel,
-			IgnoreRecordNotFoundError: false, // Ignore ErrRecordNotFound error for logger
-			Colorful:                  true,  // Disable color
+			IgnoreRecordNotFoundError: true,  // Ignore ErrRecordNotFound error for logger
+			Colorful:                  false, // Disable color
 		},
 	)
 	db, err = gorm.Open(postgres.New(postgres.Config{

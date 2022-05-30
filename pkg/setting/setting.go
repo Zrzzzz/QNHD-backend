@@ -21,10 +21,12 @@ type App struct {
 
 	RuntimeRootPath string
 
-	LogSavePath string
-	LogSaveName string
-	LogFileExt  string
-	TimeFormat  string
+	GinLogSavePath  string
+	GormLogSavePath string
+	LogSavePath     string
+	LogSaveName     string
+	LogFileExt      string
+	TimeFormat      string
 
 	ImageSavePath  string
 	ImageMaxSize   int

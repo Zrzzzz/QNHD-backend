@@ -8,6 +8,7 @@ import (
 	"qnhd/api/v1/frontend"
 	"qnhd/middleware/crossfield"
 	"qnhd/middleware/safety"
+	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +31,7 @@ func initRouter() (r *gin.Engine) {
 	gin.SetMode(setting.ServerSetting.RunMode)
 	r = gin.New()
 
-	r.Use(gin.Logger())
+	r.Use(logging.GinLogger())
 	r.Use(gin.Recovery())
 
 	// 解决跨域问题
