@@ -124,6 +124,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/message/replys", GetMessagePostReplys)
 		// 获取未读通知
 		g.GET("/message/notices", GetMessageNotices)
+		// 获取管理员通知
+		g.GET("/message/notices/department", GetMessageDepartmentNotices)
 		// 获取未读点赞
 		g.GET("/message/likes", GetMessageLikes)
 		// 获取未读数量

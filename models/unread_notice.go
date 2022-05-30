@@ -64,7 +64,7 @@ func GetUnreadNotices(c *gin.Context, uid uint64) ([]UnreadNoticeResponse, error
 }
 
 // 通知所有用户
-func addUnreadNoticeToAllUser(noticeId uint64, pubAt string) error {
+func addUnreadNoticeToAllUser(noticeId uint64, pubAt string, departmentOnly bool) error {
 	var (
 		notice  Notice
 		users   []userResult
@@ -82,14 +82,16 @@ func addUnreadNoticeToAllUser(noticeId uint64, pubAt string) error {
 		logs = append(logs, LogUnreadNotice{Uid: u.Id, NoticeId: notice.Id, PubAt: pubAt})
 		numbers = append(numbers, u.Number)
 	}
-	// 一次插入2个参数，只要少于65535就ok，经测试250效率较高
-	insertCount := 250
-	for i := 0; i < int(math.Ceil(float64(len(logs))/float64(insertCount))); i++ {
-		min := (i + 1) * insertCount
-		if len(logs) < min {
-			min = len(logs)
+	if !departmentOnly {
+		// 一次插入2个参数，只要少于65535就ok，经测试250效率较高
+		insertCount := 250
+		for i := 0; i < int(math.Ceil(float64(len(logs))/float64(insertCount))); i++ {
+			min := (i + 1) * insertCount
+			if len(logs) < min {
+				min = len(logs)
+			}
+			db.Create(logs[i*insertCount : min])
 		}
-		db.Create(logs[i*insertCount : min])
 	}
 	twtservice.NotifyNotice(notice.Sender, notice.Title, numbers...)
 	return nil

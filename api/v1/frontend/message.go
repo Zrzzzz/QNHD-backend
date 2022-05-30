@@ -35,6 +35,25 @@ func GetMessageNotices(c *gin.Context) {
 
 // @method [get]
 // @way [query]
+// @param
+// @return
+// @route /f/message/notices/department
+func GetMessageDepartmentNotices(c *gin.Context) {
+	list, err := models.GetNotices(c, true)
+	if err != nil {
+		logging.Error("Get department notices error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	data := make(map[string]interface{})
+	data["list"] = list
+	data["total"] = len(list)
+
+	r.OK(c, e.SUCCESS, data)
+}
+
+// @method [get]
+// @way [query]
 // @param uid
 // @return
 // @route /f/message/floors
