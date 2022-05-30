@@ -78,14 +78,23 @@ func getReports(rType ReportType.Enum, id uint64) (reports []Report) {
 }
 
 func AddReport(maps map[string]interface{}) error {
-	var report = &Report{
-		Uid:     maps["uid"].(uint64),
-		Type:    maps["type"].(int),
-		PostId:  maps["post_id"].(uint64),
-		FloorId: maps["floor_id"].(uint64),
+	uid := maps["uid"].(uint64)
+	t := maps["type"].(int)
+	postId := maps["post_id"].(uint64)
+	floorId := maps["floor_id"].(uint64)
+	var report Report
+	db.Where("uid = ? AND type = ? AND post_id = ? AND floor_id = ?", uid, t, postId, floorId).Find(&report)
+	if report.Id > 0 {
+		return fmt.Errorf("不能多次举报哦")
+	}
+	report = Report{
+		Uid:     uid,
+		Type:    t,
+		PostId:  postId,
+		FloorId: floorId,
 		Reason:  maps["reason"].(string),
 	}
-	err := db.Create(report).Error
+	err := db.Create(&report).Error
 	return err
 }
 
