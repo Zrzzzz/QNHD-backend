@@ -268,10 +268,10 @@ func ResetUserName(uid string) error {
 		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
-		if e := tx.Model(&Post{}).Where("uid = ? AND type = ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+		if e := tx.Model(&Post{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
-		if e := tx.Model(&Floor{}).Where("uid = ? AND type = ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+		if e := tx.Model(&Floor{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
 		return nil
