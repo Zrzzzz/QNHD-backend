@@ -260,7 +260,7 @@ func EditUserName(uid string, name string) error {
 }
 
 func ResetUserName(uid string) error {
-	return db.Model(&User{}).Where("uid = ?", uid).Update("nickname", genNickname()).Error
+	return db.Model(&User{}).Where("id = ?", uid).Update("nickname", genNickname()).Error
 }
 
 func genNickname() string {

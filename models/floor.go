@@ -122,7 +122,7 @@ func transFloorsToResponses(floor *[]Floor, searchSubFloors bool) ([]FloorRespon
 			db.Unscoped().Where("id = ?", fr.PostId).Find(&post)
 			if post.Type == POST_SCHOOL_TYPE {
 				var user User
-				db.Where("uid = ?", fr.Uid).Find(&user)
+				db.Where("id = ?", fr.Uid).Find(&user)
 				fr.Nickname = user.realnameFull()
 			}
 			frs = append(frs, fr)
