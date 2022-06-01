@@ -104,6 +104,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/users/manager", permission.RightDemand(models.UserRight{Super: true}), GetManagers)
 		// 修改管理员密码
 		g.POST("/user/modify/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
+		// 重置用户昵称
+		g.POST("/user/nickname/reset", permission.RightDemand(models.UserRight{Super: true}), ResetUserNickname)
 		// 修改自己密码
 		g.POST("/user/passwd/modify", EditUserPasswd)
 		// 修改自己手机

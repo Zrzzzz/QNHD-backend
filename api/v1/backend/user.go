@@ -426,8 +426,8 @@ func DeleteManager(c *gin.Context) {
 // @way [name]
 // @param
 // @return
-// @route /b/user/name/reset
-func ResetUserName(c *gin.Context) {
+// @route /b/user/nickname/reset
+func ResetUserNickname(c *gin.Context) {
 	uid := c.PostForm("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
