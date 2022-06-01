@@ -575,8 +575,11 @@ func EditPostType(uid, postId string, typeId string) error {
 	}
 	// 如果是校务类型，需要去掉部门
 	if post.Type == POST_SCHOOL_TYPE {
-		return EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0})
+		if err := EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0}); err != nil {
+			return err
+		}
 	}
+	// 更新楼层type
 	// 通知帖子用户
 	addNoticeWithTemplate(NoticeType.POST_TYPE_TRANSFER, []uint64{post.Uid}, []string{rawType.Name, post.Title, newType.Name})
 	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_TPYE_TRANSFER,

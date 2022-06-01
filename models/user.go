@@ -230,6 +230,7 @@ func EditUser(uid string, maps map[string]interface{}) error {
 
 // 修改用户名称
 func EditUserName(uid string, name string) error {
+	const START_DAY = "2022-03-17"
 	var user User
 	if err := db.Where("nickname = ?", name).Find(&user).Error; err != nil {
 		return err
@@ -239,10 +240,10 @@ func EditUserName(uid string, name string) error {
 	}
 	// 修改以往的帖子和楼层
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&Post{}).Where("uid = ?", uid).Update("nickname", name).Error; err != nil {
+		if err := tx.Model(&Post{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&Floor{}).Where("uid = ?", uid).Update("nickname", name).Error; err != nil {
+		if err := tx.Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
 		return db.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error

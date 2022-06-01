@@ -22,6 +22,7 @@ const POST_SCHOOL_TYPE = 1
 type Floor struct {
 	Model
 	Uid         uint64 `json:"uid"`
+	Type        int    `json:"-" gorm:"column:type"`
 	PostId      uint64 `json:"post_id"`
 	Content     string `json:"content"`
 	Nickname    string `json:"nickname" `
@@ -357,6 +358,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		Content:  filter.Filter(maps["content"].(string)),
 		Nickname: user.Nickname,
 		ImageURL: maps["image_url"].(string),
+		Type:     post.Type,
 	}
 	// 如果是校务帖实名
 	if post.Type == POST_SCHOOL_TYPE {
@@ -420,6 +422,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		Content:     maps["content"].(string),
 		Nickname:    user.Nickname,
 		ImageURL:    maps["image_url"].(string),
+		Type:        post.Type,
 		ReplyTo:     toFloor.Id,
 		ReplyToName: toFloor.Nickname,
 	}
