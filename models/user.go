@@ -13,6 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const START_DAY = "2022-03-17"
+
 type User struct {
 	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
 	Nickname             string `json:"nickname" gorm:"default:''"`
@@ -238,7 +240,7 @@ func EditUser(uid string, maps map[string]interface{}) error {
 
 // 修改用户名称
 func EditUserName(uid string, name string) error {
-	const START_DAY = "2022-03-17"
+
 	var user User
 	if err := db.Where("nickname = ?", name).Find(&user).Error; err != nil {
 		return err
@@ -254,13 +256,27 @@ func EditUserName(uid string, name string) error {
 		if err := tx.Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
-		return db.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
+		return tx.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
 	})
 	return err
 }
 
 func ResetUserName(uid string) error {
-	return db.Model(&User{}).Where("id = ?", uid).Update("nickname", genNickname()).Error
+	nickname := genNickname()
+	err := db.Transaction(func(tx *gorm.DB) error {
+
+		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		if e := tx.Model(&Post{}).Where("uid = ? AND type = ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		if e := tx.Model(&Floor{}).Where("uid = ? AND type = ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		return nil
+	})
+	return err
 }
 
 func genNickname() string {

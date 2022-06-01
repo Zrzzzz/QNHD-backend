@@ -548,10 +548,10 @@ func deleteFloor(floor *Floor) error {
 			subToFloors   []Floor
 			replyToFloors []Floor
 		)
-		if err := db.Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
+		if err := tx.Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
 			return err
 		}
-		if err := db.Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
+		if err := tx.Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
 			return err
 		}
 		// 这里需要避免重复, 合并到floors里
