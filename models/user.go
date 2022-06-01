@@ -250,10 +250,10 @@ func EditUserName(uid string, name string) error {
 	}
 	// 修改以往的帖子和楼层
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&Post{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
+		if err := tx.Unscoped().Model(&Post{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
+		if err := tx.Unscoped().Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
 		return tx.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
@@ -268,10 +268,10 @@ func ResetUserName(uid string) error {
 		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
-		if e := tx.Model(&Post{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+		if e := tx.Unscoped().Model(&Post{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
-		if e := tx.Model(&Floor{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+		if e := tx.Unscoped().Model(&Floor{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
 		return nil
