@@ -154,6 +154,12 @@ func GetUsersInDepartment(departmentId uint64) ([]User, error) {
 	return users, err
 }
 
+func GetUserSchDistributeAdmin() ([]User, error) {
+	var users = []User{}
+	err := db.Where("school_distribute_admin = true").Find(&users).Error
+	return users, err
+}
+
 func GetUser(maps map[string]interface{}) (User, error) {
 	var u User
 	if err := db.Where(maps).First(&u).Error; err != nil {

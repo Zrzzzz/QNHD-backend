@@ -120,7 +120,7 @@ func TransferPostDepartment(c *gin.Context) {
 		return
 	}
 	// 向新的部门的管理员发通知
-	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
+	if err := yunpian.NotifyNewPostToDepartment(util.AsUint(newDepartmentId), post.Title); err != nil {
 		logging.Error(err.Error())
 	}
 	r.OK(c, e.SUCCESS, nil)
@@ -163,7 +163,7 @@ func DistributePost(c *gin.Context) {
 		return
 	}
 	// 向新的部门的管理员发通知
-	if err := yunpian.NotifyNewPost(util.AsUint(newDepartmentId), post.Title); err != nil {
+	if err := yunpian.NotifyNewPostToDepartment(util.AsUint(newDepartmentId), post.Title); err != nil {
 		logging.Error(err.Error())
 	}
 	r.OK(c, e.SUCCESS, nil)

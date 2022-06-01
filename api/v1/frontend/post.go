@@ -189,7 +189,7 @@ func AddPost(c *gin.Context) {
 	}
 	// 如果是校务贴，需要对部门发出通知
 	if postTypeint == POST_SCHOOL_TYPE {
-		err = yunpian.NotifyNewPost(util.AsUint(departId), title)
+		err = yunpian.NotifyNewPost(title)
 		if err != nil {
 			logging.Error(err.Error())
 		}
