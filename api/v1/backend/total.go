@@ -130,7 +130,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 帖子转移部门
 		g.POST("/post/transfer/department", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPostDepartment)
 		// 帖子换类型
-		g.POST("/post/transfer/type", TransferPostType)
+		// g.POST("/post/transfer/type", TransferPostType)
 		// 分发帖子
 		g.POST("/post/distribute", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true}), DistributePost)
 		// 修改帖子加精值
