@@ -97,7 +97,7 @@ func AddTag(c *gin.Context) {
 		r.Error(c, e.INVALID_PARAMS, verr.Error())
 		return
 	}
-	ok, s := filter.Validate(name)
+	ok, s := filter.CommonFilter.Validate(name)
 	if !ok {
 		r.Error(c, e.INVALID_PARAMS, fmt.Sprintf("Tag触发敏感词%s", s))
 		return

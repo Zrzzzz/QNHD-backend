@@ -65,7 +65,7 @@ func checkName(name string) error {
 	if strings.Contains(name, " ") {
 		return fmt.Errorf("包含空格")
 	}
-	ok, e := filter.Validate(name)
+	ok, e := filter.NicknameFilter.Validate(name)
 	if !ok {
 		return fmt.Errorf("含有敏感词: %s", e)
 	}

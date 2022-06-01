@@ -78,7 +78,7 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	var pr = PostReply{
 		PostId:  maps["post_id"].(uint64),
 		Sender:  sender,
-		Content: filter.Filter(maps["content"].(string)),
+		Content: filter.CommonFilter.Filter(maps["content"].(string)),
 	}
 	urls := maps["urls"].([]string)
 	err := db.Transaction(func(tx *gorm.DB) error {

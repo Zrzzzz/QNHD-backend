@@ -2,21 +2,32 @@ package filter
 
 import "github.com/importcjj/sensitive"
 
-var filter *sensitive.Filter
+type WordFilter struct {
+	dictPlace string
+	filter    *sensitive.Filter
+}
+
+var (
+	CommonFilter   WordFilter
+	NicknameFilter WordFilter
+)
 
 func Setup() {
-	Reload()
+	CommonFilter = WordFilter{dictPlace: "conf/sensitive.txt"}
+	NicknameFilter = WordFilter{dictPlace: "conf/nickname-sensitive.txt"}
+	CommonFilter.Reload()
+	NicknameFilter.Reload()
 }
 
-func Reload() error {
-	filter = sensitive.New()
-	return filter.LoadWordDict("conf/sensitive.txt")
+func (c *WordFilter) Reload() error {
+	c.filter = sensitive.New()
+	return c.filter.LoadWordDict(c.dictPlace)
 }
 
-func Filter(s string) string {
-	return filter.Replace(s, '*')
+func (c *WordFilter) Filter(s string) string {
+	return c.filter.Replace(s, '*')
 }
 
-func Validate(s string) (bool, string) {
-	return filter.Validate(s)
+func (c *WordFilter) Validate(s string) (bool, string) {
+	return c.filter.Validate(s)
 }

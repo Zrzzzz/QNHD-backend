@@ -355,7 +355,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	var newFloor = Floor{
 		Uid:      uid,
 		PostId:   postId,
-		Content:  filter.Filter(maps["content"].(string)),
+		Content:  filter.CommonFilter.Filter(maps["content"].(string)),
 		Nickname: user.Nickname,
 		ImageURL: maps["image_url"].(string),
 		Type:     post.Type,

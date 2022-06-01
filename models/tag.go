@@ -104,7 +104,7 @@ func GetHotTags(cnt int) ([]HotTagResult, error) {
 }
 
 func AddTag(name, uid string) (uint64, error) {
-	var tag = Tag{Name: filter.Filter(name), Uid: util.AsUint(uid)}
+	var tag = Tag{Name: filter.CommonFilter.Filter(name), Uid: util.AsUint(uid)}
 	if err := db.Select("name", "uid").Create(&tag).Error; err != nil {
 		return 0, err
 	}

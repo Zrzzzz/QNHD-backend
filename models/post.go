@@ -412,8 +412,8 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 		Uid:      uid,
 		Nickname: user.Nickname,
 		Campus:   maps["campus"].(PostCampusType.Enum),
-		Title:    filter.Filter(maps["title"].(string)),
-		Content:  filter.Filter(maps["content"].(string)),
+		Title:    filter.CommonFilter.Filter(maps["title"].(string)),
+		Content:  filter.CommonFilter.Filter(maps["content"].(string)),
 	}
 	if post.Type == POST_SCHOOL_TYPE {
 		// 先对department_id进行查找，不存在要报错
