@@ -36,7 +36,7 @@ func AddNoticeToAllUsers(uid string, data map[string]interface{}) error {
 	data["symbol"] = "public"
 	var user User
 	db.Where("id = ?", uid).Find(&user)
-	if user.IsStuDistributeAdmin {
+	if user.IsSchAdmin {
 		data["symbol"] = "department_manager"
 	}
 	id, err := AddNoticeTemplate(data)
@@ -45,7 +45,7 @@ func AddNoticeToAllUsers(uid string, data map[string]interface{}) error {
 	}
 
 	// 对所有用户通知
-	if err := addUnreadNoticeToAllUser(id, data["pub_at"].(string), user.IsStuDistributeAdmin); err != nil {
+	if err := addUnreadNoticeToAllUser(id, data["pub_at"].(string), user.IsSchAdmin); err != nil {
 		return err
 	}
 
@@ -72,11 +72,9 @@ func EditNoticeTemplate(uid string, id uint64, data map[string]interface{}) erro
 	)
 	db.Where("id = ?", id).Find(&notice)
 	db.Where("id = ?", uid).Find(&user)
-	if user.IsStuDistributeAdmin && notice.Symbol != NOTICE_DEPARTMENT {
+	fmt.Println(user, notice)
+	if user.IsSchAdmin && notice.Symbol != NOTICE_DEPARTMENT {
 		return fmt.Errorf("不能修改非部门公告")
-	}
-	if !user.IsSuper && (notice.Symbol != "public" || notice.Symbol != NOTICE_DEPARTMENT) {
-		return fmt.Errorf("禁止修改")
 	}
 	if err := db.Where("id = ?", id).Updates(&Notice{
 		Sender:  data["sender"].(string),
@@ -96,11 +94,8 @@ func DeleteNoticeTemplate(uid string, id uint64) (uint64, error) {
 	)
 	db.Where("id = ?", id).Find(&notice)
 	db.Where("id = ?", uid).Find(&user)
-	if user.IsStuDistributeAdmin && notice.Symbol != NOTICE_DEPARTMENT {
+	if user.IsSchAdmin && notice.Symbol != NOTICE_DEPARTMENT {
 		return 0, fmt.Errorf("不能删除非部门公告")
-	}
-	if !user.IsSuper && (notice.Symbol != "public" || notice.Symbol != NOTICE_DEPARTMENT) {
-		return 0, fmt.Errorf("禁止删除")
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {

@@ -76,7 +76,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除指定禁言用户
 		blockedGroup.GET("/blocked/delete", DeleteBlocked)
 	case Notice:
-		noticeGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		noticeGroup := g.Group("", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}))
 		// 获取公告列表
 		noticeGroup.GET("/notices", GetNotices)
 		// 新建公告

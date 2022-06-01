@@ -21,7 +21,7 @@ type User struct {
 	IsSuper              bool   `json:"is_super" gorm:"default:false;column:super_admin"`
 	IsSchAdmin           bool   `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
 	IsStuAdmin           bool   `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
-	IsStuDistributeAdmin bool   `json:"is_stu_dis_admin" gorm:"default:false;column:school_distribute_admin"`
+	IsSchDistributeAdmin bool   `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
 	IsUser               bool   `json:"is_user" gorm:"default:false;"`
 	Active               bool   `json:"active" gorm:"default:true"`
 	CreatedAt            string `json:"-" gorm:"autoCreateTime;default:null;"`
@@ -58,7 +58,7 @@ func RequireRight(uid string, right UserRight) bool {
 		b = b || user.IsStuAdmin
 	}
 	if right.SchDistributeAdmin {
-		b = b || user.IsStuDistributeAdmin
+		b = b || user.IsSchDistributeAdmin
 	}
 	return b
 }
@@ -162,12 +162,13 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	return u, nil
 }
 
-func AddUser(nickname, number, password, phoneNumber string, isUser bool) (uint64, error) {
+func AddUser(nickname, number, password, phoneNumber, realname string, isUser bool) (uint64, error) {
 	var user = User{
 		Nickname:    nickname,
 		Number:      number,
 		Password:    password,
 		PhoneNumber: phoneNumber,
+		Realname:    realname,
 		IsUser:      isUser,
 	}
 	if err := db.Create(&user).Error; err != nil {
