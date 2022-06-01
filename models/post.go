@@ -578,6 +578,10 @@ func EditPostType(uid, postId string, typeId string) error {
 		if err := EditPost(postId, map[string]interface{}{"type": typeId, "department_id": 0}); err != nil {
 			return err
 		}
+		// 需要更帖子昵称和楼层的昵称
+		if err := updatePostAndFloorNickname(post); err != nil {
+			return err
+		}
 	}
 	// 更新楼层type
 	// 通知帖子用户
@@ -586,6 +590,24 @@ func EditPostType(uid, postId string, typeId string) error {
 		fmt.Sprintf("from: %s, to: %s", rawType.Name, newType.Name))
 
 	return EditPost(postId, map[string]interface{}{"type": typeId})
+}
+
+func updatePostAndFloorNickname(post Post) error {
+	var u User
+	var floors []Floor
+	db.Where("uid = ?", post.Uid).Find(&u)
+	db.Where("post_id = ?", post.Id).Find(&floors)
+	if u.Uid > 0 {
+		db.Model(&Post{}).Update("nickname", u.Nickname)
+	}
+	for _, f := range floors {
+		var u User
+		db.Where("uid = ?", f.Uid).Find(&u)
+		if u.Uid > 0 {
+			db.Model(&Floor{}).Update("nickname", u.Nickname)
+		}
+	}
+	return nil
 }
 
 func DeletePostsUser(id, uid string) (uint64, error) {

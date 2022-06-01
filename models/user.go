@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"qnhd/pkg/util"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	giterrors "github.com/pkg/errors"
@@ -255,6 +257,20 @@ func EditUserName(uid string, name string) error {
 		return db.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
 	})
 	return err
+}
+
+func ResetUserName(uid string) error {
+	return db.Model(&User{}).Where("uid = ?", uid).Update("nickname", genNickname()).Error
+}
+
+func genNickname() string {
+	letters := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	rand.Seed(time.Now().UnixMicro())
+	ret := ""
+	for i := 0; i < 8; i++ {
+		ret += letters[rand.Intn(len(letters))]
+	}
+	return ret
 }
 
 // 修改密码，要求原密码
