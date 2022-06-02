@@ -49,7 +49,7 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 		return 0, err
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Delete(&ban).Error; err != nil {
+		if err := tx.Delete(&ban).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&User{}).Where("id = ?", uid).Update("active", true).Error; err != nil {

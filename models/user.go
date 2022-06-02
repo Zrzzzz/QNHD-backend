@@ -314,5 +314,5 @@ func (u *User) realnameFull() string {
 	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
 		return u.Nickname
 	}
-	return fmt.Sprintf("%s %s", u.Number, u.Realname)
+	return fmt.Sprintf("%s %s %s", u.Number, u.Realname, u.PhoneNumber)
 }

@@ -174,7 +174,7 @@ func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
 
 		if pr.Type == POST_SCHOOL_TYPE {
 			var user User
-			db.Where("uid = ?", pr.Uid).Find(&user)
+			db.Where("id = ?", pr.Uid).Find(&user)
 			pr.Nickname = user.realnameFull()
 		}
 		if pr.Error != nil {
@@ -235,7 +235,7 @@ func GetPostResponse(postId string) (PostResponse, error) {
 	pr = p.geneResponse(true)
 	if pr.Type == POST_SCHOOL_TYPE {
 		var user User
-		db.Where("uid = ?", pr.Uid).Find(&user)
+		db.Where("id = ?", pr.Uid).Find(&user)
 		pr.Nickname = user.realnameFull()
 	}
 	return pr, pr.Error
@@ -595,14 +595,14 @@ func EditPostType(uid, postId string, typeId string) error {
 func updatePostAndFloorNickname(post Post) error {
 	var u User
 	var floors []Floor
-	db.Where("uid = ?", post.Uid).Find(&u)
+	db.Where("id = ?", post.Uid).Find(&u)
 	db.Where("post_id = ?", post.Id).Find(&floors)
 	if u.Uid > 0 {
 		db.Model(&Post{}).Update("nickname", u.Nickname)
 	}
 	for _, f := range floors {
 		var u User
-		db.Where("uid = ?", f.Uid).Find(&u)
+		db.Where("id = ?", f.Uid).Find(&u)
 		if u.Uid > 0 {
 			db.Model(&Floor{}).Update("nickname", u.Nickname)
 		}
