@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/pkg/util"
 	"time"
 
@@ -95,7 +96,14 @@ func RequireUser(uid string) error {
 
 func ExistUser(nickname, number string) (uint64, error) {
 	var user User
-	if err := db.Where(User{Nickname: nickname, Number: number, IsUser: true}).Order("id").Find(&user).Error; err != nil {
+	d := db.Where("is_user = true")
+	if nickname != "" {
+		d = d.Where("nickname = ?", nickname)
+	}
+	if number != "" {
+		d = d.Where("number = ?", number)
+	}
+	if err := d.Order("id").Find(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil
@@ -261,8 +269,10 @@ func EditUserName(uid string, name string) error {
 	return err
 }
 
-func ResetUserName(uid string) error {
+func ResetUserName(doer, uid string) error {
 	nickname := genNickname()
+	var u User
+	db.Where("id = ?").Find(&u)
 	err := db.Transaction(func(tx *gorm.DB) error {
 
 		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
@@ -276,6 +286,8 @@ func ResetUserName(uid string) error {
 		}
 		return nil
 	})
+	addManagerLogWithDetail(util.AsUint(doer), util.AsUint(uid), ManagerLogType.USER_NICKNAME_RESET,
+		fmt.Sprintf("raw: %s", u.Nickname))
 	return err
 }
 

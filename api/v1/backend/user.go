@@ -428,6 +428,7 @@ func DeleteManager(c *gin.Context) {
 // @return
 // @route /b/user/nickname/reset
 func ResetUserNickname(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.PostForm("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
@@ -438,7 +439,7 @@ func ResetUserNickname(c *gin.Context) {
 		return
 	}
 
-	err := models.ResetUserName(uid)
+	err := models.ResetUserName(doer, uid)
 	if err != nil {
 		logging.Error("reset user name error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
