@@ -99,6 +99,10 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	return pr.Id, err
 }
 
+func DeletePostReply(id string) error {
+	return db.Where("id = ?").Delete(&PostReply{}).Error
+}
+
 // 删除帖子内的回复记录
 func DeletePostReplysInPost(ttx *gorm.DB, postId uint64) error {
 	if ttx == nil {

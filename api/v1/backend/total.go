@@ -128,7 +128,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取帖子回复
 		g.GET("/post/replys", GetPostReplys)
 		// 帖子回复校方回应
-		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
+		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true, SchDistributeAdmin: true}), AddPostReply)
 		// 帖子转移部门
 		g.POST("/post/transfer/department", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPostDepartment)
 		// 帖子换类型
@@ -149,6 +149,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post_tag/delete", DeletePostTag)
 		// 删除帖子的图片
 		g.GET("/post_image/delete", DeletePostImages)
+
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
