@@ -925,3 +925,11 @@ func IsOwnPostByUid(uid, postId string) bool {
 func updatePostTime(postId uint64) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Update("updated_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
 }
+
+func ReturnPost(uid, postId string) error {
+	var post Post
+	db.Where("id = ?", postId).Find(&post)
+	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_RETURN,
+		fmt.Sprintf("from %d", post.DepartmentId))
+	return db.Model(&Post{}).Where("id = ?", postId).Update("solved", PostSolveType.UNDISTRIBUTED).Error
+}

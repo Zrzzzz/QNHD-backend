@@ -20,6 +20,7 @@ var msgSymbol = map[Enum]string{
 	POST_DEPARTMENT_TRANSFER:   "post_department_transfer",
 	POST_DEPARTMENT_DISTRIBUTE: "post_department_distribute",
 	POST_TPYE_TRANSFER:         "post_tpye_transfer",
+	POST_RETURN:                "post_return",
 
 	USER_ADD:               "user_add",
 	USER_PERMISSION_CHANGE: "user_permission_change",

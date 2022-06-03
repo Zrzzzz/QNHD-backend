@@ -135,6 +135,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/post/transfer/type", TransferPostType)
 		// 分发帖子
 		g.POST("/post/distribute", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true}), DistributePost)
+		// 退回帖子
+		g.POST("/post/return", ReturnPost)
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
 		// 修改帖子额外标签

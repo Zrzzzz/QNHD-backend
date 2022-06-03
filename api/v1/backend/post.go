@@ -403,3 +403,28 @@ func DeletePostImages(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [post]
+// @way [formdata]
+// @param
+// @return
+// @route /b/post/return
+func ReturnPost(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("post_id")
+	valid := validation.Validation{}
+	valid.Required(id, "post_id")
+	valid.Numeric(id, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Return post")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.ReturnPost(uid, id)
+	if err != nil {
+		logging.Error("return post error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
