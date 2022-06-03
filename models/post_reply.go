@@ -99,6 +99,34 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 	return pr.Id, err
 }
 
+func EditPostReply(maps map[string]interface{}) error {
+	sender := maps["sender"].(PostReplyType.Enum)
+	var pr = PostReply{
+		Sender:  sender,
+		Content: filter.CommonFilter.Filter(maps["content"].(string)),
+	}
+	urls := maps["urls"].([]string)
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&PostReply{}).Where("id = ?", maps["reply_id"].(uint64)).Updates(pr).Error; err != nil {
+			return err
+		}
+		if err := DeleteImageInPostReply(tx, pr.Id); err != nil {
+			return err
+		}
+		if len(urls) != 0 {
+			if err := AddImageInPostReply(tx, pr.Id, urls); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if sender == PostReplyType.SCHOOL {
+		uid := maps["uid"].(string)
+		addManagerLog(util.AsUint(uid), pr.Id, ManagerLogType.POST_REPLY_MODIFY)
+	}
+	return err
+}
+
 func DeletePostReply(id string) error {
 	return db.Where("id = ?").Delete(&PostReply{}).Error
 }

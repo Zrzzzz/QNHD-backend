@@ -129,6 +129,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post/replys", GetPostReplys)
 		// 帖子回复校方回应
 		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true, SchDistributeAdmin: true}), AddPostReply)
+		g.POST("/post/reply/modify", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true, SchDistributeAdmin: true}), EditPostReply)
 		// 帖子转移部门
 		g.POST("/post/transfer/department", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPostDepartment)
 		// 帖子换类型

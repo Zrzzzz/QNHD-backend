@@ -17,6 +17,7 @@ var msgSymbol = map[Enum]string{
 	POST_UNTOP: "post_untop",
 
 	POST_REPLY:                 "post_reply",
+	POST_REPLY_MODIFY:          "post_reply_modify",
 	POST_DEPARTMENT_TRANSFER:   "post_department_transfer",
 	POST_DEPARTMENT_DISTRIBUTE: "post_department_distribute",
 	POST_TPYE_TRANSFER:         "post_tpye_transfer",

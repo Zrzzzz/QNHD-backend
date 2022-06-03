@@ -491,7 +491,6 @@ func EditPostValue(uid, postId string, value int) error {
 	} else {
 		EditPostEtag(uid, postId, PostEtagType.NONE)
 		addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_UNTOP)
-
 	}
 	return EditPost(postId, map[string]interface{}{"value": value})
 }
