@@ -2,7 +2,6 @@ package filter
 
 import (
 	"encoding/json"
-	"fmt"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 	"strings"
@@ -53,7 +52,6 @@ func (c *WordFilter) Filter(s string) string {
 
 func (c *WordFilter) Validate(s string) (bool, string) {
 	aiRes := c.aiFilter.TextCensor(s)
-	fmt.Println(aiRes)
 	var r AIFilterResult
 	if err := json.Unmarshal([]byte(aiRes), &r); err != nil {
 		logging.Error(err.Error())
