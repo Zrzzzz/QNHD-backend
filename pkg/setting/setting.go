@@ -42,6 +42,9 @@ type App struct {
 	WPYLoginAc string
 	WPYLoginPw string
 
+	BaiduAIAppKey    string
+	BaiduAISecretKey string
+
 	YunPianAppKey string
 
 	// 发贴间隔时间
