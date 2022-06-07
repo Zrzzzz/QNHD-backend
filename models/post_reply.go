@@ -101,20 +101,21 @@ func AddPostReply(maps map[string]interface{}) (uint64, error) {
 
 func EditPostReply(maps map[string]interface{}) error {
 	sender := maps["sender"].(PostReplyType.Enum)
+	prId := maps["reply_id"].(uint64)
 	var pr = PostReply{
 		Sender:  sender,
 		Content: filter.CommonFilter.Filter(maps["content"].(string)),
 	}
 	urls := maps["urls"].([]string)
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&PostReply{}).Where("id = ?", maps["reply_id"].(uint64)).Updates(pr).Error; err != nil {
+		if err := tx.Model(&PostReply{}).Where("id = ?", prId).Updates(pr).Error; err != nil {
 			return err
 		}
-		if err := DeleteImageInPostReply(tx, pr.Id); err != nil {
+		if err := DeleteImageInPostReply(tx, prId); err != nil {
 			return err
 		}
 		if len(urls) != 0 {
-			if err := AddImageInPostReply(tx, pr.Id, urls); err != nil {
+			if err := AddImageInPostReply(tx, prId, urls); err != nil {
 				return err
 			}
 		}
