@@ -58,6 +58,8 @@ type Post struct {
 
 	// etag
 	Etag string `json:"e_tag" gorm:"column:extra_tag;"`
+	// 能否评论
+	Commentable bool `json:"commentable" gorm:"default:true"`
 }
 
 type LogPostFav struct {
@@ -531,6 +533,11 @@ func EditPostDepartment(uid, postId string, departmentId string) error {
 		fmt.Sprintf("from: %s, to: %s", rawType.Name, newType.Name))
 
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
+}
+
+func EditPostCommentable(uid, postId string, commentable bool) error {
+	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_EDIT_COMMENTABLE)
+	return EditPost(postId, map[string]interface{}{"commentable": commentable})
 }
 
 // 分发帖子

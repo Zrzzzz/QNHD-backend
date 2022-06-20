@@ -32,6 +32,8 @@ type Floor struct {
 	SubTo       uint64 `json:"sub_to" gorm:"default:0"`
 	LikeCount   uint64 `json:"like_count" gorm:"default:0"`
 	DisCount    uint64 `json:"-" gorm:"default:0"`
+	// 能否评论
+	Commentable bool `json:"commentable" gorm:"default:true"`
 }
 
 type LogFloorLike struct {
@@ -351,6 +353,9 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
 	}
+	if post.Commentable == false {
+		return 0, fmt.Errorf("禁止评论")
+	}
 
 	var newFloor = Floor{
 		Uid:      uid,
@@ -414,6 +419,9 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
+	}
+	if toFloor.Commentable == false {
+		return 0, fmt.Errorf("禁止评论")
 	}
 
 	var newFloor = Floor{
@@ -855,4 +863,9 @@ func IsOwnFloorByUid(uid, floorId string) bool {
 		return false
 	}
 	return util.AsStrU(floor.Uid) == uid
+}
+
+func EditFloorCommentable(uid, floorId string, commentable bool) error {
+	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_EDIT_COMMENTABLE)
+	return db.Model(&Floor{}).Where("id = ?", floorId).Updates(map[string]interface{}{"commentable": commentable}).Error
 }

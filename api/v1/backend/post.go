@@ -428,3 +428,29 @@ func ReturnPost(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [post]
+// @way [formdata]
+// @param post_id, commentable
+// @return
+// @route /b/post/commentable/edit
+func EditPostCommentable(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("post_id")
+	commentable := c.PostForm("commentable")
+	valid := validation.Validation{}
+	valid.Required(id, "post_id")
+	valid.Numeric(id, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Edit post commentable")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditPostCommentable(uid, id, commentable == "1")
+	if err != nil {
+		logging.Error("Edit post commentable error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}

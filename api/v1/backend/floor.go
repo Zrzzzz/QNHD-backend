@@ -180,3 +180,29 @@ func RecoverFloor(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [post]
+// @way [formdata]
+// @param floor_id, commentable
+// @return
+// @route /b/floor/commentable/edit
+func EditFloorCommentable(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("floor_id")
+	commentable := c.PostForm("commentable")
+	valid := validation.Validation{}
+	valid.Required(id, "floor_id")
+	valid.Numeric(id, "floor_id")
+	ok, verr := r.ErrorValid(&valid, "Edit floor commentable")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditFloorCommentable(uid, id, commentable == "1")
+	if err != nil {
+		logging.Error("Edit floor commentable error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}

@@ -140,6 +140,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/post/return", ReturnPost)
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
+		// 修改帖子能否评论
+		g.POST("/post/commentable/edit", EditPostCommentable)
 		// 修改帖子额外标签
 		g.POST("/post/etag", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostEtag)
 		// 删除指定帖子
@@ -171,6 +173,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true, StuAdmin: true}), DeleteFloor)
 		// 恢复指定楼层
 		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
+		// 修改帖子能否评论
+		g.POST("/floor/commentable/edit", EditFloorCommentable)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
