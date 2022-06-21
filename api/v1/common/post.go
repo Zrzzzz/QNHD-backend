@@ -25,6 +25,7 @@ func GetPosts(front bool) gin.HandlerFunc {
 		valueMode := c.Query("value_mode")
 		isDeleted := c.Query("is_deleted")
 		commentable := c.Query("commentable")
+		etag := c.Query("etag")
 		valid := validation.Validation{}
 		valid.Required(postType, "type")
 		valid.Numeric(postType, "type")
@@ -66,12 +67,8 @@ func GetPosts(front bool) gin.HandlerFunc {
 			"tag_id":        tagId,
 			"value_mode":    PostValueModeType.Enum(util.AsInt(valueMode)),
 			"is_deleted":    isDeleted,
-		}
-		// 获取是否评论的
-		if commentable == "1" {
-			maps["commentable"] = true
-		} else if commentable == "0" {
-			maps["commentable"] = false
+			"commentable":   commentable,
+			"etag":          etag,
 		}
 
 		if front {

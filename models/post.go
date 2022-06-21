@@ -270,6 +270,8 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	valueMode := maps["value_mode"].(PostValueModeType.Enum)
 	front := maps["front"].(bool)
 	isDeleted := maps["is_deleted"].(string)
+	commentable := maps["commentable"].(string)
+	etag := maps["etag"].(string)
 
 	var d = db.Model(&Post{})
 	// 如果是前端
@@ -281,7 +283,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	} else {
 		d = d.Where("deleted_at IS NULL")
 	}
-	// 加精帖搜索
+	// 置顶帖搜索
 	if valueMode == PostValueModeType.DEFAULT {
 		d = d.Order("value DESC")
 	} else if valueMode == PostValueModeType.ONLY {
@@ -324,6 +326,19 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
 	}
+	// 获取是否评论的
+	if commentable == "1" {
+		d = d.Where("commentable = ?", true)
+	} else if commentable == "0" {
+		d = d.Where("commentable = ?", false)
+	}
+
+	// etag区分
+	if etag != "" && PostEtagType.Contains(etag) {
+		d = d.Where("extra_tag = ?", etag)
+	}
+
+	// 开始搜索
 	if err = d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
