@@ -105,7 +105,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 修改管理员密码
 		g.POST("/user/modify/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
 		// 重置用户昵称
-		g.POST("/user/nickname/reset", permission.RightDemand(models.UserRight{Super: true}), ResetUserNickname)
+		g.POST("/user/nickname/reset", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), ResetUserNickname)
 		// 修改自己密码
 		g.POST("/user/passwd/modify", EditUserPasswd)
 		// 修改自己手机
@@ -233,5 +233,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/statistic/floors/count", GetFloorCount)
 		// 获取帖子浏览数量
 		g.GET("/statistic/posts/visit/count", GetVisitPostCount)
+		// 导出帖子回复情况
+		g.GET("/statistic/post_reply_excel", ExportPostReplyExcel)
 	}
 }
