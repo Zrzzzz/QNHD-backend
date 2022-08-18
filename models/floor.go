@@ -7,6 +7,7 @@ import (
 	"qnhd/enums/NoticeType"
 	"qnhd/enums/ReportType"
 	"qnhd/enums/TagPointType"
+	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
@@ -51,7 +52,10 @@ type FloorResponse struct {
 	Floor
 	SubFloors   []FloorResponse `json:"sub_floors"`
 	SubFloorCnt int             `json:"sub_floor_cnt"`
-	IsDeleted   bool            `json:"is_deleted"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
@@ -64,7 +68,10 @@ type FloorResponseUser struct {
 	IsLike      bool                `json:"is_like"`
 	IsDis       bool                `json:"is_dis"`
 	IsOwner     bool                `json:"is_owner"`
-	IsDeleted   bool                `json:"is_deleted"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
@@ -73,7 +80,9 @@ func (f *Floor) geneResponse(searchSubFloors bool, unscoped bool) FloorResponse 
 	var fr = FloorResponse{
 		Floor:     *f,
 		SubFloors: []FloorResponse{},
+		UInfo:     GetUserInfo(util.AsStrU(f.Uid)),
 	}
+	// user info
 	if searchSubFloors {
 		// 处理回复本条楼层的楼层
 		rps, err := getHighlikeSubfloors(util.AsStrU(f.Id), unscoped)
@@ -85,6 +94,7 @@ func (f *Floor) geneResponse(searchSubFloors bool, unscoped bool) FloorResponse 
 		// 获取子楼层总数
 		fr.SubFloorCnt = getFloorSubFloorCount(util.AsStrU(f.Id), unscoped)
 	}
+
 	fr.IsDeleted = fr.DeletedAt.Valid
 	return fr
 }
@@ -95,6 +105,7 @@ func (f FloorResponse) searchWithUid(uid string, searchSubFloors bool) FloorResp
 		IsLike:      IsLikeFloorByUid(uid, util.AsStrU(f.Id)),
 		IsDis:       IsDisFloorByUid(uid, util.AsStrU(f.Id)),
 		IsOwner:     IsOwnFloorByUid(uid, util.AsStrU(f.Id)),
+		UInfo:       f.UInfo,
 		SubFloors:   []FloorResponseUser{},
 		SubFloorCnt: f.SubFloorCnt,
 	}
@@ -400,6 +411,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		addTagLogInPost(post.Id, TagPointType.ADD_FLOOR)
 	}
 	updatePostTime(post.Id)
+	EditUserLevel(util.AsStrU(uid), UserLevelOperationType.ADD_FLOOR)
 	return newFloor.Id, nil
 }
 
@@ -521,6 +533,14 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
 	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_DELETE)
+	// 将被举报的人扣经验
+	EditUserLevel(util.AsStrU(floor.Uid), UserLevelOperationType.FLOOR_DELETED)
+	// 找如果有举报这个楼层的，找举报人加经验
+	if len(uids) != 0 {
+		for _, log := range uids {
+			EditUserLevel(util.AsStrU(log), UserLevelOperationType.REPORT_PASSED)
+		}
+	}
 	return floor.Id, nil
 }
 

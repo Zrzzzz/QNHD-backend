@@ -11,13 +11,13 @@ import (
 
 type Report struct {
 	Model
-	Uid       uint64 `json:"uid"`
-	Type      int    `json:"type"`
-	PostId    uint64 `json:"post_id"`
-	FloorId   uint64 `json:"floor_id"`
-	Reason    string `json:"reason"`
-	Solved    bool   `json:"solved"`
-	IsDeleted bool   `json:"is_deleted" gorm:"-"`
+	Uid       uint64          `json:"uid"`
+	Type      ReportType.Enum `json:"type"`
+	PostId    uint64          `json:"post_id"`
+	FloorId   uint64          `json:"floor_id"`
+	Reason    string          `json:"reason"`
+	Solved    bool            `json:"solved"`
+	IsDeleted bool            `json:"is_deleted" gorm:"-"`
 }
 
 type PostReportResponse struct {
@@ -87,7 +87,7 @@ func AddReport(maps map[string]interface{}) error {
 	}
 	report = Report{
 		Uid:     uid,
-		Type:    t,
+		Type:    ReportType.Enum(t),
 		PostId:  postId,
 		FloorId: floorId,
 		Reason:  maps["reason"].(string),

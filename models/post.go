@@ -13,6 +13,7 @@ import (
 	"qnhd/enums/PostValueModeType"
 	"qnhd/enums/ReportType"
 	"qnhd/enums/TagPointType"
+	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
@@ -83,7 +84,9 @@ type PostResponse struct {
 	CommentCount int             `json:"comment_count"`
 	ImageUrls    []string        `json:"image_urls"`
 	Department   *Department     `json:"department"`
-	IsDeleted    bool            `json:"is_deleted"`
+	UInfo        UserInfo        `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -101,8 +104,11 @@ type PostResponseUser struct {
 	IsDis      bool `json:"is_dis"`
 	IsFav      bool `json:"is_fav"`
 	IsOwner    bool `json:"is_owner"`
-	IsDeleted  bool `json:"is_deleted"`
 	VisitCount int  `json:"visit_count"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -110,11 +116,6 @@ type PostResponseUser struct {
 func (p *Post) geneResponse(unscoped bool) PostResponse {
 	var pr PostResponse
 
-	// frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
-	// if err != nil {
-	// 	pr.Error = err
-	// 	return pr
-	// }
 	imgs, err := GetImageInPost(p.Id)
 	if err != nil {
 		pr.Error = err
@@ -124,6 +125,8 @@ func (p *Post) geneResponse(unscoped bool) PostResponse {
 		Post:         *p,
 		CommentCount: GetCommentCount(p.Id, true, unscoped),
 		ImageUrls:    imgs,
+		// user info
+		UInfo: GetUserInfo(util.AsStrU(p.Uid)),
 	}
 
 	if p.DepartmentId > 0 {
@@ -140,6 +143,7 @@ func (p *Post) geneResponse(unscoped bool) PostResponse {
 	}
 	pr.Error = err
 	pr.IsDeleted = pr.DeletedAt.Valid
+
 	return pr
 }
 
@@ -150,6 +154,7 @@ func (p PostResponse) searchByUid(uid string) PostResponseUser {
 		CommentCount: p.CommentCount,
 		ImageUrls:    p.ImageUrls,
 		Department:   p.Department,
+		UInfo:        p.UInfo,
 		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
 		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
@@ -484,6 +489,8 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	if err := flushPostTokens(post.Id, post.Title, post.Content); err != nil {
 		return 0, err
 	}
+	// 增加经验
+	EditUserLevel(util.AsStrU(uid), UserLevelOperationType.ADD_POST)
 
 	return post.Id, nil
 }
@@ -497,7 +504,7 @@ func EditPostValue(uid, postId string, value int) error {
 	if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
 		return err
 	}
-	// 加精
+	// 置顶值修改
 	if post.Value == 0 && value > 0 {
 		addNoticeWithTemplate(NoticeType.POST_VALUED, []uint64{post.Uid}, []string{post.Title})
 	}
@@ -519,6 +526,10 @@ func EditPostEtag(uid, postId string, t PostEtagType.Enum) error {
 		addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_ETAG,
 			fmt.Sprintf("to: %s", t.GetSymbol()))
 	}
+	// 如果是帖子加精，加经验
+	var pUserId string
+	db.Model(&User{}).Select("uid").Where("id = ?", postId).Find(&pUserId)
+	EditUserLevel(pUserId, UserLevelOperationType.POST_RECOMMENDED)
 	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", t.GetSymbol()).Error
 }
 
@@ -654,6 +665,14 @@ func DeletePostAdmin(uid, postId string) (uint64, error) {
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
 	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DELETE)
+	// 将被举报的人扣经验
+	EditUserLevel(util.AsStrU(post.Uid), UserLevelOperationType.FLOOR_DELETED)
+	// 找如果有举报这个帖子的，找举报人加经验
+	if len(uids) != 0 {
+		for _, log := range uids {
+			EditUserLevel(util.AsStrU(log), UserLevelOperationType.REPORT_PASSED)
+		}
+	}
 	return post.Id, nil
 }
 

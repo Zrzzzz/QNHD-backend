@@ -18,7 +18,11 @@ func AsUint(a string) uint64 {
 
 // string转int
 func AsInt(a string) int {
-	b := AsUint(a)
+	b, err := strconv.ParseInt(a, 10, 64)
+	if err != nil {
+		logging.Error(err.Error())
+		panic(err)
+	}
 	return int(b)
 }
 

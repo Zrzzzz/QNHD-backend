@@ -399,6 +399,34 @@ func EditUserDepartment(c *gin.Context) {
 	r.OK(c, e.SUCCESS, nil)
 }
 
+// @method [post]
+// @way [formdata]
+// @param uid, point
+// @return
+// @route /b/user/point/change
+func EditUserPoint(c *gin.Context) {
+	uid := c.PostForm("uid")
+	point := c.PostForm("point")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(point, "point")
+	valid.Numeric(point, "point")
+	ok, verr := r.ErrorValid(&valid, "Edit user point")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.ChangeUserExp(uid, util.AsInt(point))
+	if err != nil {
+		logging.Error("edit user point error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [get]
 // @way [query]
 // @param user_id

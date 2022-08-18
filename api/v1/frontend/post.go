@@ -115,6 +115,13 @@ func GetPost() gin.HandlerFunc {
 // @route /f/post
 func AddPost(c *gin.Context) {
 	uid := r.GetUid(c)
+
+	if err := models.AddPostCheck(uid); err != nil {
+		logging.Error("Add post error: %v", err)
+		r.Error(c, e.ERROR_POST_COUNT_LIMITED, err.Error())
+		return
+	}
+
 	postType := c.PostForm("type")
 	title := c.PostForm("title")
 	content := c.PostForm("content")

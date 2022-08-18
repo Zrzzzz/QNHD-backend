@@ -69,6 +69,14 @@ func AddBlocked(c *gin.Context) {
 	// 因为做过valid了不必考虑错误
 	intuid := util.AsUint(uid)
 	intlast := util.AsUint(last)
+	// 需要在对应天数里
+	switch intlast {
+	case 1, 3, 7, 14, 30:
+		break
+	default:
+		r.Error(c, e.ERROR_BLOCKED_USER_DAY, "")
+		return
+	}
 	code := e.SUCCESS
 	id, err := models.AddBlockedByUid(intuid, util.AsUint(doer), reason, uint8(intlast))
 	if err != nil {

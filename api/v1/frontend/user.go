@@ -31,7 +31,7 @@ func GetUserInfo(c *gin.Context) {
 
 // @method [post]
 // @way [name]
-// @param
+// @param name
 // @return
 // @route /f/user/name
 func EditUserName(c *gin.Context) {
@@ -55,6 +55,22 @@ func EditUserName(c *gin.Context) {
 	err = models.EditUserName(uid, name)
 	if err != nil {
 		logging.Error("edit user name error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param avatar
+// @return
+// @route /f/user/avatar
+func EditUserAvatar(c *gin.Context) {
+	uid := r.GetUid(c)
+	avatar := c.PostForm("avatar")
+	if err := models.EditUserAvatar(uid, avatar); err != nil {
+		logging.Error("edit user avatar error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

@@ -22,6 +22,7 @@ const (
 	PostType
 	Banner
 	User
+	Share
 )
 
 var FrontTypes = [...]FrontType{
@@ -36,6 +37,7 @@ var FrontTypes = [...]FrontType{
 	PostType,
 	Banner,
 	User,
+	Share,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -158,5 +160,10 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/user", GetUserInfo)
 		// 修改昵称
 		g.POST("/user/name", EditUserName)
+		// 修改头像
+		g.POST("/user/avatar", EditUserAvatar)
+	case Share:
+		// 分享记录
+		g.POST("/share", ShareLog)
 	}
 }

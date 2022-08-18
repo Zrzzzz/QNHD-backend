@@ -17,19 +17,35 @@ import (
 const START_DAY = "2022-03-17"
 
 type User struct {
-	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Nickname             string `json:"nickname" gorm:"default:''"`
-	Realname             string `json:"-"`
-	Number               string `json:"-" gorm:"default:''"`
-	Password             string `json:"-" gorm:"column:password;"`
-	PhoneNumber          string `json:"phone_number"`
-	IsSuper              bool   `json:"is_super" gorm:"default:false;column:super_admin"`
-	IsSchAdmin           bool   `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
-	IsStuAdmin           bool   `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
-	IsSchDistributeAdmin bool   `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
-	IsUser               bool   `json:"is_user" gorm:"default:false;"`
-	Active               bool   `json:"active" gorm:"default:true"`
-	CreatedAt            string `json:"-" gorm:"autoCreateTime;default:null;"`
+	Uid                  uint64        `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
+	Nickname             string        `json:"nickname" gorm:"default:''"`
+	Realname             string        `json:"-"`
+	Number               string        `json:"-" gorm:"default:''"`
+	Password             string        `json:"-" gorm:"column:password;"`
+	PhoneNumber          string        `json:"phone_number"`
+	IsSuper              bool          `json:"is_super" gorm:"default:false;column:super_admin"`
+	IsSchAdmin           bool          `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
+	IsStuAdmin           bool          `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
+	IsSchDistributeAdmin bool          `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
+	IsUser               bool          `json:"is_user" gorm:"default:false;"`
+	Active               bool          `json:"active" gorm:"default:true"`
+	Avatar               string        `json:"avatar"`
+	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
+	LevelPoint           int           `json:"level_point" gorm:"default:0"`
+	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`
+}
+
+type UserInfo struct {
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+	UserLevelInfo
+}
+
+type UserLevelInfo struct {
+	LevelName      string `json:"level_name"`
+	Level          int    `json:"level"`
+	NextLevelPoint int    `json:"next_level_point"`
+	CurLevelPoint  int    `json:"cur_level_point"`
 }
 
 type NewUserData struct {
@@ -177,7 +193,19 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	if err := db.Where(maps).First(&u).Error; err != nil {
 		return u, err
 	}
+	u.LevelInfo = GetLevelInfo(u.LevelPoint)
 	return u, nil
+}
+
+func GetUserInfo(uid string) UserInfo {
+	u, _ := GetUser(map[string]interface{}{"id": uid})
+
+	var uinfo UserInfo
+	uinfo.UserLevelInfo = u.LevelInfo
+	uinfo.Avatar = u.Avatar
+	uinfo.Nickname = u.Nickname
+
+	return uinfo
 }
 
 func AddUser(nickname, number, password, phoneNumber, realname string, isUser bool) (uint64, error) {
@@ -308,6 +336,11 @@ func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 		return err
 	}
 	return db.Model(&user).Update("password", newPasswd).Error
+}
+
+// 修改头像
+func EditUserAvatar(uid string, newAvatar string) error {
+	return db.Model(&User{}).Where("id = ?", uid).Update("avatar", newAvatar).Error
 }
 
 // 删除用户
