@@ -158,5 +158,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/user", GetUserInfo)
 		// 修改昵称
 		g.POST("/user/name", EditUserName)
+		// 升级账户
+		g.POST("/user/update_num", UpdateUserNumber)
 	}
 }
