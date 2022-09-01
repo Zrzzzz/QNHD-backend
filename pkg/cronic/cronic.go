@@ -21,7 +21,7 @@ func Setup() {
 	}
 	// 定时任务
 	c = cron.New()
-	c.AddFunc("00 00 00 * * ?", func() {
+	_, err = c.AddFunc("@weekly", func() {
 		// 清理taglog
 		err := models.FlushOldTagLog()
 		if err != nil {
@@ -34,6 +34,11 @@ func Setup() {
 		}
 		// 清理已读点赞
 	})
+	if err != nil {
+		logging.Error(err.Error())
+	} else {
+		logging.Debug("cron启动成功")
+	}
 	c.Start()
 }
 
