@@ -311,6 +311,7 @@ func AddPostTag(c *gin.Context) {
 func DeletePost(c *gin.Context) {
 	uid := r.GetUid(c)
 	id := c.Query("id")
+	reason := c.Query("reason")
 
 	valid := validation.Validation{}
 	valid.Required(id, "id")
@@ -321,7 +322,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeletePostAdmin(uid, id)
+	_, err := models.DeletePostAdmin(uid, id, reason)
 	if err != nil {
 		logging.Error("Delete post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

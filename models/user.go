@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/pkg/util"
+	"qnhd/request/twtservice"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -272,6 +273,22 @@ func AddUsers(users []NewUserData) error {
 // 修改用户属性
 func EditUser(uid string, maps map[string]interface{}) error {
 	return db.Model(&User{}).Where("id = ?", uid).Updates(maps).Error
+}
+
+// 更新学号
+func UpdateUserNumber(uid string, old, new string) error {
+	ok, err := twtservice.QueryUserCheck(old, new)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("身份信息不一致")
+	} else {
+		if err := db.Model(&User{}).Where("id = ?", uid).Update("number", new).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // 修改用户名称

@@ -37,7 +37,7 @@ func AddNoticeToAllUsers(uid string, data map[string]interface{}) error {
 	var user User
 	db.Where("id = ?", uid).Find(&user)
 	if user.IsSchAdmin {
-		data["symbol"] = "department_manager"
+		data["symbol"] = NOTICE_DEPARTMENT
 	}
 	id, err := AddNoticeTemplate(data)
 	if err != nil {

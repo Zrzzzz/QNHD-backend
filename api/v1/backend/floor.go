@@ -136,6 +136,7 @@ func GetFloorReplys(c *gin.Context) {
 func DeleteFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	floorId := c.Query("floor_id")
+	reason := c.Query("reason")
 
 	valid := validation.Validation{}
 	valid.Required(floorId, "floorId")
@@ -146,7 +147,7 @@ func DeleteFloor(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeleteFloorByAdmin(uid, floorId)
+	_, err := models.DeleteFloorByAdmin(uid, floorId, reason)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())

@@ -651,7 +651,7 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 	return post.Id, err
 }
 
-func DeletePostAdmin(uid, postId string) (uint64, error) {
+func DeletePostAdmin(uid, postId string, reason string) (uint64, error) {
 	var post, _ = GetPost(postId)
 	// 找到举报过帖子的所有用户
 	var uids []uint64
@@ -661,9 +661,14 @@ func DeletePostAdmin(uid, postId string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	DEFAULT_REASON := "违反社区规范"
+	if reason == "" {
+		reason = DEFAULT_REASON
+	}
+
 	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
 	// 通知被删除的用户
-	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
+	addNoticeWithTemplate(NoticeType.POST_DELETED_WITH_REASON, []uint64{post.Uid}, []string{post.Title, reason})
 	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DELETE)
 	// 将被举报的人扣经验
 	EditUserLevel(util.AsStrU(post.Uid), UserLevelOperationType.FLOOR_DELETED)
