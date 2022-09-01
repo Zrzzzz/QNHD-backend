@@ -353,7 +353,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
 	}
-	if post.Commentable == false {
+	if !post.Commentable {
 		return 0, fmt.Errorf("禁止评论")
 	}
 
@@ -499,7 +499,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	return newFloor.Id, nil
 }
 
-func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
+func DeleteFloorByAdmin(uid, floorId string, reason string) (uint64, error) {
 	var floor Floor
 	var post Post
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
@@ -516,10 +516,15 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 		return 0, err
 	}
 
+	DEFAULT_REASON := "违反社区规范"
+	if reason == "" {
+		reason = DEFAULT_REASON
+	}
+
 	updatePostTime(floor.PostId)
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
-	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
+	addNoticeWithTemplate(NoticeType.FLOOR_DELETED_WITH_REASON, []uint64{floor.Uid}, []string{post.Title, floor.Content, reason})
 	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_DELETE)
 	return floor.Id, nil
 }
