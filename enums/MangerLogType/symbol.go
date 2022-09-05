@@ -35,6 +35,7 @@ var msgSymbol = map[Enum]string{
 
 	USER_DETAIL:         "user_detail",
 	USER_NICKNAME_RESET: "user_nickname_reset",
+	USER_AVATAR_RESET:   "user_avatar_reset",
 
 	TAG_POINT_ADD:   "tag_point_add",
 	TAG_POINT_CLEAR: "tag_point_clear",

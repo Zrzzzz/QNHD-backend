@@ -475,3 +475,29 @@ func ResetUserNickname(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [post]
+// @way [name]
+// @param
+// @return
+// @route /b/user/avatar/reset
+func ResetUserAvatar(c *gin.Context) {
+	doer := r.GetUid(c)
+	uid := c.PostForm("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "Reset user avatar")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+
+	err := models.ResetUserAvatar(doer, uid)
+	if err != nil {
+		logging.Error("reset user avatar error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
