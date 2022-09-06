@@ -671,7 +671,7 @@ func DeletePostAdmin(uid, postId string, reason string) (uint64, error) {
 	addNoticeWithTemplate(NoticeType.POST_DELETED_WITH_REASON, []uint64{post.Uid}, []string{post.Title, reason})
 	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DELETE)
 	// 将被举报的人扣经验
-	EditUserLevel(util.AsStrU(post.Uid), UserLevelOperationType.FLOOR_DELETED)
+	EditUserLevel(util.AsStrU(post.Uid), UserLevelOperationType.POST_DELETED)
 	// 找如果有举报这个帖子的，找举报人加经验
 	if len(uids) != 0 {
 		for _, log := range uids {
