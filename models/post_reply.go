@@ -55,7 +55,7 @@ func GetPostReplys(postId string) ([]PostReply, error) {
 
 // 获取带图片回复
 func GetPostReplyResponses(postId string) ([]PostReplyResponse, error) {
-	var rets []PostReplyResponse
+	var rets = []PostReplyResponse{}
 	var err error
 	prs, err := GetPostReplys(postId)
 	if err != nil {

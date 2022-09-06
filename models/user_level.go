@@ -10,6 +10,7 @@ import (
 
 func EditUserLevel(uid string, t UserLevelOperationType.Enum) error {
 	switch t {
+	// 加分
 	case UserLevelOperationType.VISIT_POST:
 		return addVisitExp(uid)
 	case UserLevelOperationType.ADD_POST:
@@ -21,6 +22,7 @@ func EditUserLevel(uid string, t UserLevelOperationType.Enum) error {
 	case UserLevelOperationType.POST_RECOMMENDED,
 		UserLevelOperationType.REPORT_PASSED:
 		return ChangeUserExp(uid, t.GetPoint())
+	// 扣分
 	case UserLevelOperationType.FLOOR_DELETED, UserLevelOperationType.POST_DELETED:
 		return deleteExp(uid, t)
 	case UserLevelOperationType.BLOCKED_1,
@@ -43,11 +45,11 @@ func addVisitExp(uid string) error {
 	var lastLog LogVisitHistory
 	db.Where("uid = ?", uid).Order("created_at DESC").First(&lastLog)
 	// 如果找到
-	if lastLog.Uid != 0 {
-		if !carbon.Parse(lastLog.CreatedAt).IsToday() {
-			// 增加经验
-			return ChangeUserExp(uid, UserLevelOperationType.VISIT_POST.GetPoint())
-		}
+	fmt.Println(lastLog)
+	fmt.Println(lastLog.Uid != 0, !carbon.Parse(lastLog.CreatedAt).IsToday())
+	if lastLog.Uid != 0 && !carbon.Parse(lastLog.CreatedAt).IsToday() || lastLog.Uid == 0 {
+		// 增加经验
+		return ChangeUserExp(uid, UserLevelOperationType.VISIT_POST.GetPoint())
 	}
 	return nil
 }

@@ -432,7 +432,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
 	}
-	if toFloor.Commentable == false {
+	if !toFloor.Commentable {
 		return 0, fmt.Errorf("禁止评论")
 	}
 
