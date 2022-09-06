@@ -72,7 +72,6 @@ func EditNoticeTemplate(uid string, id uint64, data map[string]interface{}) erro
 	)
 	db.Where("id = ?", id).Find(&notice)
 	db.Where("id = ?", uid).Find(&user)
-	fmt.Println(user, notice)
 	if user.IsSchAdmin && notice.Symbol != NOTICE_DEPARTMENT {
 		return fmt.Errorf("不能修改非部门公告")
 	}

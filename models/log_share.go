@@ -2,6 +2,7 @@ package models
 
 import (
 	"qnhd/enums/ShareLogType"
+	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/util"
 )
 
@@ -13,9 +14,13 @@ type LogShare struct {
 }
 
 func AddShareLog(uid string, objectId uint64, t ShareLogType.Enum) error {
-	return db.Create(&LogShare{
+	if err := db.Create(&LogShare{
 		Uid:      util.AsUint(uid),
 		ObjectId: objectId,
 		Type:     t,
-	}).Error
+	}).Error; err != nil {
+		return err
+	}
+	EditUserLevel(uid, UserLevelOperationType.SHARE_POST)
+	return nil
 }

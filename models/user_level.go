@@ -4,8 +4,6 @@ import (
 	"fmt"
 	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/UserLevelOperationType"
-
-	"github.com/golang-module/carbon/v2"
 )
 
 func EditUserLevel(uid string, t UserLevelOperationType.Enum) error {
@@ -42,16 +40,12 @@ func ChangeUserExp(uid string, change int) error {
 }
 
 func addVisitExp(uid string) error {
-	var lastLog LogVisitHistory
-	db.Where("uid = ?", uid).Order("created_at DESC").First(&lastLog)
-	// 如果找到
-	fmt.Println(lastLog)
-	fmt.Println(lastLog.Uid != 0, !carbon.Parse(lastLog.CreatedAt).IsToday())
-	if lastLog.Uid != 0 && !carbon.Parse(lastLog.CreatedAt).IsToday() || lastLog.Uid == 0 {
-		// 增加经验
-		return ChangeUserExp(uid, UserLevelOperationType.VISIT_POST.GetPoint())
+	var logs []LogVisitHistory
+	db.Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&logs)
+	if len(logs) > 1 {
+		return nil
 	}
-	return nil
+	return ChangeUserExp(uid, UserLevelOperationType.VISIT_POST.GetPoint())
 }
 
 func addPostExp(uid string) error {
@@ -73,9 +67,9 @@ func addFloorExp(uid string) error {
 }
 
 func sharePostExp(uid string) error {
-	var log LogShare
-	db.Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&log)
-	if log.ObjectId == 0 {
+	var logs []LogShare
+	db.Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&logs)
+	if len(logs) > 1 {
 		return ChangeUserExp(uid, UserLevelOperationType.SHARE_POST.GetPoint())
 	}
 	return nil
