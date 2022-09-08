@@ -12,6 +12,7 @@ type PostReplyExcelData struct {
 	CreateAt   string `json:"created_at"`
 	TransAt    string `json:"trans_at"`
 	IsReply    bool   `json:"is_reply"`
+	Reply      string `json:"reply"`
 	ReplyAt    string `json:"reply_at"`
 	Department string `json:"department"`
 	Title      string `json:"title"`
@@ -28,9 +29,11 @@ func ExportPostReplyExcel(startTime string, endTime string, c *gin.Context) ([]P
 	if endTime != "" {
 		d.Where("created_at <= ?", endTime)
 	}
+	// 全部数量
 	if err := d.Count(&cnt).Error; err != nil {
 		return nil, cnt, err
 	}
+	// 找到提问问题
 	if err := d.Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, cnt, err
 	}
@@ -45,10 +48,12 @@ func ExportPostReplyExcel(startTime string, endTime string, c *gin.Context) ([]P
 			Content:   p.Content,
 			Rating:    int(p.Rating),
 		}
+
 		if p.Solved == 2 || p.Solved == 1 {
 			prs, _ := GetPostReplys(util.AsStrU(p.Id))
 			if len(prs) > 0 {
 				r.ReplyAt = carbon.Parse(prs[0].CreatedAt, "Asia/Shanghai").Format("Y-m-d H:i:s", "Asia/Shanghai")
+				r.Reply = prs[0].Content
 			}
 		}
 		department, _ := GetDepartment(p.DepartmentId)

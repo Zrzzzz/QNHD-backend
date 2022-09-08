@@ -35,7 +35,8 @@ type Post struct {
 	Type         int                 `json:"type"`
 	DepartmentId uint64              `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType.Enum `json:"campus"`
-	Solved       PostSolveType.Enum  `json:"solved" gorm:"default:0"`
+	// 0 已提问 1 已回复 2 已解决 3 已分发
+	Solved PostSolveType.Enum `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
 	Title    string `json:"title"`
