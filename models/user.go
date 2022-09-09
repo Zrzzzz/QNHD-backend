@@ -287,7 +287,7 @@ func UpdateUserNumber(uid string, old, new string) error {
 		if err := db.Where("number = ?", new).Delete(&User{}).Error; err != nil {
 			return err
 		}
-		if err := db.Model(&User{}).Where("id = ?", uid).Update("number", new).Error; err != nil {
+		if err := db.Model(&User{}).Where("number", old).Update("number", new).Error; err != nil {
 			return err
 		}
 	}
