@@ -1,6 +1,7 @@
 package permission
 
 import (
+	"net/http"
 	"qnhd/models"
 	"qnhd/pkg/e"
 	"qnhd/pkg/r"
@@ -9,6 +10,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// 前端是否可以访问
+func FrontCanVisit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		q := models.GetSetting()
+		if !q.FrontVisit {
+			c.JSON(http.StatusNotFound, nil)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
 
 // 验证封号
 func ValidBanned() gin.HandlerFunc {

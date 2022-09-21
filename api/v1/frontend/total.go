@@ -23,6 +23,7 @@ const (
 	Banner
 	User
 	Share
+	Setting
 )
 
 var FrontTypes = [...]FrontType{
@@ -38,6 +39,7 @@ var FrontTypes = [...]FrontType{
 	Banner,
 	User,
 	Share,
+	Setting,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -46,6 +48,7 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/token", GetAuthToken)
 	g.GET("/auth/:token", RefreshToken)
 	g.Use(jwt.JWT())
+	g.Use(permission.FrontCanVisit())
 	g.Use(permission.IdentityDemand(IdentityType.USER))
 	// 封号的话不能访问
 	g.Use(permission.ValidBanned())
@@ -167,5 +170,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Share:
 		// 分享记录
 		g.POST("/share", ShareLog)
+	case Setting:
+		// 获取配置
+		g.GET("/setting", GetSetting)
 	}
 }

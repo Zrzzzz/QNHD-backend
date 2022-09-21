@@ -26,6 +26,7 @@ const (
 	PostType
 	Banner
 	Statistic
+	Setting
 )
 
 var BackendTypes = [...]BackendType{
@@ -43,6 +44,7 @@ var BackendTypes = [...]BackendType{
 	PostType,
 	Banner,
 	Statistic,
+	Setting,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -239,5 +241,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/statistic/posts/visit/count", GetVisitPostCount)
 		// 导出帖子回复情况
 		g.GET("/statistic/post_reply_excel", ExportPostReplyExcel)
+	case Setting:
+		// 获取配置
+		g.GET("/setting", GetSetting)
+		// 修改能否访问
+		g.POST("/setting", EditSetting)
 	}
 }
