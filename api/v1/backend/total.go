@@ -233,18 +233,20 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除轮播图
 		g.GET("/banner/delete", DeleteBanner)
 	case Statistic:
+		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取帖子数量
-		g.GET("/statistic/posts/count", GetPostCount)
+		group.GET("/statistic/posts/count", GetPostCount)
 		// 获取楼层数量
-		g.GET("/statistic/floors/count", GetFloorCount)
+		group.GET("/statistic/floors/count", GetFloorCount)
 		// 获取帖子浏览数量
-		g.GET("/statistic/posts/visit/count", GetVisitPostCount)
+		group.GET("/statistic/posts/visit/count", GetVisitPostCount)
 		// 导出帖子回复情况
-		g.GET("/statistic/post_reply_excel", ExportPostReplyExcel)
+		group.GET("/statistic/post_reply_excel", ExportPostReplyExcel)
 	case Setting:
+		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取配置
-		g.GET("/setting", GetSetting)
+		group.GET("/setting", GetSetting)
 		// 修改能否访问
-		g.POST("/setting", EditSetting)
+		group.POST("/setting", EditSetting)
 	}
 }
