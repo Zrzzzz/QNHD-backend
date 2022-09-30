@@ -377,14 +377,19 @@ func DeleteUser(uid uint64) error {
 }
 
 func (u *User) realname() string {
-	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+	if len([]rune(u.Realname)) == 0 {
 		return u.Nickname
 	}
-	return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
+	if len([]rune(u.Number)) == 10 {
+		return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
+	} else {
+		// 1012加后三位+***
+		return fmt.Sprintf("1012%s*** %s*", string([]rune(u.Number)[len([]rune(u.Number))-3:]), string([]rune(u.Realname)[0]))
+	}
 }
 
 func (u *User) realnameFull() string {
-	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+	if len([]rune(u.Realname)) == 0 {
 		return u.Nickname
 	}
 	return fmt.Sprintf("%s %s %s", u.Number, u.Realname, u.PhoneNumber)
