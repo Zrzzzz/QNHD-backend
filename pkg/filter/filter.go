@@ -41,7 +41,7 @@ func (c *WordFilter) Filter(s string) string {
 		for _, data := range r.Data {
 			for _, hit := range data.Hits {
 				for _, word := range hit.Words {
-					ret = strings.Replace(ret, word, strings.Repeat("*", len([]rune(word))), -1)
+					s = strings.Replace(s, word, strings.Repeat("*", len([]rune(word))), -1)
 				}
 			}
 		}
