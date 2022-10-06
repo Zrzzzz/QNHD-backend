@@ -94,6 +94,7 @@ func AddBlocked(c *gin.Context) {
 // @return
 // @route /b/blocked
 func DeleteBlocked(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.Query("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
@@ -113,7 +114,7 @@ func DeleteBlocked(c *gin.Context) {
 		code = e.ERROR_DATABASE
 	}
 	if ifBlocked {
-		_, err := models.DeleteBlockedByUid(intuid)
+		_, err := models.DeleteBlockedByUid(util.AsUint(doer), intuid)
 		if err != nil {
 			logging.Error("Delete blocked error: %v", err)
 			code = e.ERROR_DATABASE

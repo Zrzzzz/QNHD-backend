@@ -62,7 +62,7 @@ func AddBlockedByUid(uid uint64, doer uint64, reason string, last uint8) (uint64
 	return blocked.Id, nil
 }
 
-func DeleteBlockedByUid(uid uint64) (uint64, error) {
+func DeleteBlockedByUid(doer uint64, uid uint64) (uint64, error) {
 	var blocked = Blocked{}
 	if err := db.Where("uid = ?", uid).Last(&blocked).Error; err != nil {
 		return 0, err
@@ -70,7 +70,7 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	if err := db.Where("uid = ?", uid).Delete(&Blocked{}).Error; err != nil {
 		return 0, err
 	}
-	addManagerLog(blocked.Doer, uid, ManagerLogType.USER_UNBLOCK)
+	addManagerLog(doer, uid, ManagerLogType.USER_UNBLOCK)
 
 	return blocked.Id, nil
 }
