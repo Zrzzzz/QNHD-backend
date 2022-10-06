@@ -528,9 +528,11 @@ func EditPostEtag(uid, postId string, t PostEtagType.Enum) error {
 			fmt.Sprintf("to: %s", t.GetSymbol()))
 	}
 	// 如果是帖子加精，加经验
-	var pUserId string
-	db.Model(&User{}).Select("uid").Where("id = ?", postId).Find(&pUserId)
-	EditUserLevel(pUserId, UserLevelOperationType.POST_RECOMMENDED)
+	if t == PostEtagType.RECOMMEND {
+		var pUserId string
+		db.Model(&Post{}).Select("uid").Where("id = ?", postId).Find(&pUserId)
+		EditUserLevel(pUserId, UserLevelOperationType.POST_RECOMMENDED)
+	}
 	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", t.GetSymbol()).Error
 }
 
