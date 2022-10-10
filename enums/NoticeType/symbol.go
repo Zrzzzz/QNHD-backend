@@ -4,6 +4,7 @@ var msgSymbol = map[Enum]string{
 	FLOOR_REPORT_SOLVE:        "floor_report_solve",
 	POST_REPORT_SOLVE:         "post_report_solve",
 	POST_VALUED:               "post_valued",
+	FLOOR_VALUED:              "floor_valued",
 	BEEN_BLOCKED:              "been_blocked",
 	POST_DELETED:              "post_deleted",
 	FLOOR_DELETED:             "floor_deleted",

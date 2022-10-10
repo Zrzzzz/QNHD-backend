@@ -50,7 +50,7 @@ type Post struct {
 
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
-	// 加精值
+	// 置顶值
 	Value uint64 `json:"value" gorm:"default:0"`
 
 	// 分词

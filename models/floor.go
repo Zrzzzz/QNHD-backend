@@ -35,6 +35,8 @@ type Floor struct {
 	DisCount    uint64 `json:"-" gorm:"default:0"`
 	// 能否评论
 	Commentable bool `json:"commentable" gorm:"default:true"`
+	// 排序顺序
+	Value uint64 `json:"value" gorm:"default:0"`
 }
 
 type LogFloorLike struct {
@@ -223,7 +225,7 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 // 分页返回帖子里的楼层
 func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{}) ([]FloorResponse, error) {
 	var floors []Floor
-	d := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+	d := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c)).Order("value DESC")
 	if args["order"].(string) == "1" {
 		d = d.Order("created_at")
 	} else {
@@ -245,7 +247,7 @@ func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{
 // 分页返回帖子里的楼层，带uid
 func GetFloorResponsesWithUid(c *gin.Context, postId, uid string, args map[string]interface{}) ([]FloorResponseUser, error) {
 	var floors []Floor
-	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c)).Order("value DESC")
 	if args["order"].(string) == "1" {
 		d = d.Order("created_at")
 	} else {
@@ -336,7 +338,7 @@ func GetCommentCount(postId uint64, withSubfloors bool, unscoped bool) int {
 // 分页返回楼层内的回复
 func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, error) {
 	var floors []Floor
-	err := db.Unscoped().Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	err := db.Unscoped().Where("sub_to = ?", floorId).Order("created_at").Order("value DESC").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
 		return []FloorResponse{}, err
 	}
@@ -346,7 +348,7 @@ func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, er
 // 分页返回楼层内的回复带uid
 func GetFloorReplyResponsesWithUid(c *gin.Context, floorId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
-	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	err := db.Where("sub_to = ?", floorId).Order("created_at").Order("value DESC").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
 		return []FloorResponseUser{}, err
 	}
@@ -893,4 +895,17 @@ func IsOwnFloorByUid(uid, floorId string) bool {
 func EditFloorCommentable(uid, floorId string, commentable bool) error {
 	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_EDIT_COMMENTABLE)
 	return db.Model(&Floor{}).Where("id = ?", floorId).Updates(map[string]interface{}{"commentable": commentable}).Error
+}
+
+// 修改楼层置顶值
+func EditFloorValue(uid, floorId string, value int) error {
+	var floor Floor
+	if err := db.Where("id = ?", floorId).Find(&floor).Error; err != nil {
+		return err
+	}
+	// 置顶值修改
+	// if floor.Value == 0 && value > 0 {
+	// 	addNoticeWithTemplate(NoticeType.FLOOR_VALUED, []uint64{floor.Uid}, []string{floor.Content})
+	// }
+	return db.Model(&Floor{}).Where("id = ?", floorId).Update("value", value).Error
 }

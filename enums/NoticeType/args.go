@@ -4,6 +4,7 @@ var templateArgs = map[Enum][]string{
 	FLOOR_REPORT_SOLVE:        {"post", "floor"},
 	POST_REPORT_SOLVE:         {"post"},
 	POST_VALUED:               {"post"},
+	FLOOR_VALUED:              {"floor"},
 	BEEN_BLOCKED:              {"reason", "day"},
 	POST_DELETED:              {"post"},
 	FLOOR_DELETED:             {"post", "floor"},

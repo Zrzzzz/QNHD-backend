@@ -207,3 +207,37 @@ func EditFloorCommentable(c *gin.Context) {
 	}
 	r.OK(c, e.SUCCESS, nil)
 }
+
+// @method [post]
+// @way [formdata]
+// @param floor_id, value
+// @return
+// @route /b/floor/value
+func EditFloorValue(c *gin.Context) {
+	uid := r.GetUid(c)
+	floorId := c.PostForm("floor_id")
+	value := c.PostForm("value")
+	valid := validation.Validation{}
+	valid.Required(floorId, "floor_id")
+	valid.Numeric(floorId, "floor_id")
+	valid.Required(value, "value")
+	valid.Numeric(value, "value")
+	ok, verr := r.ErrorValid(&valid, "edit floor value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	valid.Range(util.AsInt(value), 0, 30000, "value")
+	ok, verr = r.ErrorValid(&valid, "edit floor value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditFloorValue(uid, floorId, util.AsInt(value))
+	if err != nil {
+		logging.Error("edit floor value error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
