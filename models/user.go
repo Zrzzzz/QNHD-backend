@@ -384,7 +384,7 @@ func (u *User) realname() string {
 		return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
 	} else {
 		// 1012加后三位+***
-		return fmt.Sprintf("1012%s*** %s*", string([]rune(u.Number)[len([]rune(u.Number))-3:]), string([]rune(u.Realname)[0]))
+		return fmt.Sprintf("1022%s*** %s*", string([]rune(u.Number)[len([]rune(u.Number))-3:]), string([]rune(u.Realname)[0]))
 	}
 }
 
