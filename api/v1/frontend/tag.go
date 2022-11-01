@@ -69,6 +69,11 @@ func GetRecommendTag(c *gin.Context) {
 // @return hottagList
 // @route /f/tags/hot
 func GetHotTag(c *gin.Context) {
+	r.OK(c, e.SUCCESS, map[string]interface{}{
+		"list":  []int{},
+		"total": 0,
+	})
+	return
 	list, err := models.GetHotTags(5)
 	data := make(map[string]interface{})
 	if err != nil {
