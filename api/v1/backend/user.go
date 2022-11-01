@@ -89,17 +89,28 @@ func GetUserInfo(c *gin.Context) {
 // @route /b/user/common
 func GetCommonUser(c *gin.Context) {
 	uid := c.Query("uid")
-	valid := validation.Validation{}
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
-	ok, verr := r.ErrorValid(&valid, "get common user")
-	if !ok {
-		r.Error(c, e.INVALID_PARAMS, verr.Error())
+	name := c.Query("name")
+	number := c.Query("number")
+
+	if uid == "" && name == "" && number == "" {
+		r.Error(c, e.INVALID_PARAMS, "")
 		return
 	}
 
-	code := e.SUCCESS
-	user, err := models.GetUser(map[string]interface{}{"id": uid})
+	query := make(map[string]interface{})
+
+	if uid != "" {
+		query["id"] = uid
+	} else if name != "" {
+		query["nickname"] = name
+	} else if number != "" {
+		query["number"] = number
+	} else {
+		r.Error(c, e.INVALID_PARAMS, "")
+		return
+	}
+
+	user, err := models.GetUser(query)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -123,7 +134,7 @@ func GetCommonUser(c *gin.Context) {
 	data := make(map[string]interface{})
 	data["user"] = nUser
 
-	r.OK(c, code, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
