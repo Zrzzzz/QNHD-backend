@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	ManagerLogType "qnhd/enums/MangerLogType"
 
 	"gorm.io/gorm"
@@ -65,8 +64,6 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 
 func IsBannedByUid(uid uint64) bool {
 	var ban Banned
-	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
-		return !errors.Is(err, gorm.ErrRecordNotFound)
-	}
-	return true
+	err := db.Where("uid = ?", uid).Last(&ban).Error
+	return err == nil
 }

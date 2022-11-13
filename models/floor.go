@@ -762,9 +762,7 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return 0, err
@@ -796,9 +794,7 @@ func UnlikeFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount-1).Error; err != nil {
 		return 0, err
@@ -826,9 +822,7 @@ func DisFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount+1).Error; err != nil {
 		return 0, err
@@ -855,9 +849,7 @@ func UndisFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount-1).Error; err != nil {
 		return 0, err

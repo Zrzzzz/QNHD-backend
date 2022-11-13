@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"qnhd/enums/LikeType"
 	ManagerLogType "qnhd/enums/MangerLogType"
@@ -762,9 +761,7 @@ func FavPost(postId string, uid string) (uint64, error) {
 	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("fav_count", post.FavCount+1).Error; err != nil {
 		return 0, err
@@ -794,9 +791,7 @@ func UnfavPost(postId string, uid string) (uint64, error) {
 	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("fav_count", post.FavCount-1).Error; err != nil {
 		return 0, err
@@ -825,9 +820,7 @@ func LikePost(postId string, uid string) (uint64, error) {
 	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("like_count", post.LikeCount+1).Error; err != nil {
 		return 0, err
@@ -860,9 +853,7 @@ func UnLikePost(postId string, uid string) (uint64, error) {
 	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("like_count", post.LikeCount-1).Error; err != nil {
 		return 0, err
@@ -890,9 +881,7 @@ func DisPost(postId string, uid string) (uint64, error) {
 	// 更新点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount+1).Error; err != nil {
 		return 0, err
@@ -922,9 +911,7 @@ func UnDisPost(postId string, uid string) (uint64, error) {
 	// 更新楼的点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount-1).Error; err != nil {
 		return 0, err
