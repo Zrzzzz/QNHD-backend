@@ -10,6 +10,15 @@ import (
 	"qnhd/pkg/setting"
 )
 
+// func main() {
+// 	setting.Setup()
+// 	if err := twtservice.NotifyFloor("haha", "3019244343"); err != nil {
+// 		fmt.Println(err)
+// 	} else {
+// 		fmt.Println("ok")
+// 	}
+// }
+
 func main() {
 	setting.Setup()
 	segment.Setup()

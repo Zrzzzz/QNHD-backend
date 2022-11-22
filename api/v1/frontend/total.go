@@ -24,6 +24,7 @@ const (
 	User
 	Share
 	Setting
+	EpiInfo
 )
 
 var FrontTypes = [...]FrontType{
@@ -40,6 +41,7 @@ var FrontTypes = [...]FrontType{
 	User,
 	Share,
 	Setting,
+	EpiInfo,
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -173,5 +175,10 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Setting:
 		// 获取配置
 		g.GET("/setting", GetSetting)
+	case EpiInfo:
+		// 获取信息
+		g.GET("/epiinfos", GetEpiInfos)
+		// 增加阅读次数
+		g.POST("/epiinfo/add_read_count", AddEpiInfoReadCount)
 	}
 }
