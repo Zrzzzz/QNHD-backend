@@ -47,13 +47,15 @@ func GetEpiInfos(c *gin.Context) ([]EpiInfo, int, error) {
 
 func AddEpiInfoReadCount(id uint64) (uint64, error) {
 	var cnt int64
-	d := db.Model(&EpiInfo{}).Where("INFOID = ?", id)
+	d := db.Model(&EpiInfo{}).Where(map[string]interface{}{
+		"INFOID": id,
+	})
 	if err := d.Select("READ_CNT").Find(&cnt).Error; err != nil {
 		return 0, err
 	}
 	d.Update("READ_CNT", cnt+1)
 
-	return uint64(cnt), nil
+	return uint64(cnt + 1), nil
 }
 
 func (EpiInfo) TableName() string {
