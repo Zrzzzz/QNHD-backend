@@ -38,7 +38,7 @@ func GetEpiInfos(c *gin.Context) ([]EpiInfo, int, error) {
 	d := db.Model(&EpiInfo{})
 
 	d.Count(&cnt)
-	if err := d.Scopes(util.Paginate(c)).Order(clause.OrderByColumn{Column: clause.Column{Name: "RANK"}, Desc: true}).Find(&infos).Error; err != nil {
+	if err := d.Scopes(util.Paginate(c)).Order(clause.OrderByColumn{Column: clause.Column{Name: "RANK"}, Desc: true}).Order(clause.OrderByColumn{Column: clause.Column{Name: "INFOTIME"}, Desc: true}).Find(&infos).Error; err != nil {
 		return nil, 0, err
 	}
 
