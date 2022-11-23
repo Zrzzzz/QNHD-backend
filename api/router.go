@@ -48,6 +48,7 @@ func initRouter() (r *gin.Engine) {
 	r.Static("src", "pages/jump")
 
 	r.Static("message", "pages/message")
+	r.Static("epi-message", "pages/epi-message")
 	return r
 }
 
