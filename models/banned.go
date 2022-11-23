@@ -63,7 +63,10 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 }
 
 func IsBannedByUid(uid uint64) bool {
-	var ban Banned
-	err := db.Where("uid = ?", uid).Last(&ban).Error
-	return err == nil
+	var ok = true
+	err := db.Debug().Model(&User{}).Where("id = ?", uid).Select("active").Find(&ok).Error
+	if err != nil {
+		return false
+	}
+	return !ok
 }
