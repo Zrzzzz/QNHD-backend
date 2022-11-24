@@ -535,7 +535,6 @@ func DeleteFloorByAdmin(uid, floorId string, reason string) (uint64, error) {
 		reason = DEFAULT_REASON
 	}
 
-	updatePostTime(floor.PostId)
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
 	addNoticeWithTemplate(NoticeType.FLOOR_DELETED_WITH_REASON, []uint64{floor.Uid}, []string{post.Title, floor.Content, reason})
@@ -559,8 +558,6 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
-
-	updatePostTime(floor.PostId)
 
 	return floor.Id, nil
 }
