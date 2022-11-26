@@ -367,7 +367,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 	if !post.Commentable {
-		return 0, fmt.Errorf("禁止评论")
+		return 0, fmt.Errorf("已归档")
 	}
 
 	var newFloor = Floor{
@@ -435,7 +435,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 		return 0, err
 	}
 	if !toFloor.Commentable {
-		return 0, fmt.Errorf("禁止评论")
+		return 0, fmt.Errorf("已归档")
 	}
 
 	var newFloor = Floor{
