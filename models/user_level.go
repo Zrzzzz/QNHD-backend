@@ -50,7 +50,8 @@ func addVisitExp(uid string) error {
 
 func addPostExp(uid string) error {
 	var posts []Post
-	db.Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&posts)
+	// 同时查找删除的
+	db.Unscoped().Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&posts)
 	if len(posts) > 3 {
 		return nil
 	}
@@ -59,7 +60,8 @@ func addPostExp(uid string) error {
 
 func addFloorExp(uid string) error {
 	var floors []Floor
-	db.Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&floors)
+	// 同时查找删除的
+	db.Unscoped().Where("uid = ? AND created_at >= CURRENT_DATE", uid).Find(&floors)
 	if len(floors) > 3 {
 		return nil
 	}
