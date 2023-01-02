@@ -39,9 +39,10 @@ func setupModels() {
 }
 
 func refreshToken() {
+	refreshAll := setting.EnvironmentSetting.QNHD_REFRESH_ALL == "1"
 	if setting.EnvironmentSetting.QNHD_REFRESH == "1" {
 		// 更新未处理的数据
-		models.FlushPostsTokens(false)
-		models.FlushTagsTokens(false)
+		models.FlushPostsTokens(refreshAll)
+		models.FlushTagsTokens(refreshAll)
 	}
 }

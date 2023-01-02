@@ -60,9 +60,10 @@ type Database struct {
 	Port     string
 }
 type Environment struct {
-	DB_DEBUG     string
-	QNHD_REFRESH string
-	RELEASE      string
+	DB_DEBUG         string
+	QNHD_REFRESH     string
+	RELEASE          string
+	QNHD_REFRESH_ALL string
 }
 
 var ServerSetting = &Server{}
@@ -74,6 +75,7 @@ func setupEnvironment() {
 	EnvironmentSetting.DB_DEBUG = os.Getenv("DB_DEBUG")
 	EnvironmentSetting.QNHD_REFRESH = os.Getenv("QNHD_REFRESH")
 	EnvironmentSetting.RELEASE = os.Getenv("RELEASE")
+	EnvironmentSetting.QNHD_REFRESH_ALL = os.Getenv("QNHD_REFRESH_ALL")
 }
 
 func Setup() {
