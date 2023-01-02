@@ -33,4 +33,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/postgres v1.2.3
 	gorm.io/gorm v1.22.3
+	mvdan.cc/xurls/v2 v2.4.0
 )
