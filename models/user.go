@@ -31,6 +31,7 @@ type User struct {
 	IsUser               bool          `json:"is_user" gorm:"default:false;"`
 	Active               bool          `json:"active" gorm:"default:true"`
 	Avatar               string        `json:"avatar"`
+	// 需不需要在这里加上 avatar_frame ?
 	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
 	LevelPoint           int           `json:"level_point" gorm:"default:0"`
 	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`

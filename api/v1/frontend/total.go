@@ -25,6 +25,7 @@ const (
 	Share
 	Setting
 	EpiInfo
+	Frame 		// 头相框 - 2023 海棠节项目
 )
 
 var FrontTypes = [...]FrontType{
@@ -42,6 +43,7 @@ var FrontTypes = [...]FrontType{
 	Share,
 	Setting,
 	EpiInfo,
+	Frame,  	// 头相框 - 2023 海棠节项目
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -180,5 +182,12 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/epiinfos", GetEpiInfos)
 		// 增加阅读次数
 		g.POST("/epiinfo/add_read_count", AddEpiInfoReadCount)
+	case Frame:
+    // 获取我的头像相框
+		g.GET("/frame/my", GetMyFrame)
+    // 设置我的头像框
+		g.POST("/frame/set", SetMyFrame)
+    // 更新我的头像框
+    g.POST("/frame/update", UpdateMyFrame)
 	}
 }
