@@ -27,7 +27,7 @@ const (
 	Banner
 	Statistic
 	Setting
-  Frame    // 头相框 - 2023 海棠节 
+	Frame    // 头相框 - 2023 海棠节 
 )
 
 var BackendTypes = [...]BackendType{
@@ -46,7 +46,7 @@ var BackendTypes = [...]BackendType{
 	Banner,
 	Statistic,
 	Setting,
-  Frame,    // 头像框 - 2023 海棠节
+	Frame,    // 头像框 - 2023 海棠节
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -252,11 +252,13 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		group.GET("/setting", GetSetting)
 		// 修改能否访问
 		group.POST("/setting", EditSetting)
-  case Frame:
+	case Frame:
 		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
-    // 存储头像框 
-    group.POST("/frame/upload", UploadAvatarFrame)
-    // 查询所有头像框
-    group.GET("/frame/all", GetAllAvatarFrame)
+		// 存储头像框 
+		group.POST("/frame/upload", UploadAvatarFrame)
+		// 查询所有头像框
+		group.GET("/frame/all", GetAllAvatarFrame)
+		// 更新头像框
+		group.POST("/frame/update", UpdateAvatarFrame)
 	}
 }
