@@ -31,7 +31,8 @@ type User struct {
 	IsUser               bool          `json:"is_user" gorm:"default:false;"`
 	Active               bool          `json:"active" gorm:"default:true"`
 	Avatar               string        `json:"avatar"`
-	// 需不需要在这里加上 avatar_frame ?
+	// Avatar Frame 的 url，类似 Avatar
+  AvatarFrame          string       `json:"avatar_frame"`
 	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
 	LevelPoint           int           `json:"level_point" gorm:"default:0"`
 	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`
@@ -40,6 +41,7 @@ type User struct {
 type UserInfo struct {
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
+  AvatarFrame string `json:"avatar_frame"`
 	UserLevelInfo
 }
 
@@ -196,6 +198,7 @@ func GetUser(maps map[string]interface{}) (User, error) {
 		return u, err
 	}
 	u.LevelInfo = GetLevelInfo(u.LevelPoint)
+  u.AvatarFrame = GetUserAvatarFrameAddr(u.Uid)
 	return u, nil
 }
 
@@ -206,7 +209,7 @@ func GetUserInfo(uid string) UserInfo {
 	uinfo.UserLevelInfo = u.LevelInfo
 	uinfo.Avatar = u.Avatar
 	uinfo.Nickname = u.Nickname
-
+  uinfo.AvatarFrame = u.AvatarFrame
 	return uinfo
 }
 

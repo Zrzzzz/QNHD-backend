@@ -34,3 +34,19 @@ func UpdateUserAvatarFrame(uid, aid uint64) (user_avatar_frame UserAvatarFrame, 
   err = db.Model(&user_avatar_frame).Where("uid", uid).Update("avatar_frame_id", aid).Error
   return
 } 
+
+func GetUserAvatarFrameAddr(id uint64) (addr string) {
+  uaf := UserAvatarFrame{}
+  err := db.Where("uid = ?", id).First(&uaf).Error
+  if err != nil{
+    addr = ""
+  } else {
+    af, err := GetAddrById(uaf.AvatarFrameId)
+    if err != nil{
+      addr = ""
+    } else {
+      addr = af.Addr
+    }
+  }
+  return
+}

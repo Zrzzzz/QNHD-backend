@@ -19,7 +19,7 @@ func GetAllAvatarFrames() (avatar_frame_list []AvatarFrame, err error){
 	return 
 }
 // GetAddrById 通过 id 获取整个 AvatarFrame
-func GetAddrById(id int) (avatar_frame AvatarFrame, err error) {
+func GetAddrById(id uint64) (avatar_frame AvatarFrame, err error) {
 	err = db.First(&avatar_frame, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return avatar_frame, nil
