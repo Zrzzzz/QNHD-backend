@@ -414,7 +414,7 @@ func GetFavPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, 
 func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	var ids []string
-	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Order("created_at DESC").Distinct("post_id").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
+	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id", "created_at").Order("created_at DESC").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
 		return nil, err
 	}
 
@@ -459,6 +459,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			return nil
 		})
 	} else if IsValidPostType(post.Type) {
+    logging.Debug("测试调试1")
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Create(post).Error; err != nil {
@@ -473,6 +474,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
 				if err := AddPostWithTag(tx, post.Id, util.AsUint(tagId)); err != nil {
+          logging.Debug("error: %v", err)
 					return err
 				}
 				// 对帖子的tag增加记录

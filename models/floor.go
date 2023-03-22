@@ -247,6 +247,7 @@ func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{
 // 分页返回帖子里的楼层，带uid
 func GetFloorResponsesWithUid(c *gin.Context, postId, uid string, args map[string]interface{}) ([]FloorResponseUser, error) {
 	var floors []Floor
+  // 这里的 value 可能是 xixi 新加的内容（2023-03-22 测试失败 - 阿里云服务器部署的备份版数据库不够新）
 	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c)).Order("value DESC")
 	if args["order"].(string) == "1" {
 		d = d.Order("created_at")
