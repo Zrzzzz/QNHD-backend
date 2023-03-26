@@ -32,7 +32,7 @@ type User struct {
 	Active               bool          `json:"active" gorm:"default:true"`
 	Avatar               string        `json:"avatar"`
 	// Avatar Frame 的 url，类似 Avatar
-  AvatarFrame          string       `json:"avatar_frame"`
+	AvatarFrame          string       `json:"avatar_frame"`
 	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
 	LevelPoint           int           `json:"level_point" gorm:"default:0"`
 	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`
@@ -41,7 +41,7 @@ type User struct {
 type UserInfo struct {
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
-  AvatarFrame string `json:"avatar_frame"`
+	AvatarFrame string `json:"avatar_frame"`
 	UserLevelInfo
 }
 
@@ -162,13 +162,13 @@ func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	var list []Manager
 	users := db.Model(&User{}).Where("nickname like ? AND is_super = false AND is_user = false", "%"+name+"%")
 	if err := db.
-		Table("(?) as a", users).
-		Select("a.*", "qd.name", "qd.introduction").
-		Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
-		Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
-		Scopes(util.Paginate(c)).
-		Order("id").
-		Find(&list).Error; err != nil {
+	Table("(?) as a", users).
+	Select("a.*", "qd.name", "qd.introduction").
+	Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
+	Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
+	Scopes(util.Paginate(c)).
+	Order("id").
+	Find(&list).Error; err != nil {
 		return nil, err
 	}
 	return list, nil
@@ -178,11 +178,11 @@ func GetUsersInDepartment(departmentId uint64) ([]User, error) {
 	var users []User
 	ud := db.Model(&UserDepartment{}).Where("department_id = ?", departmentId)
 	err := db.Table("(?) as a", ud).
-		Select("u.*").
-		Joins("JOIN qnhd.user as u ON a.uid = u.id").
-		Order("id").
-		Find(&users).
-		Error
+	Select("u.*").
+	Joins("JOIN qnhd.user as u ON a.uid = u.id").
+	Order("id").
+	Find(&users).
+	Error
 	return users, err
 }
 
@@ -197,8 +197,9 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	if err := db.Where(maps).First(&u).Error; err != nil {
 		return u, err
 	}
+	// TODO: 是否需要对此进行优化，这里访问了一次数据库
+	u.AvatarFrame = GetUserAvatarFrameAddr(u.Uid)
 	u.LevelInfo = GetLevelInfo(u.LevelPoint)
-  u.AvatarFrame = GetUserAvatarFrameAddr(u.Uid)
 	return u, nil
 }
 
@@ -209,7 +210,7 @@ func GetUserInfo(uid string) UserInfo {
 	uinfo.UserLevelInfo = u.LevelInfo
 	uinfo.Avatar = u.Avatar
 	uinfo.Nickname = u.Nickname
-  uinfo.AvatarFrame = u.AvatarFrame
+	uinfo.AvatarFrame = u.AvatarFrame
 	return uinfo
 }
 
@@ -339,7 +340,7 @@ func ResetUserName(doer, uid string) error {
 		return nil
 	})
 	addManagerLogWithDetail(util.AsUint(doer), util.AsUint(uid), ManagerLogType.USER_NICKNAME_RESET,
-		fmt.Sprintf("raw: %s", u.Nickname))
+	fmt.Sprintf("raw: %s", u.Nickname))
 	return err
 }
 
