@@ -17,9 +17,14 @@ var msgSymbol = map[Enum]string{
 	POST_UNTOP: "post_untop",
 
 	POST_REPLY:                 "post_reply",
+	POST_REPLY_MODIFY:          "post_reply_modify",
 	POST_DEPARTMENT_TRANSFER:   "post_department_transfer",
 	POST_DEPARTMENT_DISTRIBUTE: "post_department_distribute",
-	POST_TPYE_TRANSFER:         "post_tpye_transfer",
+	POST_TPYE_TRANSFER:         "post_type_transfer",
+	POST_RETURN:                "post_return",
+	POST_EDIT_COMMENTABLE:      "post_edit_commentable",
+
+	FLOOR_EDIT_COMMENTABLE: "floor_edit_commentable",
 
 	USER_ADD:               "user_add",
 	USER_PERMISSION_CHANGE: "user_permission_change",
@@ -28,7 +33,9 @@ var msgSymbol = map[Enum]string{
 	NOTICE_DELETE: "notice_delete",
 	NOTICE_EDIT:   "notice_edit",
 
-	USER_DETAIL: "user_detail",
+	USER_DETAIL:         "user_detail",
+	USER_NICKNAME_RESET: "user_nickname_reset",
+	USER_AVATAR_RESET:   "user_avatar_reset",
 
 	TAG_POINT_ADD:   "tag_point_add",
 	TAG_POINT_CLEAR: "tag_point_clear",

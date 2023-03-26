@@ -34,3 +34,10 @@ func AddImageInPostReply(tx *gorm.DB, replyId uint64, imageUrls []string) error 
 	err := tx.Create(&pis).Error
 	return err
 }
+
+func DeleteImageInPostReply(tx *gorm.DB, replyId uint64) error {
+	if tx == nil {
+		tx = db
+	}
+	return tx.Where("post_reply_id = ?", replyId).Delete(&PostReplyImage{}).Error
+}

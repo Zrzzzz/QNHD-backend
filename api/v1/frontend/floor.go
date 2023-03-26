@@ -127,6 +127,13 @@ func GetFloorReplys(c *gin.Context) {
 // @route /f/floor
 func AddFloor(c *gin.Context) {
 	uid := r.GetUid(c)
+
+	if err := models.AddFloorCheck(uid); err != nil {
+		logging.Error("Add floor error: %v", err)
+		r.Error(c, e.ERROR_FLOOR_COUNT_LIMITED, err.Error())
+		return
+	}
+
 	postId := c.PostForm("post_id")
 	content := c.PostForm("content")
 	imageURLs := c.PostFormArray("images")

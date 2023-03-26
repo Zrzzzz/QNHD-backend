@@ -22,6 +22,10 @@ const (
 	PostType
 	Banner
 	User
+	Share
+	Setting
+	EpiInfo
+	Frame 		// 头相框 - 2023 海棠节项目
 )
 
 var FrontTypes = [...]FrontType{
@@ -36,6 +40,10 @@ var FrontTypes = [...]FrontType{
 	PostType,
 	Banner,
 	User,
+	Share,
+	Setting,
+	EpiInfo,
+	Frame,  	// 头相框 - 2023 海棠节项目
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -44,6 +52,7 @@ func Setup(g *gin.RouterGroup) {
 	g.GET("/auth/token", GetAuthToken)
 	g.GET("/auth/:token", RefreshToken)
 	g.Use(jwt.JWT())
+	g.Use(permission.FrontCanVisit())
 	g.Use(permission.IdentityDemand(IdentityType.USER))
 	// 封号的话不能访问
 	g.Use(permission.ValidBanned())
@@ -158,5 +167,31 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/user", GetUserInfo)
 		// 修改昵称
 		g.POST("/user/name", EditUserName)
+		// 升级账户
+		g.POST("/user/update_num", UpdateUserNumber)
+		// 修改头像
+		g.POST("/user/avatar", EditUserAvatar)
+	case Share:
+		// 分享记录
+		g.POST("/share", ShareLog)
+	case Setting:
+		// 获取配置
+		g.GET("/setting", GetSetting)
+	case EpiInfo:
+		// 获取信息
+		g.GET("/epiinfos", GetEpiInfos)
+		// 增加阅读次数
+		g.POST("/epiinfo/add_read_count", AddEpiInfoReadCount)
+	case Frame:
+		// 获取我的头像相框
+		g.GET("/frame/my", GetMyFrame)
+		// 设置我的头像框
+		g.POST("/frame/set", SetMyFrame)
+		// 更新我的头像框
+		g.POST("/frame/update", UpdateMyFrame)
+		// 获取所有头像框
+		g.GET("/frame/all" ,GetAllAvatarFrame)
+    // 通过 id 获得头像框 addr
+    g.GET("/frame/id_url", GetAvatarFrameUrlById)
 	}
 }

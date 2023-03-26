@@ -26,6 +26,8 @@ const (
 	PostType
 	Banner
 	Statistic
+	Setting
+	Frame    // 头相框 - 2023 海棠节 
 )
 
 var BackendTypes = [...]BackendType{
@@ -43,6 +45,8 @@ var BackendTypes = [...]BackendType{
 	PostType,
 	Banner,
 	Statistic,
+	Setting,
+	Frame,    // 头像框 - 2023 海棠节
 }
 
 func Setup(g *gin.RouterGroup) {
@@ -104,6 +108,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/users/manager", permission.RightDemand(models.UserRight{Super: true}), GetManagers)
 		// 修改管理员密码
 		g.POST("/user/modify/super", permission.RightDemand(models.UserRight{Super: true}), EditUserPasswdBySuper)
+		// 重置用户昵称
+		g.POST("/user/nickname/reset", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), ResetUserNickname)
+		// 重置用户头像
+		g.POST("/user/avatar/reset", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), ResetUserAvatar)
 		// 修改自己密码
 		g.POST("/user/passwd/modify", EditUserPasswd)
 		// 修改自己手机
@@ -112,6 +120,8 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.POST("/user/right/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserRight)
 		// 修改用户部门
 		g.POST("/user/department/modify", permission.RightDemand(models.UserRight{Super: true}), EditUserDepartment)
+		// 加减用户等级分
+		g.POST("/user/point", permission.RightDemand(models.UserRight{Super: true}), EditUserPoint)
 		// 删除管理员
 		g.GET("/user/manager/delete", permission.RightDemand(models.UserRight{Super: true}), DeleteManager)
 	case Post:
@@ -126,15 +136,20 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 获取帖子回复
 		g.GET("/post/replys", GetPostReplys)
 		// 帖子回复校方回应
-		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), AddPostReply)
+		g.POST("/post/reply", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true, SchDistributeAdmin: true}), AddPostReply)
+		g.POST("/post/reply/modify", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true, SchDistributeAdmin: true}), EditPostReply)
 		// 帖子转移部门
 		g.POST("/post/transfer/department", permission.RightDemand(models.UserRight{Super: true, SchAdmin: true}), TransferPostDepartment)
 		// 帖子换类型
 		g.POST("/post/transfer/type", TransferPostType)
 		// 分发帖子
 		g.POST("/post/distribute", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true}), DistributePost)
+		// 退回帖子
+		g.POST("/post/return", ReturnPost)
 		// 修改帖子加精值
 		g.POST("/post/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostValue)
+		// 修改帖子能否评论
+		g.POST("/post/commentable/edit", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostCommentable)
 		// 修改帖子额外标签
 		g.POST("/post/etag", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditPostEtag)
 		// 删除指定帖子
@@ -147,6 +162,7 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/post_tag/delete", DeletePostTag)
 		// 删除帖子的图片
 		g.GET("/post_image/delete", DeletePostImages)
+
 	case Report:
 		// 获取举报列表
 		g.GET("/reports", GetReports)
@@ -165,6 +181,10 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		g.GET("/floor/delete", permission.RightDemand(models.UserRight{Super: true, SchDistributeAdmin: true, StuAdmin: true}), DeleteFloor)
 		// 恢复指定楼层
 		g.POST("/floor/recover", permission.RightDemand(models.UserRight{Super: true}), RecoverFloor)
+		// 修改楼层能否评论
+		g.POST("/floor/commentable/edit", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditFloorCommentable)
+		// 修改楼层置顶
+		g.POST("/floor/value", permission.RightDemand(models.UserRight{Super: true, StuAdmin: true}), EditFloorValue)
 	case Tag:
 		// 查询标签
 		g.GET("/tags", GetTags)
@@ -217,11 +237,28 @@ func initType(g *gin.RouterGroup, t BackendType) {
 		// 删除轮播图
 		g.GET("/banner/delete", DeleteBanner)
 	case Statistic:
+		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
 		// 获取帖子数量
-		g.GET("/statistic/posts/count", GetPostCount)
+		group.GET("/statistic/posts/count", GetPostCount)
 		// 获取楼层数量
-		g.GET("/statistic/floors/count", GetFloorCount)
+		group.GET("/statistic/floors/count", GetFloorCount)
 		// 获取帖子浏览数量
-		g.GET("/statistic/posts/visit/count", GetVisitPostCount)
+		group.GET("/statistic/posts/visit/count", GetVisitPostCount)
+		// 导出帖子回复情况
+		group.GET("/statistic/post_reply_excel", ExportPostReplyExcel)
+	case Setting:
+		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		// 获取配置
+		group.GET("/setting", GetSetting)
+		// 修改能否访问
+		group.POST("/setting", EditSetting)
+	case Frame:
+		group := g.Group("", permission.RightDemand(models.UserRight{Super: true}))
+		// 存储头像框 
+		group.POST("/frame/upload", UploadAvatarFrame)
+		// 查询所有头像框
+		group.GET("/frame/all", GetAllAvatarFrame)
+		// 更新头像框
+		group.POST("/frame/update", UpdateAvatarFrame)
 	}
 }

@@ -31,7 +31,7 @@ func GetUserInfo(c *gin.Context) {
 
 // @method [post]
 // @way [name]
-// @param
+// @param name
 // @return
 // @route /f/user/name
 func EditUserName(c *gin.Context) {
@@ -55,6 +55,50 @@ func EditUserName(c *gin.Context) {
 	err = models.EditUserName(uid, name)
 	if err != nil {
 		logging.Error("edit user name error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [get]
+// @way [query]
+// @param old, new
+// @return
+// @route /f/user/update_num
+func UpdateUserNumber(c *gin.Context) {
+	uid := r.GetUid(c)
+	old := c.PostForm("old")
+	new := c.PostForm("new")
+	valid := validation.Validation{}
+	valid.Required(old, "old")
+	valid.MaxSize(old, 20, "old")
+	valid.Required(new, "new")
+	valid.MaxSize(new, 20, "new")
+	ok, verr := r.ErrorValid(&valid, "Update user number")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.UpdateUserNumber(uid, old, new)
+	if err != nil {
+		logging.Error("update user number error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param avatar
+// @return
+// @route /f/user/avatar
+func EditUserAvatar(c *gin.Context) {
+	uid := r.GetUid(c)
+	avatar := c.PostForm("avatar")
+	if err := models.EditUserAvatar(uid, avatar); err != nil {
+		logging.Error("edit user avatar error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

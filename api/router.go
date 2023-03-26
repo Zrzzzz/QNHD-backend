@@ -48,6 +48,7 @@ func initRouter() (r *gin.Engine) {
 	r.Static("src", "pages/jump")
 
 	r.Static("message", "pages/message")
+	r.Static("epi-message", "pages/epi-message")
 	return r
 }
 
@@ -61,9 +62,13 @@ func Setup() {
 		MaxHeaderBytes: 1 << 20,
 		// TLSConfig:      tlscfg,
 	}
+	s.ListenAndServe()
+	return
 	if setting.EnvironmentSetting.RELEASE == "1" {
+		fmt.Println("s.ListenAndServe()")
 		s.ListenAndServe()
 	} else {
+		fmt.Println("s.ListenAndServeTLS()")
 		s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key")
 	}
 }

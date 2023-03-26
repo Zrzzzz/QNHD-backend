@@ -27,7 +27,7 @@ func geneTokenString(strs ...string) string {
 	}
 	if len(strs) == 1 {
 		t := segment.Cut(strs[0], " ")
-		tokens = append(tokens, fmt.Sprintf("to_tsvector('simple', '%s')", t))
+		tokens = append(tokens, fmt.Sprintf("to_tsvector('simple', '%s')", escapeString(t)))
 	} else {
 		for i, s := range cutStrs {
 			t := segment.Cut(s, " ")

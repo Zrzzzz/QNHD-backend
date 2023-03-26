@@ -37,7 +37,7 @@ func AddNoticeToAllUsers(uid string, data map[string]interface{}) error {
 	var user User
 	db.Where("id = ?", uid).Find(&user)
 	if user.IsSchAdmin {
-		data["symbol"] = "department_manager"
+		data["symbol"] = NOTICE_DEPARTMENT
 	}
 	id, err := AddNoticeTemplate(data)
 	if err != nil {
@@ -72,7 +72,6 @@ func EditNoticeTemplate(uid string, id uint64, data map[string]interface{}) erro
 	)
 	db.Where("id = ?", id).Find(&notice)
 	db.Where("id = ?", uid).Find(&user)
-	fmt.Println(user, notice)
 	if user.IsSchAdmin && notice.Symbol != NOTICE_DEPARTMENT {
 		return fmt.Errorf("不能修改非部门公告")
 	}
@@ -98,10 +97,10 @@ func DeleteNoticeTemplate(uid string, id uint64) (uint64, error) {
 		return 0, fmt.Errorf("不能删除非部门公告")
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Where("id = ?", id).Delete(&notice).Error; err != nil {
+		if err := tx.Where("id = ?", id).Delete(&notice).Error; err != nil {
 			return err
 		}
-		return db.Where("notice_id = ?", id).Delete(&LogUnreadNotice{}).Error
+		return tx.Where("notice_id = ?", id).Delete(&LogUnreadNotice{}).Error
 	})
 	addManagerLog(util.AsUint(uid), id, ManagerLogType.NOTICE_DELETE)
 	return notice.Id, err

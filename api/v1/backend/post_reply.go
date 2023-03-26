@@ -25,7 +25,7 @@ func GetPostReplys(c *gin.Context) {
 
 // @method [post]
 // @way [formdata]
-// @param post_id, content
+// @param post_id, content, images
 // @return
 // @route /b/post/reply
 func AddPostReply(c *gin.Context) {
@@ -79,6 +79,70 @@ func AddPostReply(c *gin.Context) {
 	}
 	// 通知回复
 	err = models.AddUnreadPostReply(util.AsUint(postId), id)
+	if err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param reply_id, content, images
+// @return
+// @route /b/post/reply
+func EditPostReply(c *gin.Context) {
+	uid := r.GetUid(c)
+	replyId := c.PostForm("reply_id")
+	content := c.PostForm("content")
+	imageURLs := c.PostFormArray("images")
+	valid := validation.Validation{}
+	valid.Required(replyId, "reply_id")
+	valid.Numeric(replyId, "reply_id")
+	valid.MaxSize(content, 1000, "content")
+	valid.MaxSize(imageURLs, 3, "images")
+	ok, verr := r.ErrorValid(&valid, "Get post replys")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+
+	// 限制无文字时必须有图
+	if content == "" && len(imageURLs) == 0 {
+		r.Error(c, e.INVALID_PARAMS, "缺失图片或内容")
+		return
+	}
+
+	err := models.EditPostReply(map[string]interface{}{
+		"uid":      uid,
+		"reply_id": util.AsUint(replyId),
+		"sender":   PostReplyType.SCHOOL,
+		"content":  content,
+		"urls":     imageURLs,
+	})
+	if err != nil {
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [delete]
+// @way [query]
+// @param reply_id
+// @return
+// @route /b/post/reply/delete
+func DeletePostReply(c *gin.Context) {
+	id := c.Query("reply_id")
+	valid := validation.Validation{}
+	valid.Required(id, "reply_id")
+	valid.Numeric(id, "reply_id")
+	ok, verr := r.ErrorValid(&valid, "Delete post reply")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.DeletePostReply(id)
 	if err != nil {
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return

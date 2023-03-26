@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	ManagerLogType "qnhd/enums/MangerLogType"
 
 	"gorm.io/gorm"
@@ -49,7 +48,7 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 		return 0, err
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Delete(&ban).Error; err != nil {
+		if err := tx.Delete(&ban).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&User{}).Where("id = ?", uid).Update("active", true).Error; err != nil {
@@ -64,9 +63,10 @@ func DeleteBannedByUid(uid uint64) (uint64, error) {
 }
 
 func IsBannedByUid(uid uint64) bool {
-	var ban Banned
-	if err := db.Where("uid = ?", uid).Last(&ban).Error; err != nil {
-		return !errors.Is(err, gorm.ErrRecordNotFound)
+	var ok = true
+	err := db.Model(&User{}).Where("id = ?", uid).Select("active").Find(&ok).Error
+	if err != nil {
+		return false
 	}
-	return true
+	return !ok
 }

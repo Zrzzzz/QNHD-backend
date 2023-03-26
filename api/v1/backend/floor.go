@@ -136,6 +136,7 @@ func GetFloorReplys(c *gin.Context) {
 func DeleteFloor(c *gin.Context) {
 	uid := r.GetUid(c)
 	floorId := c.Query("floor_id")
+	reason := c.Query("reason")
 
 	valid := validation.Validation{}
 	valid.Required(floorId, "floorId")
@@ -146,7 +147,7 @@ func DeleteFloor(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeleteFloorByAdmin(uid, floorId)
+	_, err := models.DeleteFloorByAdmin(uid, floorId, reason)
 	if err != nil {
 		logging.Error("Delete floor error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -175,6 +176,66 @@ func RecoverFloor(c *gin.Context) {
 	err := models.RecoverFloor(floorId)
 	if err != nil {
 		logging.Error("Recover floor error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param floor_id, commentable
+// @return
+// @route /b/floor/commentable/edit
+func EditFloorCommentable(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("floor_id")
+	commentable := c.PostForm("commentable")
+	valid := validation.Validation{}
+	valid.Required(id, "floor_id")
+	valid.Numeric(id, "floor_id")
+	ok, verr := r.ErrorValid(&valid, "Edit floor commentable")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditFloorCommentable(uid, id, commentable == "1")
+	if err != nil {
+		logging.Error("Edit floor commentable error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param floor_id, value
+// @return
+// @route /b/floor/value
+func EditFloorValue(c *gin.Context) {
+	uid := r.GetUid(c)
+	floorId := c.PostForm("floor_id")
+	value := c.PostForm("value")
+	valid := validation.Validation{}
+	valid.Required(floorId, "floor_id")
+	valid.Numeric(floorId, "floor_id")
+	valid.Required(value, "value")
+	valid.Numeric(value, "value")
+	ok, verr := r.ErrorValid(&valid, "edit floor value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	valid.Range(util.AsInt(value), 0, 30000, "value")
+	ok, verr = r.ErrorValid(&valid, "edit floor value")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditFloorValue(uid, floorId, util.AsInt(value))
+	if err != nil {
+		logging.Error("edit floor value error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

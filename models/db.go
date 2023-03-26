@@ -57,6 +57,9 @@ func Setup(debug bool) {
 	sqlDB.SetConnMaxLifetime(time.Second * 30)
 	sqlDB.SetMaxIdleConns(20)
 	sqlDB.SetMaxOpenConns(100)
+
+	// 初始化等级
+	levelSetup()
 }
 func Close() {
 	sqlDB.Close()

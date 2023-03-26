@@ -5,6 +5,8 @@ import (
 	"fmt"
 	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/enums/NoticeType"
+	"qnhd/enums/UserLevelOperationType"
+	"qnhd/pkg/util"
 	"time"
 
 	"github.com/golang-module/carbon/v2"
@@ -44,11 +46,23 @@ func AddBlockedByUid(uid uint64, doer uint64, reason string, last uint8) (uint64
 
 	addNoticeWithTemplate(NoticeType.BEEN_BLOCKED, []uint64{uid}, []string{reason, fmt.Sprintf("%d", last)})
 	addManagerLogWithDetail(doer, uid, ManagerLogType.USER_BLOCK, fmt.Sprintf("reason: %s, day: %d", reason, last))
+	switch last {
+	case 1:
+		EditUserLevel(util.AsStrU(uid), UserLevelOperationType.BLOCKED_1)
+	case 3:
+		EditUserLevel(util.AsStrU(uid), UserLevelOperationType.BLOCKED_3)
+	case 7:
+		EditUserLevel(util.AsStrU(uid), UserLevelOperationType.BLOCKED_7)
+	case 14:
+		EditUserLevel(util.AsStrU(uid), UserLevelOperationType.BLOCKED_14)
+	case 30:
+		EditUserLevel(util.AsStrU(uid), UserLevelOperationType.BLOCKED_30)
+	}
 
 	return blocked.Id, nil
 }
 
-func DeleteBlockedByUid(uid uint64) (uint64, error) {
+func DeleteBlockedByUid(doer uint64, uid uint64) (uint64, error) {
 	var blocked = Blocked{}
 	if err := db.Where("uid = ?", uid).Last(&blocked).Error; err != nil {
 		return 0, err
@@ -56,7 +70,7 @@ func DeleteBlockedByUid(uid uint64) (uint64, error) {
 	if err := db.Where("uid = ?", uid).Delete(&Blocked{}).Error; err != nil {
 		return 0, err
 	}
-	addManagerLog(blocked.Doer, uid, ManagerLogType.USER_UNBLOCK)
+	addManagerLog(doer, uid, ManagerLogType.USER_UNBLOCK)
 
 	return blocked.Id, nil
 }

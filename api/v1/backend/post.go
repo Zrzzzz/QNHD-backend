@@ -311,6 +311,7 @@ func AddPostTag(c *gin.Context) {
 func DeletePost(c *gin.Context) {
 	uid := r.GetUid(c)
 	id := c.Query("id")
+	reason := c.Query("reason")
 
 	valid := validation.Validation{}
 	valid.Required(id, "id")
@@ -321,7 +322,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	_, err := models.DeletePostAdmin(uid, id)
+	_, err := models.DeletePostAdmin(uid, id, reason)
 	if err != nil {
 		logging.Error("Delete post error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -398,6 +399,57 @@ func DeletePostImages(c *gin.Context) {
 	err := models.DeletePostImages(id)
 	if err != nil {
 		logging.Error("Delete post images error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param
+// @return
+// @route /b/post/return
+func ReturnPost(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("post_id")
+	valid := validation.Validation{}
+	valid.Required(id, "post_id")
+	valid.Numeric(id, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Return post")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.ReturnPost(uid, id)
+	if err != nil {
+		logging.Error("return post error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [formdata]
+// @param post_id, commentable
+// @return
+// @route /b/post/commentable/edit
+func EditPostCommentable(c *gin.Context) {
+	uid := r.GetUid(c)
+	id := c.PostForm("post_id")
+	commentable := c.PostForm("commentable")
+	valid := validation.Validation{}
+	valid.Required(id, "post_id")
+	valid.Numeric(id, "post_id")
+	ok, verr := r.ErrorValid(&valid, "Edit post commentable")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.EditPostCommentable(uid, id, commentable == "1")
+	if err != nil {
+		logging.Error("Edit post commentable error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

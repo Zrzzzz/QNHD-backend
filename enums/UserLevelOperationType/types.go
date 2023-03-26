@@ -1,0 +1,23 @@
+package UserLevelOperationType
+
+type Enum int
+
+const (
+	VISIT_POST Enum = iota
+	ADD_POST
+	ADD_FLOOR
+	SHARE_POST
+
+	// 帖子被加精
+	POST_RECOMMENDED
+	// 举报受理
+	REPORT_PASSED
+
+	POST_DELETED
+	FLOOR_DELETED
+	BLOCKED_1
+	BLOCKED_3
+	BLOCKED_7
+	BLOCKED_14
+	BLOCKED_30
+)

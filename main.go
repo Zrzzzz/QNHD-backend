@@ -10,6 +10,15 @@ import (
 	"qnhd/pkg/setting"
 )
 
+// func main() {
+// 	setting.Setup()
+// 	if err := twtservice.NotifyFloor("haha", "3019244343"); err != nil {
+// 		fmt.Println(err)
+// 	} else {
+// 		fmt.Println("ok")
+// 	}
+// }
+
 func main() {
 	setting.Setup()
 	segment.Setup()
@@ -30,9 +39,10 @@ func setupModels() {
 }
 
 func refreshToken() {
+	refreshAll := setting.EnvironmentSetting.QNHD_REFRESH_ALL == "1"
 	if setting.EnvironmentSetting.QNHD_REFRESH == "1" {
 		// 更新未处理的数据
-		models.FlushPostsTokens(false)
-		models.FlushTagsTokens(false)
+		models.FlushPostsTokens(refreshAll)
+		models.FlushTagsTokens(refreshAll)
 	}
 }

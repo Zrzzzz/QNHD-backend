@@ -7,6 +7,7 @@ import (
 	"qnhd/enums/NoticeType"
 	"qnhd/enums/ReportType"
 	"qnhd/enums/TagPointType"
+	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/util"
@@ -32,6 +33,10 @@ type Floor struct {
 	SubTo       uint64 `json:"sub_to" gorm:"default:0"`
 	LikeCount   uint64 `json:"like_count" gorm:"default:0"`
 	DisCount    uint64 `json:"-" gorm:"default:0"`
+	// 能否评论
+	Commentable bool `json:"commentable" gorm:"default:true"`
+	// 排序顺序
+	Value uint64 `json:"value" gorm:"default:0"`
 }
 
 type LogFloorLike struct {
@@ -49,7 +54,10 @@ type FloorResponse struct {
 	Floor
 	SubFloors   []FloorResponse `json:"sub_floors"`
 	SubFloorCnt int             `json:"sub_floor_cnt"`
-	IsDeleted   bool            `json:"is_deleted"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
@@ -62,7 +70,10 @@ type FloorResponseUser struct {
 	IsLike      bool                `json:"is_like"`
 	IsDis       bool                `json:"is_dis"`
 	IsOwner     bool                `json:"is_owner"`
-	IsDeleted   bool                `json:"is_deleted"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 处理链式错误
 	Error error `json:"-"`
 }
@@ -71,7 +82,9 @@ func (f *Floor) geneResponse(searchSubFloors bool, unscoped bool) FloorResponse 
 	var fr = FloorResponse{
 		Floor:     *f,
 		SubFloors: []FloorResponse{},
+		UInfo:     GetUserInfo(util.AsStrU(f.Uid)),
 	}
+	// user info
 	if searchSubFloors {
 		// 处理回复本条楼层的楼层
 		rps, err := getHighlikeSubfloors(util.AsStrU(f.Id), unscoped)
@@ -83,6 +96,7 @@ func (f *Floor) geneResponse(searchSubFloors bool, unscoped bool) FloorResponse 
 		// 获取子楼层总数
 		fr.SubFloorCnt = getFloorSubFloorCount(util.AsStrU(f.Id), unscoped)
 	}
+
 	fr.IsDeleted = fr.DeletedAt.Valid
 	return fr
 }
@@ -93,6 +107,7 @@ func (f FloorResponse) searchWithUid(uid string, searchSubFloors bool) FloorResp
 		IsLike:      IsLikeFloorByUid(uid, util.AsStrU(f.Id)),
 		IsDis:       IsDisFloorByUid(uid, util.AsStrU(f.Id)),
 		IsOwner:     IsOwnFloorByUid(uid, util.AsStrU(f.Id)),
+		UInfo:       f.UInfo,
 		SubFloors:   []FloorResponseUser{},
 		SubFloorCnt: f.SubFloorCnt,
 	}
@@ -122,7 +137,7 @@ func transFloorsToResponses(floor *[]Floor, searchSubFloors bool) ([]FloorRespon
 			db.Unscoped().Where("id = ?", fr.PostId).Find(&post)
 			if post.Type == POST_SCHOOL_TYPE {
 				var user User
-				db.Where("uid = ?", fr.Uid).Find(&user)
+				db.Where("id = ?", fr.Uid).Find(&user)
 				fr.Nickname = user.realnameFull()
 			}
 			frs = append(frs, fr)
@@ -210,7 +225,7 @@ func GetFloorResponseWithUid(floorId, uid string) (FloorResponseUser, error) {
 // 分页返回帖子里的楼层
 func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{}) ([]FloorResponse, error) {
 	var floors []Floor
-	d := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+	d := db.Unscoped().Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c)).Order("value DESC")
 	if args["order"].(string) == "1" {
 		d = d.Order("created_at")
 	} else {
@@ -232,7 +247,8 @@ func GetFloorResponses(c *gin.Context, postId string, args map[string]interface{
 // 分页返回帖子里的楼层，带uid
 func GetFloorResponsesWithUid(c *gin.Context, postId, uid string, args map[string]interface{}) ([]FloorResponseUser, error) {
 	var floors []Floor
-	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c))
+  // 这里的 value 可能是 xixi 新加的内容（2023-03-22 测试失败 - 阿里云服务器部署的备份版数据库不够新）
+	d := db.Where("post_id = ? AND reply_to = 0", postId).Scopes(util.Paginate(c)).Order("value DESC")
 	if args["order"].(string) == "1" {
 		d = d.Order("created_at")
 	} else {
@@ -323,7 +339,7 @@ func GetCommentCount(postId uint64, withSubfloors bool, unscoped bool) int {
 // 分页返回楼层内的回复
 func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, error) {
 	var floors []Floor
-	err := db.Unscoped().Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	err := db.Unscoped().Where("sub_to = ?", floorId).Order("created_at").Order("value DESC").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
 		return []FloorResponse{}, err
 	}
@@ -333,7 +349,7 @@ func GetFloorReplyResponses(c *gin.Context, floorId string) ([]FloorResponse, er
 // 分页返回楼层内的回复带uid
 func GetFloorReplyResponsesWithUid(c *gin.Context, floorId, uid string) ([]FloorResponseUser, error) {
 	var floors []Floor
-	err := db.Where("sub_to = ?", floorId).Order("created_at").Scopes(util.Paginate(c)).Find(&floors).Error
+	err := db.Where("sub_to = ?", floorId).Order("created_at").Order("value DESC").Scopes(util.Paginate(c)).Find(&floors).Error
 	if err != nil {
 		return []FloorResponseUser{}, err
 	}
@@ -350,6 +366,9 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
+	}
+	if !post.Commentable {
+		return 0, fmt.Errorf("已归档")
 	}
 
 	var newFloor = Floor{
@@ -395,6 +414,7 @@ func AddFloor(maps map[string]interface{}) (uint64, error) {
 		addTagLogInPost(post.Id, TagPointType.ADD_FLOOR)
 	}
 	updatePostTime(post.Id)
+	EditUserLevel(util.AsStrU(uid), UserLevelOperationType.ADD_FLOOR)
 	return newFloor.Id, nil
 }
 
@@ -414,6 +434,9 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	// 先找到post主人
 	if err := db.First(&post, postId).Error; err != nil {
 		return 0, err
+	}
+	if !toFloor.Commentable {
+		return 0, fmt.Errorf("已归档")
 	}
 
 	var newFloor = Floor{
@@ -491,7 +514,7 @@ func ReplyFloor(maps map[string]interface{}) (uint64, error) {
 	return newFloor.Id, nil
 }
 
-func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
+func DeleteFloorByAdmin(uid, floorId string, reason string) (uint64, error) {
 	var floor Floor
 	var post Post
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
@@ -508,11 +531,23 @@ func DeleteFloorByAdmin(uid, floorId string) (uint64, error) {
 		return 0, err
 	}
 
-	updatePostTime(floor.PostId)
+	DEFAULT_REASON := "违反社区规范"
+	if reason == "" {
+		reason = DEFAULT_REASON
+	}
+
 	addNoticeWithTemplate(NoticeType.FLOOR_REPORT_SOLVE, uids, []string{post.Title, floor.Content})
 	// 通知被删除的用户
-	addNoticeWithTemplate(NoticeType.FLOOR_DELETED, []uint64{floor.Uid}, []string{post.Title, floor.Content})
+	addNoticeWithTemplate(NoticeType.FLOOR_DELETED_WITH_REASON, []uint64{floor.Uid}, []string{post.Title, floor.Content, reason})
 	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_DELETE)
+	// 将被举报的人扣经验
+	EditUserLevel(util.AsStrU(floor.Uid), UserLevelOperationType.FLOOR_DELETED)
+	// 找如果有举报这个楼层的，找举报人加经验
+	if len(uids) != 0 {
+		for _, log := range uids {
+			EditUserLevel(util.AsStrU(log), UserLevelOperationType.REPORT_PASSED)
+		}
+	}
 	return floor.Id, nil
 }
 
@@ -524,8 +559,6 @@ func DeleteFloorByUser(uid, floorId string) (uint64, error) {
 	if err := deleteFloor(&floor); err != nil {
 		return 0, err
 	}
-
-	updatePostTime(floor.PostId)
 
 	return floor.Id, nil
 }
@@ -548,10 +581,10 @@ func deleteFloor(floor *Floor) error {
 			subToFloors   []Floor
 			replyToFloors []Floor
 		)
-		if err := db.Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
+		if err := tx.Where("sub_to = ?", floor.Id).Find(&subToFloors).Error; err != nil {
 			return err
 		}
-		if err := db.Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
+		if err := tx.Where("reply_to = ?", floor.Id).Find(&replyToFloors).Error; err != nil {
 			return err
 		}
 		// 这里需要避免重复, 合并到floors里
@@ -727,9 +760,7 @@ func LikeFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount+1).Error; err != nil {
 		return 0, err
@@ -761,9 +792,7 @@ func UnlikeFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("like_count", floor.LikeCount-1).Error; err != nil {
 		return 0, err
@@ -791,9 +820,7 @@ func DisFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount+1).Error; err != nil {
 		return 0, err
@@ -820,9 +847,7 @@ func UndisFloor(floorId string, uid string) (uint64, error) {
 	// 更新楼的likes
 	var floor Floor
 	if err := db.Where("id = ?", floorId).First(&floor).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&floor).Update("dis_count", floor.DisCount-1).Error; err != nil {
 		return 0, err
@@ -855,4 +880,22 @@ func IsOwnFloorByUid(uid, floorId string) bool {
 		return false
 	}
 	return util.AsStrU(floor.Uid) == uid
+}
+
+func EditFloorCommentable(uid, floorId string, commentable bool) error {
+	addManagerLog(util.AsUint(uid), util.AsUint(floorId), ManagerLogType.FLOOR_EDIT_COMMENTABLE)
+	return db.Model(&Floor{}).Where("id = ?", floorId).Updates(map[string]interface{}{"commentable": commentable}).Error
+}
+
+// 修改楼层置顶值
+func EditFloorValue(uid, floorId string, value int) error {
+	var floor Floor
+	if err := db.Where("id = ?", floorId).Find(&floor).Error; err != nil {
+		return err
+	}
+	// 置顶值修改
+	// if floor.Value == 0 && value > 0 {
+	// 	addNoticeWithTemplate(NoticeType.FLOOR_VALUED, []uint64{floor.Uid}, []string{floor.Content})
+	// }
+	return db.Model(&Floor{}).Where("id = ?", floorId).Update("value", value).Error
 }

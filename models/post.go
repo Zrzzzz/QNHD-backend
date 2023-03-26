@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"qnhd/enums/LikeType"
 	ManagerLogType "qnhd/enums/MangerLogType"
@@ -13,6 +12,7 @@ import (
 	"qnhd/enums/PostValueModeType"
 	"qnhd/enums/ReportType"
 	"qnhd/enums/TagPointType"
+	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/segment"
@@ -34,7 +34,8 @@ type Post struct {
 	Type         int                 `json:"type"`
 	DepartmentId uint64              `json:"-" gorm:"column:department_id;default:0"`
 	Campus       PostCampusType.Enum `json:"campus"`
-	Solved       PostSolveType.Enum  `json:"solved" gorm:"default:0"`
+	// 0 已提问 1 已回复 2 已解决 3 已分发
+	Solved PostSolveType.Enum `json:"solved" gorm:"default:0"`
 
 	// 帖子内容
 	Title    string `json:"title"`
@@ -48,7 +49,7 @@ type Post struct {
 
 	// 评分
 	Rating uint64 `json:"rating" gorm:"default:0"`
-	// 加精值
+	// 置顶值
 	Value uint64 `json:"value" gorm:"default:0"`
 
 	// 分词
@@ -58,6 +59,8 @@ type Post struct {
 
 	// etag
 	Etag string `json:"e_tag" gorm:"column:extra_tag;"`
+	// 能否评论
+	Commentable bool `json:"commentable" gorm:"default:true"`
 }
 
 type LogPostFav struct {
@@ -81,7 +84,9 @@ type PostResponse struct {
 	CommentCount int             `json:"comment_count"`
 	ImageUrls    []string        `json:"image_urls"`
 	Department   *Department     `json:"department"`
-	IsDeleted    bool            `json:"is_deleted"`
+	UInfo        UserInfo        `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -99,8 +104,11 @@ type PostResponseUser struct {
 	IsDis      bool `json:"is_dis"`
 	IsFav      bool `json:"is_fav"`
 	IsOwner    bool `json:"is_owner"`
-	IsDeleted  bool `json:"is_deleted"`
 	VisitCount int  `json:"visit_count"`
+
+	UInfo UserInfo `json:"user_info"`
+
+	IsDeleted bool `json:"is_deleted"`
 	// 用于处理链式数据
 	Error error `json:"-"`
 }
@@ -108,11 +116,6 @@ type PostResponseUser struct {
 func (p *Post) geneResponse(unscoped bool) PostResponse {
 	var pr PostResponse
 
-	// frs, err := getShortFloorResponsesInPost(util.AsStrU(p.Id))
-	// if err != nil {
-	// 	pr.Error = err
-	// 	return pr
-	// }
 	imgs, err := GetImageInPost(p.Id)
 	if err != nil {
 		pr.Error = err
@@ -122,6 +125,8 @@ func (p *Post) geneResponse(unscoped bool) PostResponse {
 		Post:         *p,
 		CommentCount: GetCommentCount(p.Id, true, unscoped),
 		ImageUrls:    imgs,
+		// user info
+		UInfo: GetUserInfo(util.AsStrU(p.Uid)),
 	}
 
 	if p.DepartmentId > 0 {
@@ -138,6 +143,7 @@ func (p *Post) geneResponse(unscoped bool) PostResponse {
 	}
 	pr.Error = err
 	pr.IsDeleted = pr.DeletedAt.Valid
+
 	return pr
 }
 
@@ -148,6 +154,7 @@ func (p PostResponse) searchByUid(uid string) PostResponseUser {
 		CommentCount: p.CommentCount,
 		ImageUrls:    p.ImageUrls,
 		Department:   p.Department,
+		UInfo:        p.UInfo,
 		IsLike:       IsLikePostByUid(uid, util.AsStrU(p.Id)),
 		IsDis:        IsDisPostByUid(uid, util.AsStrU(p.Id)),
 		IsFav:        IsFavPostByUid(uid, util.AsStrU(p.Id)),
@@ -174,7 +181,7 @@ func transPostsToResponses(posts *[]Post) ([]PostResponse, error) {
 
 		if pr.Type == POST_SCHOOL_TYPE {
 			var user User
-			db.Where("uid = ?", pr.Uid).Find(&user)
+			db.Where("id = ?", pr.Uid).Find(&user)
 			pr.Nickname = user.realnameFull()
 		}
 		if pr.Error != nil {
@@ -235,7 +242,7 @@ func GetPostResponse(postId string) (PostResponse, error) {
 	pr = p.geneResponse(true)
 	if pr.Type == POST_SCHOOL_TYPE {
 		var user User
-		db.Where("uid = ?", pr.Uid).Find(&user)
+		db.Where("id = ?", pr.Uid).Find(&user)
 		pr.Nickname = user.realnameFull()
 	}
 	return pr, pr.Error
@@ -268,6 +275,8 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	valueMode := maps["value_mode"].(PostValueModeType.Enum)
 	front := maps["front"].(bool)
 	isDeleted := maps["is_deleted"].(string)
+	commentable := maps["commentable"].(string)
+	etag := maps["etag"].(string)
 
 	var d = db.Model(&Post{})
 	// 如果是前端
@@ -279,7 +288,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	} else {
 		d = d.Where("deleted_at IS NULL")
 	}
-	// 加精帖搜索
+	// 置顶帖搜索
 	if valueMode == PostValueModeType.DEFAULT {
 		d = d.Order("value DESC")
 	} else if valueMode == PostValueModeType.ONLY {
@@ -322,6 +331,19 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 		// 然后加上条件
 		d = d.Where("id IN (?)", tagIds)
 	}
+	// 获取是否评论的
+	if commentable == "1" {
+		d = d.Where("commentable = ?", true)
+	} else if commentable == "0" {
+		d = d.Where("commentable = ?", false)
+	}
+
+	// etag区分
+	if etag != "" && PostEtagType.Contains(etag) {
+		d = d.Where("extra_tag = ?", etag)
+	}
+
+	// 开始搜索
 	if err = d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
@@ -392,7 +414,7 @@ func GetFavPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, 
 func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
 	var ids []string
-	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Order("created_at DESC").Distinct("post_id").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
+	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id", "created_at").Order("created_at DESC").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
 		return nil, err
 	}
 
@@ -437,6 +459,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			return nil
 		})
 	} else if IsValidPostType(post.Type) {
+    logging.Debug("测试调试1")
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Create(post).Error; err != nil {
@@ -451,6 +474,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
 				if err := AddPostWithTag(tx, post.Id, util.AsUint(tagId)); err != nil {
+          logging.Debug("error: %v", err)
 					return err
 				}
 				// 对帖子的tag增加记录
@@ -467,6 +491,8 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 	if err := flushPostTokens(post.Id, post.Title, post.Content); err != nil {
 		return 0, err
 	}
+	// 增加经验
+	EditUserLevel(util.AsStrU(uid), UserLevelOperationType.ADD_POST)
 
 	return post.Id, nil
 }
@@ -480,7 +506,7 @@ func EditPostValue(uid, postId string, value int) error {
 	if err := db.Where("id = ?", postId).Find(&post).Error; err != nil {
 		return err
 	}
-	// 加精
+	// 置顶值修改
 	if post.Value == 0 && value > 0 {
 		addNoticeWithTemplate(NoticeType.POST_VALUED, []uint64{post.Uid}, []string{post.Title})
 	}
@@ -491,7 +517,6 @@ func EditPostValue(uid, postId string, value int) error {
 	} else {
 		EditPostEtag(uid, postId, PostEtagType.NONE)
 		addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_UNTOP)
-
 	}
 	return EditPost(postId, map[string]interface{}{"value": value})
 }
@@ -502,6 +527,12 @@ func EditPostEtag(uid, postId string, t PostEtagType.Enum) error {
 	} else {
 		addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_ETAG,
 			fmt.Sprintf("to: %s", t.GetSymbol()))
+	}
+	// 如果是帖子加精，加经验
+	if t == PostEtagType.RECOMMEND {
+		var pUserId string
+		db.Model(&Post{}).Select("uid").Where("id = ?", postId).Find(&pUserId)
+		EditUserLevel(pUserId, UserLevelOperationType.POST_RECOMMENDED)
 	}
 	return db.Model(&Post{}).Where("id = ?", postId).Update("extra_tag", t.GetSymbol()).Error
 }
@@ -532,6 +563,11 @@ func EditPostDepartment(uid, postId string, departmentId string) error {
 		fmt.Sprintf("from: %s, to: %s", rawType.Name, newType.Name))
 
 	return EditPost(postId, map[string]interface{}{"department_id": departmentId})
+}
+
+func EditPostCommentable(uid, postId string, commentable bool) error {
+	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_EDIT_COMMENTABLE)
+	return EditPost(postId, map[string]interface{}{"commentable": commentable})
 }
 
 // 分发帖子
@@ -595,14 +631,14 @@ func EditPostType(uid, postId string, typeId string) error {
 func updatePostAndFloorNickname(post Post) error {
 	var u User
 	var floors []Floor
-	db.Where("uid = ?", post.Uid).Find(&u)
+	db.Where("id = ?", post.Uid).Find(&u)
 	db.Where("post_id = ?", post.Id).Find(&floors)
 	if u.Uid > 0 {
 		db.Model(&Post{}).Update("nickname", u.Nickname)
 	}
 	for _, f := range floors {
 		var u User
-		db.Where("uid = ?", f.Uid).Find(&u)
+		db.Where("id = ?", f.Uid).Find(&u)
 		if u.Uid > 0 {
 			db.Model(&Floor{}).Update("nickname", u.Nickname)
 		}
@@ -619,7 +655,7 @@ func DeletePostsUser(id, uid string) (uint64, error) {
 	return post.Id, err
 }
 
-func DeletePostAdmin(uid, postId string) (uint64, error) {
+func DeletePostAdmin(uid, postId string, reason string) (uint64, error) {
 	var post, _ = GetPost(postId)
 	// 找到举报过帖子的所有用户
 	var uids []uint64
@@ -629,10 +665,23 @@ func DeletePostAdmin(uid, postId string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	DEFAULT_REASON := "违反社区规范"
+	if reason == "" {
+		reason = DEFAULT_REASON
+	}
+
 	addNoticeWithTemplate(NoticeType.POST_REPORT_SOLVE, uids, []string{post.Title})
 	// 通知被删除的用户
-	addNoticeWithTemplate(NoticeType.POST_DELETED, []uint64{post.Uid}, []string{post.Title})
+	addNoticeWithTemplate(NoticeType.POST_DELETED_WITH_REASON, []uint64{post.Uid}, []string{post.Title, reason})
 	addManagerLog(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_DELETE)
+	// 将被举报的人扣经验
+	EditUserLevel(util.AsStrU(post.Uid), UserLevelOperationType.POST_DELETED)
+	// 找如果有举报这个帖子的，找举报人加经验
+	if len(uids) != 0 {
+		for _, log := range uids {
+			EditUserLevel(util.AsStrU(log), UserLevelOperationType.REPORT_PASSED)
+		}
+	}
 	return post.Id, nil
 }
 
@@ -714,9 +763,7 @@ func FavPost(postId string, uid string) (uint64, error) {
 	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("fav_count", post.FavCount+1).Error; err != nil {
 		return 0, err
@@ -746,9 +793,7 @@ func UnfavPost(postId string, uid string) (uint64, error) {
 	// 更新收藏数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("fav_count", post.FavCount-1).Error; err != nil {
 		return 0, err
@@ -777,9 +822,7 @@ func LikePost(postId string, uid string) (uint64, error) {
 	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("like_count", post.LikeCount+1).Error; err != nil {
 		return 0, err
@@ -812,9 +855,7 @@ func UnLikePost(postId string, uid string) (uint64, error) {
 	// 更新点赞数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("like_count", post.LikeCount-1).Error; err != nil {
 		return 0, err
@@ -842,9 +883,7 @@ func DisPost(postId string, uid string) (uint64, error) {
 	// 更新点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount+1).Error; err != nil {
 		return 0, err
@@ -874,9 +913,7 @@ func UnDisPost(postId string, uid string) (uint64, error) {
 	// 更新楼的点踩数
 	var post Post
 	if err := db.Where("id = ?", postId).First(&post).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, err
-		}
+		return 0, err
 	}
 	if err := db.Model(&post).Update("dis_count", post.DisCount-1).Error; err != nil {
 		return 0, err
@@ -924,4 +961,12 @@ func IsOwnPostByUid(uid, postId string) bool {
 
 func updatePostTime(postId uint64) error {
 	return db.Model(&Post{}).Where("id = ?", postId).Update("updated_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
+}
+
+func ReturnPost(uid, postId string) error {
+	var post Post
+	db.Where("id = ?", postId).Find(&post)
+	addManagerLogWithDetail(util.AsUint(uid), util.AsUint(postId), ManagerLogType.POST_RETURN,
+		fmt.Sprintf("from %d", post.DepartmentId))
+	return db.Model(&Post{}).Where("id = ?", postId).Update("solved", PostSolveType.UNDISTRIBUTED).Error
 }

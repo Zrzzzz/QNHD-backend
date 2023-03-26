@@ -89,17 +89,28 @@ func GetUserInfo(c *gin.Context) {
 // @route /b/user/common
 func GetCommonUser(c *gin.Context) {
 	uid := c.Query("uid")
-	valid := validation.Validation{}
-	valid.Required(uid, "uid")
-	valid.Numeric(uid, "uid")
-	ok, verr := r.ErrorValid(&valid, "get common user")
-	if !ok {
-		r.Error(c, e.INVALID_PARAMS, verr.Error())
+	name := c.Query("name")
+	number := c.Query("number")
+
+	if uid == "" && name == "" && number == "" {
+		r.Error(c, e.INVALID_PARAMS, "")
 		return
 	}
 
-	code := e.SUCCESS
-	user, err := models.GetUser(map[string]interface{}{"id": uid})
+	query := make(map[string]interface{})
+
+	if uid != "" {
+		query["id"] = uid
+	} else if name != "" {
+		query["nickname"] = name
+	} else if number != "" {
+		query["number"] = number
+	} else {
+		r.Error(c, e.INVALID_PARAMS, "")
+		return
+	}
+
+	user, err := models.GetUser(query)
 	if err != nil {
 		logging.Error("Get users error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
@@ -123,7 +134,7 @@ func GetCommonUser(c *gin.Context) {
 	data := make(map[string]interface{})
 	data["user"] = nUser
 
-	r.OK(c, code, data)
+	r.OK(c, e.SUCCESS, data)
 }
 
 // @method [get]
@@ -399,6 +410,34 @@ func EditUserDepartment(c *gin.Context) {
 	r.OK(c, e.SUCCESS, nil)
 }
 
+// @method [post]
+// @way [formdata]
+// @param uid, point
+// @return
+// @route /b/user/point/change
+func EditUserPoint(c *gin.Context) {
+	uid := c.PostForm("uid")
+	point := c.PostForm("point")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	valid.Required(point, "point")
+	valid.Numeric(point, "point")
+	ok, verr := r.ErrorValid(&valid, "Edit user point")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+	err := models.ChangeUserExp(uid, util.AsInt(point))
+	if err != nil {
+		logging.Error("edit user point error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+
+	r.OK(c, e.SUCCESS, nil)
+}
+
 // @method [get]
 // @way [query]
 // @param user_id
@@ -426,8 +465,9 @@ func DeleteManager(c *gin.Context) {
 // @way [name]
 // @param
 // @return
-// @route /b/user/name/reset
-func ResetUserName(c *gin.Context) {
+// @route /b/user/nickname/reset
+func ResetUserNickname(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.PostForm("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
@@ -438,9 +478,35 @@ func ResetUserName(c *gin.Context) {
 		return
 	}
 
-	err := models.ResetUserName(uid)
+	err := models.ResetUserName(doer, uid)
 	if err != nil {
 		logging.Error("reset user name error: %v", err)
+		r.Error(c, e.ERROR_DATABASE, err.Error())
+		return
+	}
+	r.OK(c, e.SUCCESS, nil)
+}
+
+// @method [post]
+// @way [name]
+// @param
+// @return
+// @route /b/user/avatar/reset
+func ResetUserAvatar(c *gin.Context) {
+	doer := r.GetUid(c)
+	uid := c.PostForm("uid")
+	valid := validation.Validation{}
+	valid.Required(uid, "uid")
+	valid.Numeric(uid, "uid")
+	ok, verr := r.ErrorValid(&valid, "Reset user avatar")
+	if !ok {
+		r.Error(c, e.INVALID_PARAMS, verr.Error())
+		return
+	}
+
+	err := models.ResetUserAvatar(doer, uid)
+	if err != nil {
+		logging.Error("reset user avatar error: %v", err)
 		r.Error(c, e.ERROR_DATABASE, err.Error())
 		return
 	}

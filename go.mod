@@ -3,6 +3,7 @@ module qnhd
 go 1.13
 
 require (
+	github.com/Baidu-AIP/golang-sdk v1.0.9
 	github.com/astaxie/beego v1.12.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.7.3
@@ -32,4 +33,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/postgres v1.2.3
 	gorm.io/gorm v1.22.3
+	mvdan.cc/xurls/v2 v2.4.0
 )

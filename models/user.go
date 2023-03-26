@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/pkg/util"
+	"qnhd/request/twtservice"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,20 +15,41 @@ import (
 	"gorm.io/gorm"
 )
 
+const START_DAY = "2022-03-17"
+
 type User struct {
-	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Nickname             string `json:"nickname" gorm:"default:''"`
-	Realname             string `json:"-"`
-	Number               string `json:"-" gorm:"default:''"`
-	Password             string `json:"-" gorm:"column:password;"`
-	PhoneNumber          string `json:"phone_number"`
-	IsSuper              bool   `json:"is_super" gorm:"default:false;column:super_admin"`
-	IsSchAdmin           bool   `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
-	IsStuAdmin           bool   `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
-	IsSchDistributeAdmin bool   `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
-	IsUser               bool   `json:"is_user" gorm:"default:false;"`
-	Active               bool   `json:"active" gorm:"default:true"`
-	CreatedAt            string `json:"-" gorm:"autoCreateTime;default:null;"`
+	Uid                  uint64        `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
+	Nickname             string        `json:"nickname" gorm:"default:''"`
+	Realname             string        `json:"-"`
+	Number               string        `json:"-" gorm:"default:''"`
+	Password             string        `json:"-" gorm:"column:password;"`
+	PhoneNumber          string        `json:"phone_number"`
+	IsSuper              bool          `json:"is_super" gorm:"default:false;column:super_admin"`
+	IsSchAdmin           bool          `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
+	IsStuAdmin           bool          `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
+	IsSchDistributeAdmin bool          `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
+	IsUser               bool          `json:"is_user" gorm:"default:false;"`
+	Active               bool          `json:"active" gorm:"default:true"`
+	Avatar               string        `json:"avatar"`
+	// Avatar Frame 的 url，类似 Avatar
+	AvatarFrame          string       `json:"avatar_frame"`
+	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
+	LevelPoint           int           `json:"level_point" gorm:"default:0"`
+	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`
+}
+
+type UserInfo struct {
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+	AvatarFrame string `json:"avatar_frame"`
+	UserLevelInfo
+}
+
+type UserLevelInfo struct {
+	LevelName      string `json:"level_name"`
+	Level          int    `json:"level"`
+	NextLevelPoint int    `json:"next_level_point"`
+	CurLevelPoint  int    `json:"cur_level_point"`
 }
 
 type NewUserData struct {
@@ -93,7 +116,14 @@ func RequireUser(uid string) error {
 
 func ExistUser(nickname, number string) (uint64, error) {
 	var user User
-	if err := db.Where(User{Nickname: nickname, Number: number, IsUser: true}).Order("id").Find(&user).Error; err != nil {
+	d := db.Where("is_user = true")
+	if nickname != "" {
+		d = d.Where("nickname = ?", nickname)
+	}
+	if number != "" {
+		d = d.Where("number = ?", number)
+	}
+	if err := d.Order("id").Find(&user).Error; err != nil {
 		return 0, err
 	}
 	return user.Uid, nil
@@ -132,13 +162,13 @@ func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	var list []Manager
 	users := db.Model(&User{}).Where("nickname like ? AND is_super = false AND is_user = false", "%"+name+"%")
 	if err := db.
-		Table("(?) as a", users).
-		Select("a.*", "qd.name", "qd.introduction").
-		Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
-		Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
-		Scopes(util.Paginate(c)).
-		Order("id").
-		Find(&list).Error; err != nil {
+	Table("(?) as a", users).
+	Select("a.*", "qd.name", "qd.introduction").
+	Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
+	Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
+	Scopes(util.Paginate(c)).
+	Order("id").
+	Find(&list).Error; err != nil {
 		return nil, err
 	}
 	return list, nil
@@ -148,11 +178,11 @@ func GetUsersInDepartment(departmentId uint64) ([]User, error) {
 	var users []User
 	ud := db.Model(&UserDepartment{}).Where("department_id = ?", departmentId)
 	err := db.Table("(?) as a", ud).
-		Select("u.*").
-		Joins("JOIN qnhd.user as u ON a.uid = u.id").
-		Order("id").
-		Find(&users).
-		Error
+	Select("u.*").
+	Joins("JOIN qnhd.user as u ON a.uid = u.id").
+	Order("id").
+	Find(&users).
+	Error
 	return users, err
 }
 
@@ -167,7 +197,21 @@ func GetUser(maps map[string]interface{}) (User, error) {
 	if err := db.Where(maps).First(&u).Error; err != nil {
 		return u, err
 	}
+	// TODO: 是否需要对此进行优化，这里访问了一次数据库
+	u.AvatarFrame = GetUserAvatarFrameAddr(u.Uid)
+	u.LevelInfo = GetLevelInfo(u.LevelPoint)
 	return u, nil
+}
+
+func GetUserInfo(uid string) UserInfo {
+	u, _ := GetUser(map[string]interface{}{"id": uid})
+
+	var uinfo UserInfo
+	uinfo.UserLevelInfo = u.LevelInfo
+	uinfo.Avatar = u.Avatar
+	uinfo.Nickname = u.Nickname
+	uinfo.AvatarFrame = u.AvatarFrame
+	return uinfo
 }
 
 func AddUser(nickname, number, password, phoneNumber, realname string, isUser bool) (uint64, error) {
@@ -236,9 +280,28 @@ func EditUser(uid string, maps map[string]interface{}) error {
 	return db.Model(&User{}).Where("id = ?", uid).Updates(maps).Error
 }
 
+// 更新学号
+func UpdateUserNumber(uid string, old, new string) error {
+	ok, err := twtservice.QueryUserCheck(old, new)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("身份信息不一致")
+	} else {
+		if err := db.Where("number = ?", new).Delete(&User{}).Error; err != nil {
+			return err
+		}
+		if err := db.Model(&User{}).Where("number", old).Update("number", new).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // 修改用户名称
 func EditUserName(uid string, name string) error {
-	const START_DAY = "2022-03-17"
+
 	var user User
 	if err := db.Where("nickname = ?", name).Find(&user).Error; err != nil {
 		return err
@@ -248,19 +311,45 @@ func EditUserName(uid string, name string) error {
 	}
 	// 修改以往的帖子和楼层
 	err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&Post{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
+		if err := tx.Unscoped().Model(&Post{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
+		if err := tx.Unscoped().Model(&Floor{}).Where("uid = ? AND created_at > ? AND type <> ?", uid, START_DAY, POST_SCHOOL_TYPE).Update("nickname", name).Error; err != nil {
 			return err
 		}
-		return db.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
+		return tx.Model(&User{}).Where("id = ?", uid).Update("nickname", name).Error
 	})
 	return err
 }
 
-func ResetUserName(uid string) error {
-	return db.Model(&User{}).Where("uid = ?", uid).Update("nickname", genNickname()).Error
+func ResetUserName(doer, uid string) error {
+	nickname := genNickname()
+	var u User
+	db.Where("id = ?").Find(&u)
+	err := db.Transaction(func(tx *gorm.DB) error {
+
+		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		if e := tx.Unscoped().Model(&Post{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		if e := tx.Unscoped().Model(&Floor{}).Where("uid = ? AND type <> ? AND created_at > ?", uid, POST_SCHOOL_TYPE, START_DAY).Update("nickname", nickname).Error; e != nil {
+			return e
+		}
+		return nil
+	})
+	addManagerLogWithDetail(util.AsUint(doer), util.AsUint(uid), ManagerLogType.USER_NICKNAME_RESET,
+	fmt.Sprintf("raw: %s", u.Nickname))
+	return err
+}
+
+func ResetUserAvatar(doer, uid string) error {
+	if err := db.Model(&User{}).Where("id = ?", uid).Update("avatar", "").Error; err != nil {
+		return err
+	}
+	addManagerLog(util.AsUint(doer), util.AsUint(uid), ManagerLogType.FLOOR_DELETE)
+	return nil
 }
 
 func genNickname() string {
@@ -282,21 +371,31 @@ func EditUserPasswd(uid string, rawPasswd, newPasswd string) error {
 	return db.Model(&user).Update("password", newPasswd).Error
 }
 
+// 修改头像
+func EditUserAvatar(uid string, newAvatar string) error {
+	return db.Model(&User{}).Where("id = ?", uid).Update("avatar", newAvatar).Error
+}
+
 // 删除用户
 func DeleteUser(uid uint64) error {
 	return db.Where("id = ?", uid).Delete(&User{}).Error
 }
 
 func (u *User) realname() string {
-	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+	if len([]rune(u.Realname)) == 0 {
 		return u.Nickname
 	}
-	return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
+	if len([]rune(u.Number)) == 10 {
+		return fmt.Sprintf("%s*** %s*", string([]rune(u.Number)[:7]), string([]rune(u.Realname)[0]))
+	} else {
+		// 1012加后三位+***
+		return fmt.Sprintf("1022%s*** %s*", string([]rune(u.Number)[len([]rune(u.Number))-3:]), string([]rune(u.Realname)[0]))
+	}
 }
 
 func (u *User) realnameFull() string {
-	if len([]rune(u.Number)) != 10 || len([]rune(u.Realname)) == 0 {
+	if len([]rune(u.Realname)) == 0 {
 		return u.Nickname
 	}
-	return fmt.Sprintf("%s %s", u.Number, u.Realname)
+	return fmt.Sprintf("%s %s %s", u.Number, u.Realname, u.PhoneNumber)
 }

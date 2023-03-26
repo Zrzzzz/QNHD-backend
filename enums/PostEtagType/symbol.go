@@ -10,3 +10,15 @@ var msgSymbol = map[Enum]string{
 func (code Enum) GetSymbol() string {
 	return msgSymbol[code]
 }
+
+func Contains(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, v := range msgSymbol {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}

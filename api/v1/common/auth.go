@@ -9,6 +9,7 @@ import (
 	"qnhd/pkg/r"
 	"qnhd/pkg/util"
 	"qnhd/request/twtservice"
+	"strings"
 	"time"
 
 	"github.com/astaxie/beego/validation"
@@ -68,7 +69,7 @@ func GetAuthPasswd(c *gin.Context) {
 
 // 认证过程
 func auth(result twtservice.TwTAuthResult, c *gin.Context) {
-	uid, err := models.ExistUser("", result.UserNumber)
+	uid, err := models.ExistUser("", strings.Trim(result.UserNumber, " "))
 	data := make(map[string]interface{})
 	if err != nil {
 		logging.Error("auth error: %v", err)

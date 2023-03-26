@@ -69,6 +69,14 @@ func AddBlocked(c *gin.Context) {
 	// 因为做过valid了不必考虑错误
 	intuid := util.AsUint(uid)
 	intlast := util.AsUint(last)
+	// 需要在对应天数里
+	switch intlast {
+	case 1, 3, 7, 14, 30:
+		break
+	default:
+		r.Error(c, e.ERROR_BLOCKED_USER_DAY, "")
+		return
+	}
 	code := e.SUCCESS
 	id, err := models.AddBlockedByUid(intuid, util.AsUint(doer), reason, uint8(intlast))
 	if err != nil {
@@ -86,6 +94,7 @@ func AddBlocked(c *gin.Context) {
 // @return
 // @route /b/blocked
 func DeleteBlocked(c *gin.Context) {
+	doer := r.GetUid(c)
 	uid := c.Query("uid")
 	valid := validation.Validation{}
 	valid.Required(uid, "uid")
@@ -105,7 +114,7 @@ func DeleteBlocked(c *gin.Context) {
 		code = e.ERROR_DATABASE
 	}
 	if ifBlocked {
-		_, err := models.DeleteBlockedByUid(intuid)
+		_, err := models.DeleteBlockedByUid(util.AsUint(doer), intuid)
 		if err != nil {
 			logging.Error("Delete blocked error: %v", err)
 			code = e.ERROR_DATABASE

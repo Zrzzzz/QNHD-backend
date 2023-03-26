@@ -24,6 +24,8 @@ func GetPosts(front bool) gin.HandlerFunc {
 		tagId := c.Query("tag_id")
 		valueMode := c.Query("value_mode")
 		isDeleted := c.Query("is_deleted")
+		commentable := c.Query("commentable")
+		etag := c.Query("etag")
 		valid := validation.Validation{}
 		valid.Required(postType, "type")
 		valid.Numeric(postType, "type")
@@ -65,7 +67,10 @@ func GetPosts(front bool) gin.HandlerFunc {
 			"tag_id":        tagId,
 			"value_mode":    PostValueModeType.Enum(util.AsInt(valueMode)),
 			"is_deleted":    isDeleted,
+			"commentable":   commentable,
+			"etag":          etag,
 		}
+
 		if front {
 			uid := r.GetUid(c)
 			list, err := models.GetPostResponsesWithUid(c, uid, maps)
