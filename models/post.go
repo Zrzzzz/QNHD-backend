@@ -413,11 +413,11 @@ func GetFavPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, 
 
 func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
-	var ids []string
-	if err := db.Model(&LogVisitHistory{}).Where("uid = ?", uid).Distinct("post_id", "created_at").Order("created_at DESC").Scopes(util.Paginate(c)).Find(&ids).Error; err != nil {
+  var ids []string
+  // 这样写不是很优雅，但是之前那种真的会出错
+  if err := db.Raw("SELECT post_id FROM (SELECT DISTINCT post_id, created_at FROM qnhd.log_visit_history WHERE uid = ? ORDER BY created_at DESC) as a", uid).Scan(&ids).Error; err != nil{
 		return nil, err
 	}
-
 	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
 		return nil, err
 	}
