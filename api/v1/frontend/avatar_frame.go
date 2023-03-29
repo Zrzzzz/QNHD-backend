@@ -80,7 +80,7 @@ func GetAllAvatarFrame(c *gin.Context) {
 // @return
 // @route /f/frame/id_url
 func GetAvatarFrameUrlById(c *gin.Context) {
-  aid := c.PostForm("aid")
+	aid := c.Query("aid")
   avatar_frame, err := models.GetAddrById(util.AsUint(aid))
   if err != nil {
     logging.Error("Get Avatar Frame Error: %v", aid)
