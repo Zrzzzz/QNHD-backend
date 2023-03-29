@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"qnhd/pkg/logging"
 
 	"gorm.io/gorm"
 )
@@ -11,6 +12,7 @@ type AvatarFrame struct {
 	Addr        string `json:"addr"`
 	CreatedAt 	string `json:"created_at" gorm:"default:null;"`
 	Comment     string `json:"comment"`
+  Type        string `json:"type"`
 }
 
 // GetAllAvatarFrames 获取所有 AvatarFrame
@@ -44,4 +46,16 @@ func UpdateAvatarFrame(id uint64, addr string, comment string) (avatar_frame Ava
 	avatar_frame.Addr = addr
 	err = db.Save(&avatar_frame).Error
 	return 
+}
+
+// GetAddrByType 通过 type 获取 avatar_frame_list
+func GetAddrByType(t string) (avatar_frame_list []AvatarFrame, err error) {
+  if err = db.Where("type = ?", t).Find(&avatar_frame_list).Error; err != nil{
+    logging.Error("通过 type 获取 avatar_frame_list 错误")
+    if errors.Is(err, gorm.ErrRecordNotFound){
+      err = nil
+      return
+    }
+  }
+  return
 }

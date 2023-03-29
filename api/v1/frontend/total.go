@@ -193,5 +193,7 @@ func initType(g *gin.RouterGroup, t FrontType) {
 		g.GET("/frame/all" ,GetAllAvatarFrame)
     // 通过 id 获得头像框 addr
     g.GET("/frame/id_url", GetAvatarFrameUrlById)
+    // 通过 type 获取头像框
+    g.GET("/frame/type_url", GetAvatarFrameUrlByType)
 	}
 }

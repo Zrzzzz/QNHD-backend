@@ -89,3 +89,23 @@ func GetAvatarFrameUrlById(c *gin.Context) {
   }
   r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame": avatar_frame})
 }
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /f/frame/type_url
+func GetAvatarFrameUrlByType(c *gin.Context) {
+	t := c.Query("type")
+  avatar_frame_list, err := models.GetAddrByType(t)
+  if err != nil {
+    logging.Error("Get Avatar Frame Error Type: %v", t)
+    r.Error(c, e.ERROR_DATABASE, err.Error())
+    return
+  }
+  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list})
+}
+
+
+
+
