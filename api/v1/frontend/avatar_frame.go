@@ -64,13 +64,13 @@ func UpdateMyFrame(c *gin.Context){
 // @return
 // @route /f/frame/all
 func GetAllAvatarFrame(c *gin.Context) {
-  avatar_frame_list, err := models.GetAllAvatarFrames()
+  avatar_frame_list, err := models.GetAllAvatarFrames(1)
   if err != nil {
     logging.Error("Get all avatar frame Error: %v", err)
     r.Error(c, e.ERROR_DATABASE, err.Error())
     return
   }
-  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list})
+  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list, "total": len(avatar_frame_list)})
 }
 
 
@@ -103,7 +103,7 @@ func GetAvatarFrameUrlByType(c *gin.Context) {
     r.Error(c, e.ERROR_DATABASE, err.Error())
     return
   }
-  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list})
+  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list, "total": len(avatar_frame_list)})
 }
 
 
