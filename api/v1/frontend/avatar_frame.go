@@ -45,32 +45,19 @@ func SetMyFrame(c *gin.Context){
   r.OK(c, e.SUCCESS, map[string]interface{}{"user_avatar_frame": user_avatar_frame})
 }
 
-func UpdateMyFrame(c *gin.Context){
-  uid := r.GetUid(c)
-  aid := c.PostForm("aid")
-  user_avatar_frame, err := models.UpdateUserAvatarFrame(util.AsUint(uid), util.AsUint(aid))
-  if err != nil {
-    logging.Error("Update user frame Error: %v", err)
-    r.Error(c, e.ERROR_DATABASE, err.Error())
-    return
-  }
-  r.OK(c, e.SUCCESS, map[string]interface{}{"user_avatar_frame": user_avatar_frame})
-}
-
-
 // @method [get]
 // @way [query]
 // @param
 // @return
 // @route /f/frame/all
 func GetAllAvatarFrame(c *gin.Context) {
-  avatar_frame_list, err := models.GetAllAvatarFrames()
+  avatar_frame_list, err := models.GetAllAvatarFrames(1)
   if err != nil {
     logging.Error("Get all avatar frame Error: %v", err)
     r.Error(c, e.ERROR_DATABASE, err.Error())
     return
   }
-  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list})
+  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list, "total": len(avatar_frame_list)})
 }
 
 
@@ -80,7 +67,7 @@ func GetAllAvatarFrame(c *gin.Context) {
 // @return
 // @route /f/frame/id_url
 func GetAvatarFrameUrlById(c *gin.Context) {
-  aid := c.PostForm("aid")
+	aid := c.Query("aid")
   avatar_frame, err := models.GetAddrById(util.AsUint(aid))
   if err != nil {
     logging.Error("Get Avatar Frame Error: %v", aid)
@@ -89,3 +76,23 @@ func GetAvatarFrameUrlById(c *gin.Context) {
   }
   r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame": avatar_frame})
 }
+
+// @method [get]
+// @way [query]
+// @param
+// @return
+// @route /f/frame/type_url
+func GetAvatarFrameUrlByType(c *gin.Context) {
+	t := c.Query("type")
+  avatar_frame_list, err := models.GetAddrByType(t)
+  if err != nil {
+    logging.Error("Get Avatar Frame Error Type: %v", t)
+    r.Error(c, e.ERROR_DATABASE, err.Error())
+    return
+  }
+  r.OK(c, e.SUCCESS, map[string]interface{}{"avatar_frame_list": avatar_frame_list, "total": len(avatar_frame_list)})
+}
+
+
+
+

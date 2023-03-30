@@ -21,7 +21,7 @@ import (
 // @Security ApiKeyAuth
 // @Success 200 {object} models.Response{data=models.ListRes{list=models.Tag}}
 // @Failure 400 {object} models.Response ""
-// @Router /f/tag [get]
+// @Router /f/tags [get]
 func GetTags(c *gin.Context) {
 	name := c.Query("name")
 
