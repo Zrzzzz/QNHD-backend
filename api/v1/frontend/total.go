@@ -185,10 +185,8 @@ func initType(g *gin.RouterGroup, t FrontType) {
 	case Frame:
 		// 获取我的头像相框
 		g.GET("/frame/my", GetMyFrame)
-		// 设置我的头像框
+		// 设置或更新我的头像框
 		g.POST("/frame/set", SetMyFrame)
-		// 更新我的头像框
-		g.POST("/frame/update", UpdateMyFrame)
 		// 获取所有头像框
 		g.GET("/frame/all" ,GetAllAvatarFrame)
     // 通过 id 获得头像框 addr

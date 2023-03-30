@@ -45,19 +45,6 @@ func SetMyFrame(c *gin.Context){
   r.OK(c, e.SUCCESS, map[string]interface{}{"user_avatar_frame": user_avatar_frame})
 }
 
-func UpdateMyFrame(c *gin.Context){
-  uid := r.GetUid(c)
-  aid := c.PostForm("aid")
-  user_avatar_frame, err := models.UpdateUserAvatarFrame(util.AsUint(uid), util.AsUint(aid))
-  if err != nil {
-    logging.Error("Update user frame Error: %v", err)
-    r.Error(c, e.ERROR_DATABASE, err.Error())
-    return
-  }
-  r.OK(c, e.SUCCESS, map[string]interface{}{"user_avatar_frame": user_avatar_frame})
-}
-
-
 // @method [get]
 // @way [query]
 // @param
