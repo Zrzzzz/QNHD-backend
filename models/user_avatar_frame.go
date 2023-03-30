@@ -35,7 +35,7 @@ func AddNewUserAvatarFrame(uid, aid uint64) (user_avatar_frame UserAvatarFrame, 
 }
 
 func GetUserAvatarFrameAddr(id uint64) (addr string) {
-	err :=db.Model(&AvatarFrame{}).Select("avatar_frame.addr").Joins("JOIN qnhd.user_avatar_frame ON avatar_frame.id = qnhd.user_avatar_frame.avatar_frame_id").Where("user_avatar_frame.uid = ?", id).First(&addr).Error
+	err :=db.Model(&AvatarFrame{}).Select("avatar_frame.addr").Joins("JOIN qnhd.user_avatar_frame ON avatar_frame.id = qnhd.user_avatar_frame.avatar_frame_id").Where("user_avatar_frame.uid = ? AND avatar_frame.hidden = ?", id, false).First(&addr).Error
 	if err != nil{
 		logging.Error("Get User Avatar Frame Addr by Uid (%v) Error: %v" ,id ,err)
 		addr = ""
