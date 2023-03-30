@@ -21,7 +21,8 @@ type AvatarFrame struct {
 func GetAllAvatarFrames(f int) (avatar_frame_list []AvatarFrame, err error){
   d := db
   if f==1 {
-    d.Where("hidden = ?", false)
+    // 1 是必须要 hidden 
+    d = d.Where("hidden = ?", false)
   }
 	err = d.Order("id").Find(&avatar_frame_list).Error
 	return 
