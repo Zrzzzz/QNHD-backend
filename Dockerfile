@@ -1,20 +1,49 @@
-# syntax=docker/dockerfile:1
+# build start
+FROM golang:alpine AS builder
 
-FROM golang
+LABEL stage=gobuilder
 
-WORKDIR /app
+ENV CGO_ENABLED 0
+ENV GOPROXY https://goproxy.cn,direct
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
-ADD . /app/
+RUN apk update --no-cache && apk add --no-cache tzdata
 
-RUN go version
+WORKDIR /build
 
-RUN go env -w GOPROXY=https://goproxy.cn,direct
+ADD go.mod .
+ADD go.sum .
+RUN go mod download
+COPY . .
+RUN go build -ldflags="-s -w" -o /app/main main.go
+# build end
 
-RUN go mod tidy
+# run start
+FROM alpine:3.17
 
-RUN go build -o backend .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/share/zoneinfo/Asia/Shanghai /usr/share/zoneinfo/Asia/Shanghai
+ENV TZ Asia/Shanghai
+
+
+COPY --from=builder /app/main /qnhd/main
+WORKDIR /qnhd
+COPY Docker/avatar /qnhd/avatar
+COPY Docker/conf /qnhd/conf
+COPY Docker/dict /qnhd/dict
+COPY Docker/run.sh run.sh
+RUN mkdir -p /qnhd/runtime
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
+RUN apk update --no-cache && apk add --no-cache tzdata && \
+    apk add ca-certificates curl nodejs npm
+
+RUN cd /qnhd/avatar && npm install && cd /qnhd
 
 EXPOSE 7013
 
-CMD /app/backend
+RUN chmod +x /qnhd/main && chmod +x /qnhd/run.sh
+ENV RELEASE=1
+CMD [ "sh", "/qnhd/run.sh" ]
 
+# run end
