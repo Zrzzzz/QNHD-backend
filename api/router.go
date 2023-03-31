@@ -62,14 +62,16 @@ func Setup() {
 		MaxHeaderBytes: 1 << 20,
 		// TLSConfig:      tlscfg,
 	}
-	s.ListenAndServe()
-	return
+	// s.ListenAndServe()
+	// return
 	if setting.EnvironmentSetting.RELEASE == "1" {
 		fmt.Println("s.ListenAndServe()")
 		s.ListenAndServe()
 	} else {
 		fmt.Println("s.ListenAndServeTLS()")
-		s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key")
+		if err := s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key"); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 

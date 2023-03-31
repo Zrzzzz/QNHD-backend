@@ -28,7 +28,7 @@ ENV TZ Asia/Shanghai
 
 COPY --from=builder /app/main /qnhd/main
 WORKDIR /qnhd
-COPY Docker/avatar /qnhd/avatar
+COPY boring-avatars-service /qnhd/avatar
 COPY Docker/conf /qnhd/conf
 COPY Docker/dict /qnhd/dict
 COPY Docker/run.sh run.sh
