@@ -18,29 +18,29 @@ import (
 const START_DAY = "2022-03-17"
 
 type User struct {
-	Uid                  uint64        `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
-	Nickname             string        `json:"nickname" gorm:"default:''"`
-	Realname             string        `json:"-"`
-	Number               string        `json:"-" gorm:"default:''"`
-	Password             string        `json:"-" gorm:"column:password;"`
-	PhoneNumber          string        `json:"phone_number"`
-	IsSuper              bool          `json:"is_super" gorm:"default:false;column:super_admin"`
-	IsSchAdmin           bool          `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
-	IsStuAdmin           bool          `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
-	IsSchDistributeAdmin bool          `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
-	IsUser               bool          `json:"is_user" gorm:"default:false;"`
-	Active               bool          `json:"active" gorm:"default:true"`
-	Avatar               string        `json:"avatar"`
+	Uid                  uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement;default:null;"`
+	Nickname             string `json:"nickname" gorm:"default:''"`
+	Realname             string `json:"-"`
+	Number               string `json:"-" gorm:"default:''"`
+	Password             string `json:"-" gorm:"column:password;"`
+	PhoneNumber          string `json:"phone_number"`
+	IsSuper              bool   `json:"is_super" gorm:"default:false;column:super_admin"`
+	IsSchAdmin           bool   `json:"is_sch_admin" gorm:"default:false;column:school_department_admin"`
+	IsStuAdmin           bool   `json:"is_stu_admin" gorm:"default:false;column:student_admin"`
+	IsSchDistributeAdmin bool   `json:"is_sch_dis_admin" gorm:"default:false;column:school_distribute_admin"`
+	IsUser               bool   `json:"is_user" gorm:"default:false;"`
+	Active               bool   `json:"active" gorm:"default:true"`
+	Avatar               string `json:"avatar"`
 	// Avatar Frame 的 url，类似 Avatar
-	AvatarFrame          string       `json:"avatar_frame"`
-	CreatedAt            string        `json:"-" gorm:"autoCreateTime;default:null;"`
-	LevelPoint           int           `json:"level_point" gorm:"default:0"`
-	LevelInfo            UserLevelInfo `json:"level_info" gorm:"-"`
+	AvatarFrame string        `json:"avatar_frame" gorm:"-"`
+	CreatedAt   string        `json:"-" gorm:"autoCreateTime;default:null;"`
+	LevelPoint  int           `json:"level_point" gorm:"default:0"`
+	LevelInfo   UserLevelInfo `json:"level_info" gorm:"-"`
 }
 
 type UserInfo struct {
-	Nickname string `json:"nickname"`
-	Avatar   string `json:"avatar"`
+	Nickname    string `json:"nickname"`
+	Avatar      string `json:"avatar"`
 	AvatarFrame string `json:"avatar_frame"`
 	UserLevelInfo
 }
@@ -162,13 +162,13 @@ func GetManagers(c *gin.Context, name string) ([]Manager, error) {
 	var list []Manager
 	users := db.Model(&User{}).Where("nickname like ? AND is_super = false AND is_user = false", "%"+name+"%")
 	if err := db.
-	Table("(?) as a", users).
-	Select("a.*", "qd.name", "qd.introduction").
-	Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
-	Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
-	Scopes(util.Paginate(c)).
-	Order("id").
-	Find(&list).Error; err != nil {
+		Table("(?) as a", users).
+		Select("a.*", "qd.name", "qd.introduction").
+		Joins("LEFT JOIN qnhd.user_department as ud ON a.id = ud.uid").
+		Joins("LEFT JOIN qnhd.department as qd ON ud.department_id = qd.id").
+		Scopes(util.Paginate(c)).
+		Order("id").
+		Find(&list).Error; err != nil {
 		return nil, err
 	}
 	return list, nil
@@ -178,11 +178,11 @@ func GetUsersInDepartment(departmentId uint64) ([]User, error) {
 	var users []User
 	ud := db.Model(&UserDepartment{}).Where("department_id = ?", departmentId)
 	err := db.Table("(?) as a", ud).
-	Select("u.*").
-	Joins("JOIN qnhd.user as u ON a.uid = u.id").
-	Order("id").
-	Find(&users).
-	Error
+		Select("u.*").
+		Joins("JOIN qnhd.user as u ON a.uid = u.id").
+		Order("id").
+		Find(&users).
+		Error
 	return users, err
 }
 
@@ -340,7 +340,7 @@ func ResetUserName(doer, uid string) error {
 		return nil
 	})
 	addManagerLogWithDetail(util.AsUint(doer), util.AsUint(uid), ManagerLogType.USER_NICKNAME_RESET,
-	fmt.Sprintf("raw: %s", u.Nickname))
+		fmt.Sprintf("raw: %s", u.Nickname))
 	return err
 }
 
