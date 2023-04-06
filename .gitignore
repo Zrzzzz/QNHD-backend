@@ -15,3 +15,6 @@ request/
 /pages/
 /crypto/
 /Docker/
+# 打包 zip 文件
+archive.zip
+
