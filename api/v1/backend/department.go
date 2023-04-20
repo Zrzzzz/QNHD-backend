@@ -56,6 +56,7 @@ func AddDepartment(c *gin.Context) {
 	}
 	if exist {
 		r.OK(c, e.ERROR_EXIST_DEPARTMENT, nil)
+    return
 	}
 	maps := map[string]interface{}{
 		"name":         name,
