@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"qnhd/pkg/logging"
 
 	"gorm.io/gorm"
 )
@@ -37,7 +36,8 @@ func AddNewUserAvatarFrame(uid, aid uint64) (user_avatar_frame UserAvatarFrame, 
 func GetUserAvatarFrameAddr(id uint64) (addr string) {
 	err :=db.Model(&AvatarFrame{}).Select("avatar_frame.addr").Joins("JOIN qnhd.user_avatar_frame ON avatar_frame.id = qnhd.user_avatar_frame.avatar_frame_id").Where("user_avatar_frame.uid = ? AND avatar_frame.hidden = ?", id, false).First(&addr).Error
 	if err != nil{
-		logging.Error("Get User Avatar Frame Addr by Uid (%v) Error: %v" ,id ,err)
+    // 这里写出 Log 的话，LOG 太多了，上线 3 天就有 2 G
+		// logging.Error("Get User Avatar Frame Addr by Uid (%v) Error: %v" ,id ,err)
 		addr = ""
 	}
 	return
