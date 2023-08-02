@@ -79,10 +79,10 @@ func GetRecommendTag(lastId int) (HotTagResult, error) {
 		tag.Name = t.Name
 		return tag, nil
 	}
-	rand.Seed(time.Now().UnixNano())
-	idx := rand.Intn(len(tags))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	idx := r.Intn(len(tags))
 	for idx == int(lastId) {
-		idx = rand.Intn(len(tags))
+		idx = r.Intn(len(tags))
 	}
 	return tags[idx], nil
 }
