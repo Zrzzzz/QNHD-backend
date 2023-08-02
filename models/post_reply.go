@@ -129,7 +129,7 @@ func EditPostReply(maps map[string]interface{}) error {
 }
 
 func DeletePostReply(id string) error {
-	return db.Where("id = ?").Delete(&PostReply{}).Error
+	return db.Where("id = ?", id).Delete(&PostReply{}).Error
 }
 
 // 删除帖子内的回复记录

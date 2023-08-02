@@ -325,7 +325,7 @@ func EditUserName(uid string, name string) error {
 func ResetUserName(doer, uid string) error {
 	nickname := genNickname()
 	var u User
-	db.Where("id = ?").Find(&u)
+	db.Where("id = ?", doer).Find(&u)
 	err := db.Transaction(func(tx *gorm.DB) error {
 
 		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
