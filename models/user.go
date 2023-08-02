@@ -4,11 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/rand"
 	ManagerLogType "qnhd/enums/MangerLogType"
 	"qnhd/pkg/util"
 	"qnhd/request/twtservice"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	giterrors "github.com/pkg/errors"
@@ -150,6 +148,14 @@ func GetCommonUsers(c *gin.Context, maps map[string]interface{}) ([]User, error)
 		return nil, err
 	}
 	return users, nil
+}
+
+func GetUserCount() (int64, error) {
+	var count int64
+	if err := db.Unscoped().Model(&User{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 type Manager struct {
@@ -323,11 +329,11 @@ func EditUserName(uid string, name string) error {
 }
 
 func ResetUserName(doer, uid string) error {
-	nickname := genNickname()
+	nickname := fmt.Sprintf("用户%d", uid)
 	var u User
 	db.Where("id = ?", doer).Find(&u)
-	err := db.Transaction(func(tx *gorm.DB) error {
 
+	err := db.Transaction(func(tx *gorm.DB) error {
 		if e := tx.Model(&User{}).Where("id = ?", uid).Update("nickname", nickname).Error; e != nil {
 			return e
 		}
@@ -350,16 +356,6 @@ func ResetUserAvatar(doer, uid string) error {
 	}
 	addManagerLog(util.AsUint(doer), util.AsUint(uid), ManagerLogType.FLOOR_DELETE)
 	return nil
-}
-
-func genNickname() string {
-	letters := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	ret := ""
-	for i := 0; i < 8; i++ {
-		ret += letters[r.Intn(len(letters))]
-	}
-	return ret
 }
 
 // 修改密码，要求原密码
