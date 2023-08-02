@@ -37,5 +37,5 @@ func Cut(text string, sep string) string {
 	for _, x := range urls {
 		text = strings.ReplaceAll(text, x, "")
 	}
-	return strings.Join(seg.CutSearch(text), sep)
+	return strings.Join(append(seg.CutSearch(text), urls...), sep)
 }
