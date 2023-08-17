@@ -30,10 +30,11 @@ type User struct {
 	Active               bool   `json:"active" gorm:"default:true"`
 	Avatar               string `json:"avatar"`
 	// Avatar Frame 的 url，类似 Avatar
-	AvatarFrame string        `json:"avatar_frame" gorm:"-"`
-	CreatedAt   string        `json:"-" gorm:"autoCreateTime;default:null;"`
-	LevelPoint  int           `json:"level_point" gorm:"default:0"`
-	LevelInfo   UserLevelInfo `json:"level_info" gorm:"-"`
+	AvatarFrame string         `json:"avatar_frame" gorm:"-"`
+	CreatedAt   string         `json:"-" gorm:"autoCreateTime;default:null;"`
+	LevelPoint  int            `json:"level_point" gorm:"default:0"`
+	LevelInfo   UserLevelInfo  `json:"level_info" gorm:"-"`
+	DeletedAt   gorm.DeletedAt `json:"-"`
 }
 
 type UserInfo struct {
