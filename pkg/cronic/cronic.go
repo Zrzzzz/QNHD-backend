@@ -1,14 +1,14 @@
 package cronic
 
 import (
+	"fmt"
 	"qnhd/models"
 	"qnhd/pkg/logging"
 	"qnhd/request/twtservice"
+	"time"
 
-	cron "github.com/robfig/cron/v3"
+	"github.com/go-co-op/gocron"
 )
-
-var c *cron.Cron
 
 func Setup() {
 	err := models.FlushOldTagLog()
@@ -20,8 +20,8 @@ func Setup() {
 		logging.Error(err.Error())
 	}
 	// 定时任务
-	c = cron.New()
-	_, err = c.AddFunc("@weekly", func() {
+	s := gocron.NewScheduler(time.UTC)
+	s.Every(1).Week().Do(func() {
 		// 清理taglog
 		err := models.FlushOldTagLog()
 		if err != nil {
@@ -33,15 +33,17 @@ func Setup() {
 			logging.Error(err.Error())
 		}
 		// 清理已读点赞
+
+		// 计算帖子频率
+		err = models.RefreshPostFreq()
+		if err != nil {
+			logging.Error(err.Error())
+		}
 	})
-	if err != nil {
-		logging.Error(err.Error())
-	} else {
-		logging.Debug("cron启动成功")
-	}
-	c.Start()
+
+	s.StartAsync()
+	fmt.Println("cron启动成功")
 }
 
 func Close() {
-	c.Stop()
 }

@@ -69,9 +69,10 @@ func Setup() {
 		s.ListenAndServe()
 	} else {
 		fmt.Println("s.ListenAndServeTLS()")
-		if err := s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key"); err != nil {
-			fmt.Println(err)
-		}
+		// if err := s.ListenAndServeTLS("cert/cert.pem", "cert/cert.key"); err != nil {
+		// 	fmt.Println(err)
+		// }
+		s.ListenAndServe()
 	}
 }
 

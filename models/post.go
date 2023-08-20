@@ -61,19 +61,25 @@ type Post struct {
 	Etag string `json:"e_tag" gorm:"column:extra_tag;"`
 	// 能否评论
 	Commentable bool `json:"commentable" gorm:"default:true"`
+
+	// 频率等级
+	FreqLevel uint64 `json:"-" gorm:"default:0"`
 }
 
 type LogPostFav struct {
-	Uid    uint64 `json:"uid"`
-	PostId uint64 `json:"post_id"`
+	Uid       uint64 `json:"uid"`
+	PostId    uint64 `json:"post_id"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 type LogPostLike struct {
-	Uid    uint64 `json:"uid"`
-	PostId uint64 `json:"post_id"`
+	Uid       uint64 `json:"uid"`
+	PostId    uint64 `json:"post_id"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 type LogPostDis struct {
-	Uid    uint64 `json:"uid"`
-	PostId uint64 `json:"post_id"`
+	Uid       uint64 `json:"uid"`
+	PostId    uint64 `json:"post_id"`
+	CreatedAt string `json:"created_at" gorm:"default:null;"`
 }
 
 // 帖子返回数据
@@ -307,7 +313,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	if searchMode == PostSearchModeType.TIME {
 		d = d.Order("created_at DESC")
 	} else if searchMode == PostSearchModeType.UPDATE {
-		d = d.Order("updated_at DESC")
+		d = d.Order("freq_level").Order("updated_at DESC")
 	}
 
 	// 分区 不为全部时加上区分
@@ -413,9 +419,9 @@ func GetFavPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, 
 
 func GetHistoryPostResponseWithUid(c *gin.Context, uid string) ([]PostResponseUser, error) {
 	var posts []Post
-  var ids []string
-  // 这样写不是很优雅，但是之前那种真的会出错
-  if err := db.Raw("SELECT post_id FROM (SELECT DISTINCT post_id, created_at FROM qnhd.log_visit_history WHERE uid = ? ORDER BY created_at DESC) as a", uid).Scan(&ids).Error; err != nil{
+	var ids []string
+	// 这样写不是很优雅，但是之前那种真的会出错
+	if err := db.Raw("SELECT post_id FROM (SELECT DISTINCT post_id, created_at FROM qnhd.log_visit_history WHERE uid = ? ORDER BY created_at DESC) as a", uid).Scan(&ids).Error; err != nil {
 		return nil, err
 	}
 	if err := db.Where("id IN (?)", ids).Scopes(util.Paginate(c)).Find(&posts).Error; err != nil {
@@ -459,7 +465,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			return nil
 		})
 	} else if IsValidPostType(post.Type) {
-    logging.Debug("测试调试1")
+		logging.Debug("测试调试1")
 		imgs, img_ok := maps["image_urls"].([]string)
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Create(post).Error; err != nil {
@@ -474,7 +480,7 @@ func AddPost(maps map[string]interface{}) (uint64, error) {
 			tagId, ok := maps["tag_id"].(string)
 			if ok {
 				if err := AddPostWithTag(tx, post.Id, util.AsUint(tagId)); err != nil {
-          logging.Debug("error: %v", err)
+					logging.Debug("error: %v", err)
 					return err
 				}
 				// 对帖子的tag增加记录
