@@ -20,16 +20,6 @@ import (
 // }
 
 func main() {
-	// setting.Setup()
-	// // segment.Setup()
-	// logging.Setup()
-	// setupModels()
-	// // filter.Setup()
-	// // refreshToken()
-	// if err := models.RefreshPostFreq(); err != nil {
-	// 	panic(err)
-	// }
-
 	setting.Setup()
 	segment.Setup()
 	logging.Setup()
