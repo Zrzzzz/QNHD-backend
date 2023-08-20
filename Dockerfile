@@ -12,9 +12,9 @@ RUN apk update --no-cache && apk add --no-cache tzdata
 WORKDIR /build
 
 ADD go.mod .
-ADD go.sum .
 RUN go mod download
 COPY . .
+RUN go mod tidy
 RUN go build -ldflags="-s -w" -o /app/main main.go
 # build end
 
