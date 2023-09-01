@@ -3,10 +3,12 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"qnhd/pkg/logging"
 	"qnhd/pkg/setting"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -57,6 +59,16 @@ func Setup(debug bool) {
 	sqlDB.SetConnMaxLifetime(time.Second * 30)
 	sqlDB.SetMaxIdleConns(20)
 	sqlDB.SetMaxOpenConns(100)
+
+	var res []string
+	db.Debug().Raw("SELECT extname FROM pg_extension").Scan(&res)
+	if !slices.Contains(res, "zhparser") {
+		if err := db.Exec(`CREATE EXTENSION zhparser;
+		CREATE TEXT SEARCH CONFIGURATION chinese_zh (PARSER = zhparser);
+		ALTER TEXT SEARCH CONFIGURATION chinese_zh ADD MAPPING FOR n,v,a,i,e,l WITH simple;`).Error; err != nil {
+			log.Fatalln(err)
+		}
+	}
 
 	// 初始化等级
 	levelSetup()

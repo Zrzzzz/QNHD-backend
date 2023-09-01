@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"qnhd/pkg/segment"
 	"strings"
 
 	"gorm.io/gorm"
@@ -25,14 +24,8 @@ func geneTokenString(strs ...string) string {
 	} else {
 		cutStrs = strs
 	}
-	if len(strs) == 1 {
-		t := segment.Cut(strs[0], " ")
-		tokens = append(tokens, fmt.Sprintf("to_tsvector('simple', '%s')", escapeString(t)))
-	} else {
-		for i, s := range cutStrs {
-			t := segment.Cut(s, " ")
-			tokens = append(tokens, fmt.Sprintf("setweight(to_tsvector('simple', '%s'), '%s')", escapeString(t), weights[i]))
-		}
+	for i, s := range cutStrs {
+		tokens = append(tokens, fmt.Sprintf("setweight(to_tsvector('chinese_zh', '%s'), '%s')", escapeString(s), weights[i]))
 	}
 	return strings.Join(tokens, " || ")
 }

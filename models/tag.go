@@ -8,7 +8,6 @@ import (
 	"qnhd/enums/TagPointType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
-	"qnhd/pkg/segment"
 	"qnhd/pkg/util"
 	"time"
 
@@ -50,7 +49,7 @@ func GetTags(name string) ([]Tag, error) {
 	var d = db.Model(&Tag{})
 	if name != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, plainto_tsquery(?) as q", d, segment.Cut(name, " ")).
+			Table("(?) as p, to_tsquery('chinese_zh', '?') as q", d, name).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	if err := d.Order("id").Find(&tags).Error; err != nil {

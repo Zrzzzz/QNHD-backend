@@ -15,7 +15,6 @@ import (
 	"qnhd/enums/UserLevelOperationType"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
-	"qnhd/pkg/segment"
 
 	"qnhd/pkg/util"
 
@@ -306,7 +305,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	// 当搜索不为空时加上全文检索
 	if content != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, plainto_tsquery(?) as q", d, segment.Cut(content, " ")).
+			Table("(?) as p, to_tsquery('chinese_zh', '?') as q", d, content).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	// 排序方式

@@ -6,26 +6,15 @@ import (
 	"qnhd/pkg/cronic"
 	"qnhd/pkg/filter"
 	"qnhd/pkg/logging"
-	"qnhd/pkg/segment"
 	"qnhd/pkg/setting"
 )
 
-// func main() {
-// 	setting.Setup()
-// 	if err := twtservice.NotifyFloor("haha", "3019244343"); err != nil {
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println("ok")
-// 	}
-// }
-
 func main() {
 	setting.Setup()
-	segment.Setup()
 	logging.Setup()
 	setupModels()
 	filter.Setup()
-	refreshToken()
+	// refreshToken()
 	cronic.Setup()
 	api.Setup()
 
