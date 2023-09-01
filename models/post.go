@@ -305,7 +305,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	// 当搜索不为空时加上全文检索
 	if content != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, to_tsquery('chinese_zh', '?') as q", d, content).
+			Table("(?) as p, to_tsquery('chinese_zh', ?) as q", d, content).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	// 排序方式
@@ -349,7 +349,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	}
 
 	// 开始搜索
-	if err = d.Count(&cnt).Error; err != nil {
+	if err = d.Debug().Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
 	// 分页

@@ -49,7 +49,7 @@ func GetTags(name string) ([]Tag, error) {
 	var d = db.Model(&Tag{})
 	if name != "" {
 		d = db.Select("p.*", "ts_rank(p.tokens, q) as score").
-			Table("(?) as p, to_tsquery('chinese_zh', '?') as q", d, name).
+			Table("(?) as p, to_tsquery('chinese_zh', ?) as q", d, name).
 			Where("q @@ p.tokens").Order("score DESC")
 	}
 	if err := d.Order("id").Find(&tags).Error; err != nil {
