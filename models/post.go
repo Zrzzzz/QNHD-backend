@@ -349,7 +349,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	}
 
 	// 开始搜索
-	if err = d.Debug().Count(&cnt).Error; err != nil {
+	if err = d.Count(&cnt).Error; err != nil {
 		return posts, int(cnt), err
 	}
 	// 分页
@@ -358,7 +358,7 @@ func getPosts(c *gin.Context, maps map[string]interface{}) ([]Post, int, error) 
 	if !front {
 		d = d.Unscoped()
 	}
-	err = d.Find(&posts).Error
+	err = d.Debug().Find(&posts).Error
 	return posts, int(cnt), err
 }
 
@@ -581,7 +581,7 @@ func DistributePost(uid string, postId string, departmentId string) error {
 	var (
 		newType Department
 	)
-	fmt.Println(departmentId)
+
 	if err := db.First(&newType, departmentId).Error; err != nil {
 		return err
 	}

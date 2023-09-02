@@ -61,7 +61,7 @@ func Setup(debug bool) {
 	sqlDB.SetMaxOpenConns(100)
 
 	var res []string
-	db.Debug().Raw("SELECT extname FROM pg_extension").Scan(&res)
+	db.Raw("SELECT extname FROM pg_extension").Scan(&res)
 	if !slices.Contains(res, "zhparser") {
 		if err := db.Exec(`CREATE EXTENSION zhparser;
 		CREATE TEXT SEARCH CONFIGURATION chinese_zh (PARSER = zhparser);

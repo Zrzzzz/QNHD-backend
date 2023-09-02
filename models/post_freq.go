@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
@@ -78,13 +76,11 @@ func RefreshPostFreq() error {
 		// 如果分数大于freq * 10 + 10则将level置0
 		var updatePosts []uint64
 		for id, score := range postScoreMap {
-			fmt.Println(score, postFreqMap[id])
 			if score > postFreqMap[id]*10+10 {
 				updatePosts = append(updatePosts, id)
 			}
 		}
 
-		fmt.Println(updatePosts)
 		if err := tx.Model(&Post{}).Where("id IN (?)", updatePosts).Update("freq_level", 0).Error; err != nil {
 			return err
 		}

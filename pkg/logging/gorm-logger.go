@@ -11,12 +11,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//定义自己的Writer
+// 定义自己的Writer
 type GormWriter struct {
 	mlog *logrus.Logger
 }
 
-//实现gorm/logger.Writer接口
+// 实现gorm/logger.Writer接口
 func (m *GormWriter) Printf(format string, v ...interface{}) {
 	m.mlog.Printf(format, v...)
 }
@@ -55,6 +55,12 @@ func GormLogger() *GormWriter {
 		logrus.WarnLevel:  logWriter,
 		logrus.ErrorLevel: logWriter,
 		logrus.PanicLevel: logWriter,
+		// logrus.InfoLevel:  io.MultiWriter(os.Stdout, logWriter),
+		// logrus.FatalLevel: io.MultiWriter(os.Stdout, logWriter),
+		// logrus.DebugLevel: io.MultiWriter(os.Stdout, logWriter),
+		// logrus.WarnLevel:  io.MultiWriter(os.Stdout, logWriter),
+		// logrus.ErrorLevel: io.MultiWriter(os.Stderr, logWriter),
+		// logrus.PanicLevel: io.MultiWriter(os.Stderr, logWriter),
 	}
 	lfhook := lfshook.NewHook(writeMap, &logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02 15:04:05",
