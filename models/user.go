@@ -330,7 +330,7 @@ func EditUserName(uid string, name string) error {
 }
 
 func ResetUserName(doer, uid string) error {
-	nickname := fmt.Sprintf("用户%d", uid)
+	nickname := fmt.Sprintf("用户%v", uid)
 	var u User
 	db.Where("id = ?", doer).Find(&u)
 
