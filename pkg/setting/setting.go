@@ -66,10 +66,12 @@ type Environment struct {
 	QNHD_REFRESH_ALL string
 }
 
-var ServerSetting = &Server{}
-var AppSetting = &App{}
-var DatabaseSetting = &Database{}
-var EnvironmentSetting = &Environment{}
+var (
+	ServerSetting      = &Server{}
+	AppSetting         = &App{}
+	DatabaseSetting    = &Database{}
+	EnvironmentSetting = &Environment{}
+)
 
 func setupEnvironment() {
 	EnvironmentSetting.DB_DEBUG = os.Getenv("DB_DEBUG")
